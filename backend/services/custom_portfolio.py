@@ -18,6 +18,7 @@ from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
 from backend.services.portfolio_intelligence import detect_cross_contract_candidates, reconcile_payment_events, review_cross_contract_candidates, run_bounded_review_cycles
+from backend.services.amendment_resolution import analyze_amendment_lineage
 
 
 DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
@@ -316,6 +317,22 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "confirmed_liability": False,
         })
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
+    # Amendment lineage and precedence are resolved before cross-contract review.
+    amendment_resolution = analyze_amendment_lineage(contracts, cross_contract_candidates)
+    amendment_review_by_id = {item.get('candidate_id'): item for item in amendment_resolution.get('candidate_reviews', []) if item.get('candidate_id')}
+    for candidate in cross_contract_candidates:
+        amendment_review = amendment_review_by_id.get(candidate.get('id'))
+        if amendment_review:
+            candidate['amendment_resolution'] = amendment_review
+            candidate['precedence_context_status'] = amendment_review.get('status')
+            candidate['legal_conflict_determined'] = False
+            candidate['human_review_required'] = True
+    for edge in amendment_resolution.get('lineage_edges', []):
+        graph.setdefault('edges', []).append({'source': edge['source'], 'target': edge['target'], 'relation': edge['relation'], 'status': edge['status'], 'evidence': edge.get('evidence', {}), 'amendment_validity_confirmed': False})
+        graph.setdefault('nodes', []).append({'id': edge['id'], 'type': 'amendment_lineage_candidate', 'label': 'Possible amendment link', 'contract_ids': [edge['source'], edge['target']], 'evidence': edge.get('evidence', {}), 'status': edge['status'], 'human_review_required': True})
+        agent_messages.append({'from': 'Thor', 'to': 'Odin', 'type': 'amendment_lineage_candidate', 'status': edge['status'], 'source_contract_id': edge['source'], 'target_contract_id': edge['target']})
+    for missing in amendment_resolution.get('missing_document_requests', []):
+        alerts.append({'id': 'missing-document:' + str(missing.get('document_id')) + ':' + str(missing.get('line_number', 0)) + ':' + str(missing.get('type')), 'contract_id': missing.get('document_id'), 'category': 'amendment_or_incorporated_document_gap', 'title': 'Resolve missing amendment or incorporated document', 'severity': 'medium', 'priority': 'medium', 'status': missing.get('status', 'manual_review_required'), 'reason': missing.get('reason', 'A referenced document could not be linked to supplied sources.'), 'evidence': {}, 'recommended_next_step': 'Upload the referenced base agreement, amendment, order form, schedule, exhibit, or statement of work and confirm its effective version.', 'human_review_required': True, 'legal_conflict_determined': False})
     cross_review_budget = max(
         0, portfolio_call_budget - int(agent_workflow.get("agent_calls_used", 0))
     )
@@ -497,6 +514,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "candidate_count": financial_reconciliation.get("counts", {}).get("payment_candidates", 0),
                 "reason": "Custom portfolio intake does not aggregate exposure from unverified invoice/payment candidates."}
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
+                      "amendment_resolution": amendment_resolution,
+                      "amendment_resolution_summary": amendment_resolution.get("summary", {}),
                       "status": "complete_with_limitations", "contract_count": len(contracts),
                       "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges, "cross_contract_candidates": cross_contract_candidates,
                       "total_financial_exposure": None, "financial_exposure_status": exposure["status"], "financial_reconciliation": financial_reconciliation,
@@ -517,6 +536,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
 
     shared_state = {"schema_version": "1.0", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
+                    "amendment_resolution": amendment_resolution,
                     "workstreams": workstreams,
                     "extracted_clauses": [term for item in extractions.values() for term in item.get("extracted_terms", [])],
                     "timeline_events": timeline, "financial_calculations": financial_reconciliation.get("payment_candidates", []), "financial_reconciliation": financial_reconciliation, "risk_claims": risks,
@@ -557,6 +577,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
             "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
+            "amendment_resolution": amendment_resolution,
             "cross_contract_review": cross_contract_review,
             "contract_reports": contract_reports, "company_risk_report": company_report,
             "shared_state": shared_state, "limitations": company_report["limitations"]}
