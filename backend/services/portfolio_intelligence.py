@@ -335,7 +335,7 @@ def _llm_thor_terms(contract_id: str, source: str) -> tuple[list[dict[str, Any]]
         return [], status
     terms = []
     seen = set()
-    for item in payload.get("extracted_terms", [])[:20]:
+    for item in (payload.get("extracted_terms") or [])[:20]:
         if not isinstance(item, dict):
             continue
         quote = str(item.get("quote", ""))
@@ -372,7 +372,7 @@ def _llm_loki_findings(contract_id: str, source: str, current_findings: list[dic
     if not payload:
         return [], status
     output = []
-    for index, item in enumerate(payload.get("findings", [])[:8], start=1):
+    for index, item in enumerate((payload.get("findings") or [])[:8], start=1):
         if not isinstance(item, dict):
             continue
         quote = str(item.get("quote", ""))
@@ -392,7 +392,7 @@ def _llm_loki_findings(contract_id: str, source: str, current_findings: list[dic
             "claim": str(item.get("claim") or "Potential risk candidate; human review required.")[:1200],
             "reason": "LLM-suggested risk; exact quotation was validated, but interpretation is not a legal conclusion.",
             "attack_path": [str(item.get("reasoning") or "Review the cited language in context.")[:1500]],
-            "evidence_gaps": [str(gap)[:300] for gap in item.get("evidence_gaps", [])[:8]],
+            "evidence_gaps": [str(gap)[:300] for gap in (item.get("evidence_gaps") or [])[:8]],
             "citations": [citation], "evidence": citation, "agent": "Loki",
             "mode": "llm_quote_validated",
         })
@@ -418,7 +418,7 @@ def _llm_heimdall_review(contract_id: str, source: str, findings: list[dict[str,
     event_by_id = {str(e.get("event_id")): e for e in events}
     validated = []
     rejected = 0
-    for item in payload.get("event_evidence", [])[:20]:
+    for item in (payload.get("event_evidence") or [])[:20]:
         if not isinstance(item, dict):
             continue
         event = event_by_id.get(str(item.get("event_id")))
@@ -431,8 +431,8 @@ def _llm_heimdall_review(contract_id: str, source: str, findings: list[dict[str,
             rejected += 1
     return {
         "agent": "Heimdall", "status": "llm_review_with_limitations",
-        "challenges": [str(x)[:1000] for x in payload.get("challenges", [])[:10]],
-        "evidence_gaps": [str(x)[:500] for x in payload.get("evidence_gaps", [])[:15]],
+        "challenges": [str(x)[:1000] for x in (payload.get("challenges") or [])[:10]],
+        "evidence_gaps": [str(x)[:500] for x in (payload.get("evidence_gaps") or [])[:15]],
         "validated_event_evidence": validated, "rejected_event_citations": rejected,
         "source_authenticity_verified": False,
     }, status
@@ -448,7 +448,7 @@ def _llm_tyr_review(contract_id: str, source: str, findings: list[dict[str, Any]
         "Each citation quote must be copied exactly from the contract or supplied event. Do not approve actions or send anything. "
         "FINDINGS:\n" + json.dumps(findings[:10], ensure_ascii=False, default=str)[:6500]
         + "\nVERIFICATION:\n" + json.dumps(verification, ensure_ascii=False, default=str)[:5000]
-        + "\nEXISTING RULINGS:\n" + json.dumps(rulings.get("rulings", [])[:10], ensure_ascii=False, default=str)[:5000]
+        + "\nEXISTING RULINGS:\n" + json.dumps((rulings.get("rulings") or [])[:10], ensure_ascii=False, default=str)[:5000]
         + "\nEVENTS:\n" + json.dumps([{"event_id": e.get("event_id"), "body": e.get("body", "")} for e in events[:30]], ensure_ascii=False, default=str)[:12000]
         + "\nCONTRACT ID: " + contract_id + "\nSOURCE:\n" + source[:30000],
         1600,
@@ -458,7 +458,7 @@ def _llm_tyr_review(contract_id: str, source: str, findings: list[dict[str, Any]
     event_bodies = [str(e.get("body", "")) for e in events]
     existing = {str(r.get("finding_id")): r for r in rulings.get("rulings", [])}
     accepted = 0
-    for item in payload.get("rulings", [])[:15]:
+    for item in (payload.get("rulings") or [])[:15]:
         if not isinstance(item, dict):
             continue
         quotes = [str(q) for q in item.get("citation_quotes", [])[:5]]
@@ -484,7 +484,7 @@ def _llm_tyr_review(contract_id: str, source: str, findings: list[dict[str, Any]
         draft["status"] = "draft_only_not_sent"
         target["action_draft"] = draft
         accepted += 1
-    return {"agent": "Tyr", "accepted_rulings": accepted, "rejected_or_unmatched_rulings": max(0, len(payload.get("rulings", [])) - accepted),
+    return {"agent": "Tyr", "accepted_rulings": accepted, "rejected_or_unmatched_rulings": max(0, len(payload.get("rulings") or []) - accepted),
             "legal_outcome_resolved": False, "human_approval_required": True}, status
 
 
@@ -573,7 +573,7 @@ def run_bounded_review_cycles(
             calls += 1
             if llm_verification:
                 verification["llm_review"] = llm_verification
-                verification.setdefault("evidence_gaps", []).extend(llm_verification.get("evidence_gaps", []))
+                verification.setdefault("evidence_gaps", []).extend((llm_verification.get("evidence_gaps") or []))
                 verification["evidence_gaps"] = list(dict.fromkeys(verification["evidence_gaps"]))
             messages.append({"from": "Heimdall", "to": "Tyr", "type": "llm_evidence_review",
                              "status": llm_status["Heimdall"], "contract_id": cid,
