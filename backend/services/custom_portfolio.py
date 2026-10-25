@@ -202,6 +202,57 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "evidence": item.get("evidence"),
                 "recommended_next_step": "Validate the date and triggering event with the contract owner."
             })
+    # Run a bounded second-pass collaboration cycle. This is deterministic and
+    # evidence-preserving; it never claims an LLM debate or a legal conclusion.
+    agent_workflow = run_bounded_review_cycles(
+        contracts=contracts, extractions=extractions, events=visible_events,
+        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 9),
+    )
+    financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
+    cross_contract_candidates = detect_cross_contract_candidates(contracts)
+    for candidate in cross_contract_candidates:
+        ids = candidate.get("contract_ids", [])
+        if len(ids) != 2:
+            continue
+        left, right = ids
+        evidence = candidate.get("evidence", [])
+        edge = {
+            "source": left, "target": right, "relation": "potential_inconsistency",
+            "status": "candidate_requires_human_review", "candidate_id": candidate.get("id"),
+            "topic": candidate.get("topic"), "classification": candidate.get("classification"),
+            "evidence": evidence, "legal_conflict_determined": False,
+        }
+        graph.setdefault("edges", []).append(edge)
+        graph.setdefault("nodes", []).append({
+            "id": candidate.get("id"), "type": "conflict_candidate",
+            "label": "Potential " + str(candidate.get("topic", "term")) + " inconsistency",
+            "contract_ids": ids, "status": candidate.get("status"),
+            "evidence": evidence, "human_review_required": True,
+        })
+        cross_contract_edges.append(edge)
+        risks.append({
+            "id": candidate.get("id"), "category": "cross_contract_inconsistency_candidate",
+            "title": "Potential cross-contract " + str(candidate.get("topic", "term")) + " inconsistency",
+            "contract_ids": ids, "severity": candidate.get("severity", "medium"),
+            "status": candidate.get("status"), "claim": candidate.get("explanation"),
+            "citations": evidence, "evidence": evidence,
+            "evidence_gaps": candidate.get("unresolved_questions", []),
+            "legal_conflict_determined": False, "human_review_required": True,
+        })
+        alerts.append({
+            "id": candidate.get("id"), "contract_id": left,
+            "contract_ids": ids, "category": "cross_contract_inconsistency_candidate",
+            "title": "Review potential cross-contract " + str(candidate.get("topic", "term")) + " difference",
+            "severity": candidate.get("severity", "medium"), "priority": "medium",
+            "status": candidate.get("status"), "reason": candidate.get("explanation"),
+            "evidence": evidence, "recommended_next_step": "Compare parties, scope, amendments, precedence, and incorporated terms.",
+        })
+    graph["node_count"] = len(graph.get("nodes", []))
+    graph["edge_count"] = len(graph.get("edges", []))
+    agent_messages.extend(agent_workflow.get("agent_messages", []))
+    debate_traces.append({"workflow": agent_workflow.get("mode"),
+                          "loop_traces": agent_workflow.get("loop_traces", []),
+                          "stop_reason": agent_workflow.get("stop_reason")})
     workstreams = []
     for report in contract_reports:
         gaps = report.get("unresolved_questions", []) or []
@@ -275,57 +326,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "Bounded agent review ran; unresolved evidence and human review are still visible."
             if ran else "Agent review did not run because the configured call budget was exhausted."
         )
-    # Run a bounded second-pass collaboration cycle. This is deterministic and
-    # evidence-preserving; it never claims an LLM debate or a legal conclusion.
-    agent_workflow = run_bounded_review_cycles(
-        contracts=contracts, extractions=extractions, events=visible_events,
-        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 9),
-    )
-    financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
-    cross_contract_candidates = detect_cross_contract_candidates(contracts)
-    for candidate in cross_contract_candidates:
-        ids = candidate.get("contract_ids", [])
-        if len(ids) != 2:
-            continue
-        left, right = ids
-        evidence = candidate.get("evidence", [])
-        edge = {
-            "source": left, "target": right, "relation": "potential_inconsistency",
-            "status": "candidate_requires_human_review", "candidate_id": candidate.get("id"),
-            "topic": candidate.get("topic"), "classification": candidate.get("classification"),
-            "evidence": evidence, "legal_conflict_determined": False,
-        }
-        graph.setdefault("edges", []).append(edge)
-        graph.setdefault("nodes", []).append({
-            "id": candidate.get("id"), "type": "conflict_candidate",
-            "label": "Potential " + str(candidate.get("topic", "term")) + " inconsistency",
-            "contract_ids": ids, "status": candidate.get("status"),
-            "evidence": evidence, "human_review_required": True,
-        })
-        cross_contract_edges.append(edge)
-        risks.append({
-            "id": candidate.get("id"), "category": "cross_contract_inconsistency_candidate",
-            "title": "Potential cross-contract " + str(candidate.get("topic", "term")) + " inconsistency",
-            "contract_ids": ids, "severity": candidate.get("severity", "medium"),
-            "status": candidate.get("status"), "claim": candidate.get("explanation"),
-            "citations": evidence, "evidence": evidence,
-            "evidence_gaps": candidate.get("unresolved_questions", []),
-            "legal_conflict_determined": False, "human_review_required": True,
-        })
-        alerts.append({
-            "id": candidate.get("id"), "contract_id": left,
-            "contract_ids": ids, "category": "cross_contract_inconsistency_candidate",
-            "title": "Review potential cross-contract " + str(candidate.get("topic", "term")) + " difference",
-            "severity": candidate.get("severity", "medium"), "priority": "medium",
-            "status": candidate.get("status"), "reason": candidate.get("explanation"),
-            "evidence": evidence, "recommended_next_step": "Compare parties, scope, amendments, precedence, and incorporated terms.",
-        })
-    graph["node_count"] = len(graph.get("nodes", []))
-    graph["edge_count"] = len(graph.get("edges", []))
-    agent_messages.extend(agent_workflow.get("agent_messages", []))
-    debate_traces.append({"workflow": agent_workflow.get("mode"),
-                          "loop_traces": agent_workflow.get("loop_traces", []),
-                          "stop_reason": agent_workflow.get("stop_reason")})
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
                                   str(item.get("contract_id", "")), str(item.get("id", ""))))
     contract_reports.sort(key=lambda item: item["contract_id"])
