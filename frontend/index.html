@@ -50,7 +50,7 @@ details[open] summary{margin-bottom:8px}
 @media(max-width:560px){.agentlist{grid-template-columns:1fr}.milestone{grid-template-columns:85px 1fr}.milestone .tag{grid-column:2}.auditrow{grid-template-columns:70px 1fr}}
 
 /* Light theme skin only — original dashboard markup, data flow, and interactions are preserved. */
-body{background:radial-gradient(ellipse at top left,#f3f4ec,#e9eae4 58%);color:var(--txt)}header{background:#e9eae4ed;backdrop-filter:blur(14px)}.card,.agent,.evidence,.action,.milestone{box-shadow:0 10px 30px #2026160b;border-radius:18px}.card{border-color:var(--line)}button,select,input,textarea{color:var(--txt)}button{background:#fff;border:1px solid var(--line);border-radius:999px}button:hover{border-color:#81916f}button#run,button.primary{background:#151813;color:#fff}.tag{border-radius:999px}.evidence blockquote,blockquote{color:var(--txt)}.notice{background:#fff3d5;border-color:#e8d9b5;color:#876521}.err{background:#fbe8e5;color:#a6423d}.flow .step{background:#fff}.contract-explorer-card,.agentlist .agent{background:#fff}
+body{background:radial-gradient(ellipse at top left,#f3f4ec,#e9eae4 58%);color:var(--txt)}header{background:#e9eae4ed;backdrop-filter:blur(14px)}.card,.agent,.evidence,.action,.milestone{box-shadow:0 10px 30px #2026160b;border-radius:18px}.card{border-color:var(--line)}button,select,input,textarea{color:var(--txt)}button{background:#fff;border:1px solid var(--line);border-radius:999px}button#run,button.primary{background:#151813;color:#fff}.tag{border-radius:999px}.evidence blockquote,blockquote{color:var(--txt)}.notice{background:#fff3d5;border-color:#e8d9b5;color:#876521}.err{background:#fbe8e5;color:#a6423d}.flow .step{background:#fff}.contract-explorer-card,.agentlist .agent{background:#fff}
 
 /* Reference-inspired visual skin. All existing features, data bindings and analysis handlers remain in place. */
 :root{--bg:#e9eae4;--p:#fff;--line:#d7d9cf;--txt:#151813;--muted:#777d6e;--cyan:#81916f;--gold:#c89a45;--green:#50765c}
@@ -58,14 +58,14 @@ html{scroll-behavior:smooth;scroll-padding-top:95px}
 body{max-width:none;margin:0;padding:0 2.35vw 30px;background:radial-gradient(ellipse at 30% 0%,#d9d7cd 0,transparent 300px),#e9eae4;color:var(--txt)}
 header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:minmax(190px,1fr) auto auto;align-items:center;gap:22px;margin:0 -2.35vw 34px;padding:20px 2.35vw;background:rgba(233,234,228,.94);backdrop-filter:blur(16px);border-bottom:1px solid #d7d9cf}
 header h1{font-size:25px;letter-spacing:-1.2px;margin:0;font-weight:750}header p{margin:4px 0 0;color:var(--muted);font-size:12px}
-.top-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.top-tabs a{display:inline-flex;align-items:center;justify-content:center;padding:13px 20px;border:1px solid #c9ccbf;border-radius:999px;text-decoration:none;color:#596052;font-size:13px;font-weight:600;white-space:nowrap}.top-tabs a:hover,.top-tabs a:focus{background:#fff;color:#151813;border-color:#151813}.top-tabs a.active{background:#151813;color:#fff;border-color:#151813}
+.top-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.top-tabs a{display:inline-flex;align-items:center;justify-content:center;padding:13px 20px;border:1px solid #c9ccbf;border-radius:999px;text-decoration:none;color:#596052;font-size:13px;font-weight:600;white-space:nowrap}.top-tabs a:focus{background:#fff;color:#151813;border-color:#151813}.top-tabs a.active{background:#151813;color:#fff;border-color:#151813}
 #health{justify-self:end}
 .intro{padding:14px 0 22px}
 .card,.agent,.evidence,.action,.milestone{border-radius:20px;box-shadow:0 8px 26px rgba(32,38,22,.035)}
 .card{background:#fff;border:1px solid rgba(215,217,207,.72);padding:20px}
 .card h2,.card h3{letter-spacing:-.45px}
 .metric{min-height:150px}
-button{transition:background .15s,border-color .15s,transform .15s}button:hover{transform:translateY(-1px)}
+button{transition:background .15s,border-color .15s,transform .15s}
 input,select,textarea{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
 .tag{border-radius:999px}
 section[id],.wide[id],.side[id],.half[id]{scroll-margin-top:105px}
@@ -79,7 +79,6 @@ header h1{font-size:24px;letter-spacing:-1px;font-weight:800}
 .top-tabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .top-tabs button{background:transparent;color:#596052;border:1px solid #c9ccbf;border-radius:999px;padding:12px 17px;font:600 13px system-ui;white-space:nowrap;cursor:pointer}
 .top-tabs button.active{background:#151813;color:#fff;border-color:#151813}
-.top-tabs button:hover{background:#fff;color:#151813}
 main{max-width:1600px;padding:28px 0}
 .intro{align-items:center;min-height:200px;padding:12px 0 24px}
 .intro .eyebrow{font-size:11px;letter-spacing:2px;font-weight:800}
@@ -103,13 +102,13 @@ main{max-width:1600px;padding:28px 0}
 .metric .value{font-size:42px}
 .quick-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}
 .quick-link{display:block;text-align:left;padding:20px;background:#fff;border:1px solid #e0e2d9;border-radius:20px;color:#151813;cursor:pointer}
-.quick-link b{display:block;font-size:16px;margin-bottom:8px}.quick-link span{font-size:12px;color:#777d6e;line-height:1.5}.quick-link:hover{border-color:#81916f;transform:translateY(-2px)}
+.quick-link b{display:block;font-size:16px;margin-bottom:8px}.quick-link span{font-size:12px;color:#777d6e;line-height:1.5}
 #overviewMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .overview-metric{background:#fff;border:1px solid #e0e2d9;border-radius:22px;padding:20px}
 .overview-metric .label{font-size:12px;color:#777d6e}.overview-metric .value{font-size:38px;letter-spacing:-1.5px;margin:12px 0 5px}.overview-metric .hint{font-size:11px;color:#777d6e}
 .graph-wrap{width:100%;overflow:auto;background:#f7f8f3;border:1px solid #e2e4dc;border-radius:18px;min-height:250px}
 .graph-wrap svg{display:block;width:100%;min-width:650px;height:320px}
-.graph-node{cursor:pointer}.graph-node rect{fill:#fff;stroke:#cbd0c2;stroke-width:1.5}.graph-node:hover rect,.graph-node:focus rect{stroke:#81916f;stroke-width:3}.graph-node text{fill:#151813;font-size:13px}.graph-edge{stroke:#a6ad9a;stroke-width:2}.graph-edge-label{fill:#6c7462;font-size:10px}
+.graph-node{cursor:pointer}.graph-node rect{fill:#fff;stroke:#cbd0c2;stroke-width:1.5}.graph-node:focus rect{stroke:#81916f;stroke-width:3}.graph-node text{fill:#151813;font-size:13px}.graph-edge{stroke:#a6ad9a;stroke-width:2}.graph-edge-label{fill:#6c7462;font-size:10px}
 .section-actions{display:flex;justify-content:flex-end;gap:8px;margin:0 0 14px}.section-actions button{background:#151813;color:white;border:0;border-radius:999px;padding:11px 16px}
 @media(max-width:1050px){header{grid-template-columns:1fr auto}.top-tabs{grid-column:1/-1;grid-row:2;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}#health{grid-column:2;grid-row:1}.page-grid>.card.metric{grid-column:span 6}.quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){body{padding:0 14px 22px}header{margin:0 -14px;padding:14px;grid-template-columns:1fr auto}header h1{font-size:18px}.top-tabs button{padding:10px 13px}.intro{display:block;padding:18px 0}.intro .controls{margin-top:18px}.page-grid{grid-template-columns:1fr}.page-grid>.card,.page-grid>.card.full,.page-grid>.card.wide,.page-grid>.card.side,.page-grid>.card.half,.page-grid>.card.metric{grid-column:1/-1}#overviewMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-links{grid-template-columns:1fr 1fr}.card{padding:16px}}
@@ -147,7 +146,7 @@ main{max-width:1600px;padding:28px 0}
 .orch-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 24px}.orch-stats>div{background:#fff;border:1px solid #e0e3d8;border-radius:14px;padding:14px}.orch-stats span,.orch-stats b{display:block}.orch-stats span{font-size:11px;color:#777d6e}.orch-stats b{font-size:27px;margin-top:7px;letter-spacing:-1px}
 .orchestrator-panel>h4{font-size:14px;margin:22px 0 10px}.orch-fr-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.orch-fr{border:1px solid #e0e3d8;border-radius:14px;padding:14px;background:#fff}.orch-fr-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.orch-fr-top b{font-size:12px}.orch-fr p{font-size:12px;color:#68725d;line-height:1.55;margin:8px 0 0}.orch-status{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;border-radius:999px;padding:5px 8px;background:#edf0e7;color:#526348}.orch-status.partial{background:#fff2d7;color:#89641d}.orch-status.missing{background:#f7e8e5;color:#9a5148}
 .orch-workstreams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.orch-ws{border:1px solid #e0e3d8;border-radius:14px;padding:14px;background:#fff;min-width:0}.orch-ws-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.orch-ws b{font-size:13px}.orch-ws p{font-size:11px;color:#68725d;line-height:1.5;margin:7px 0}.orch-ws .bar{height:5px;border-radius:999px;background:#edf0e7;overflow:hidden;margin:10px 0}.orch-ws .bar span{display:block;height:100%;background:#81916f;width:0}.orch-ws .meta{font-size:10px;color:#777d6e}
-.orch-title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.orch-title-row h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.orch-agent-open{background:#f8f5ff!important;color:#191727!important;border:0!important;border-radius:999px!important;padding:8px 12px!important;font-size:11px!important;white-space:nowrap}.orch-agent-open:hover{transform:none!important}.orch-agent-board{margin-top:16px;padding-top:0;border-top:0}.orch-agent-board[hidden]{display:none!important}.orch-agent-board-head p{display:none}.orch-agent-task .orch-agent-role{display:none}.orch-agent-card .orch-agent-role{display:none}.orch-agent-card .orch-agent-task:has(> b:first-child){}.orch-agent-board-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}.orch-agent-board-head h4{margin:0 0 5px}.orch-agent-board-head p{font-size:12px;margin:0}.orch-agent-board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.orch-agent-card{min-width:0;border:1px solid rgba(190,165,255,.18);border-radius:14px;padding:15px;background:rgba(255,255,255,.035)}.orch-agent-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.orch-agent-card-top b{font-size:14px}.orch-agent-card .orch-agent-role{font-size:11px;color:#bdb6d0;margin:5px 0 12px}.orch-agent-task{padding:9px 0;border-top:1px solid rgba(190,165,255,.12)}.orch-agent-task b,.orch-agent-task span{display:block}.orch-agent-task b{font-size:11px}.orch-agent-task span{font-size:10px;color:#bdb6d0;line-height:1.5;margin-top:3px}.orch-agent-progress{display:flex;justify-content:space-between;gap:8px;font-size:10px;margin-top:12px;color:#bdb6d0}.orch-agent-progress strong{color:#f8f5ff}.orch-agent-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:6px}.orch-agent-bar span{display:block;height:100%;border-radius:999px;background:#a9c68b}@media(max-width:850px){.orch-agent-board-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.orch-agent-board-grid{grid-template-columns:1fr}.orch-agent-board-head{display:block}.orch-agent-open{margin-top:10px}}.orch-trace{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px}.orch-event{min-width:150px;max-width:230px;border-left:3px solid #81916f;background:#f8f9f5;border-radius:0 10px 10px 0;padding:11px}.orch-event b,.orch-event span,.orch-event small{display:block}.orch-event b{font-size:11px}.orch-event span{font-size:11px;margin-top:5px;color:#68725d}.orch-event small{font-size:10px;color:#777d6e;margin-top:5px}
+.orch-title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.orch-title-row h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.orch-agent-open{background:#f8f5ff!important;color:#191727!important;border:0!important;border-radius:999px!important;padding:8px 12px!important;font-size:11px!important;white-space:nowrap}.orch-agent-board{margin-top:16px;padding-top:0;border-top:0}.orch-agent-board[hidden]{display:none!important}.orch-agent-board-head p{display:none}.orch-agent-task .orch-agent-role{display:none}.orch-agent-card .orch-agent-role{display:none}.orch-agent-card .orch-agent-task:has(> b:first-child){}.orch-agent-board-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}.orch-agent-board-head h4{margin:0 0 5px}.orch-agent-board-head p{font-size:12px;margin:0}.orch-agent-board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.orch-agent-card{min-width:0;border:1px solid rgba(190,165,255,.18);border-radius:14px;padding:15px;background:rgba(255,255,255,.035)}.orch-agent-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.orch-agent-card-top b{font-size:14px}.orch-agent-card .orch-agent-role{font-size:11px;color:#bdb6d0;margin:5px 0 12px}.orch-agent-task{padding:9px 0;border-top:1px solid rgba(190,165,255,.12)}.orch-agent-task b,.orch-agent-task span{display:block}.orch-agent-task b{font-size:11px}.orch-agent-task span{font-size:10px;color:#bdb6d0;line-height:1.5;margin-top:3px}.orch-agent-progress{display:flex;justify-content:space-between;gap:8px;font-size:10px;margin-top:12px;color:#bdb6d0}.orch-agent-progress strong{color:#f8f5ff}.orch-agent-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:6px}.orch-agent-bar span{display:block;height:100%;border-radius:999px;background:#a9c68b}@media(max-width:850px){.orch-agent-board-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.orch-agent-board-grid{grid-template-columns:1fr}.orch-agent-board-head{display:block}.orch-agent-open{margin-top:10px}}.orch-trace{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px}.orch-event{min-width:150px;max-width:230px;border-left:3px solid #81916f;background:#f8f9f5;border-radius:0 10px 10px 0;padding:11px}.orch-event b,.orch-event span,.orch-event small{display:block}.orch-event b{font-size:11px}.orch-event span{font-size:11px;margin-top:5px;color:#68725d}.orch-event small{font-size:10px;color:#777d6e;margin-top:5px}
 @media(max-width:850px){.orch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.orch-workstreams{grid-template-columns:repeat(2,minmax(0,1fr))}.orch-head{display:block}.orch-last-run{display:inline-block;margin-top:8px}}
 @media(max-width:560px){.orch-fr-list,.orch-workstreams{grid-template-columns:1fr}.orch-pipeline>i{display:none}.orch-step{min-width:145px}.orch-stats b{font-size:22px}}
 
@@ -162,14 +161,12 @@ header p,.muted{line-height:1.65}
 .card,.overview-metric{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease}
 .card{position:relative;overflow:hidden;border-radius:22px;background:linear-gradient(145deg,#fff 0%,#fcfdf9 100%);box-shadow:0 5px 18px rgba(34,44,25,.035)}
 .card:before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,#8fa17b,#d5dec9);opacity:0;transition:opacity .2s ease;pointer-events:none}
-.card:hover{transform:translateY(-3px);border-color:#bdc9b0;box-shadow:0 16px 36px rgba(45,58,34,.09);background:linear-gradient(145deg,#fff 0%,#f7faf2 100%)}.card:hover:before{opacity:1}
 .card h3{font-size:16px;font-weight:800;line-height:1.4}.card p,.card li{font-size:14px;line-height:1.7}
 .metric{background:linear-gradient(145deg,#fff 0%,#f5f8f0 100%);border-color:#dfe5d8}.metric .value,.value{font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.055em}
 .overview-metric{position:relative;border-radius:22px;padding:22px;background:linear-gradient(145deg,#fff,#f7f9f3);box-shadow:0 5px 18px rgba(34,44,25,.035)}
-.overview-metric:hover{transform:translateY(-4px);border-color:#aeba9f;box-shadow:0 16px 34px rgba(45,58,34,.1);background:linear-gradient(145deg,#fafff5,#edf3e6)}
 .overview-metric .label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#737d69}.overview-metric .value{font-size:40px;color:#20271b}.overview-metric .hint{font-size:12px;line-height:1.5;color:#737d69}
-button,select,input,textarea{font-family:inherit;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(42,52,32,.1)}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #b6c9a6;outline-offset:3px}
-.agent,.evidence,.action,.milestone{border-radius:14px;background:linear-gradient(145deg,#fff,#f6f8f2);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.agent:hover,.evidence:hover,.action:hover,.milestone:hover{transform:translateY(-2px);border-color:#bdc9b0;box-shadow:0 10px 22px rgba(45,58,34,.08)}
+button,select,input,textarea{font-family:inherit;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #b6c9a6;outline-offset:3px}
+.agent,.evidence,.action,.milestone{border-radius:14px;background:linear-gradient(145deg,#fff,#f6f8f2);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .tag{font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:.015em}.page-grid{gap:18px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
 
@@ -182,29 +179,15 @@ button,select,input,textarea{font-family:inherit;transition:transform .18s ease,
   border:1px solid #e0e3da;
   transition:background .28s ease,color .22s ease,border-color .22s ease,box-shadow .28s ease,transform .28s cubic-bezier(.2,.75,.25,1);
 }
-.card,.overview-metric{box-shadow:0 4px 18px rgba(30,36,25,.025)}
-.card:hover,.card:focus-within,.overview-metric:hover,.metric:hover,.agent:hover,.evidence:hover,.action:hover,.milestone:hover{
+.card,.overview-metric{box-shadow:0 4px 18px rgba(30,36,25,.025)}.card:focus-within{
   color:#fff;
   background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%);
   border-color:#6d7770;
   box-shadow:0 20px 42px rgba(35,42,34,.19);
   transform:translateY(-4px);
 }
-.card:hover h1,.card:hover h2,.card:hover h3,.card:hover h4,.card:hover p,.card:hover li,.card:hover small,.card:hover label,
-.card:hover .value,.card:hover .muted,.card:hover .label,.card:hover .hint,
-.overview-metric:hover h1,.overview-metric:hover h2,.overview-metric:hover h3,.overview-metric:hover p,
-.overview-metric:hover .value,.overview-metric:hover .label,.overview-metric:hover .hint,
-.metric:hover h1,.metric:hover h2,.metric:hover h3,.metric:hover p,.metric:hover small,.metric:hover .value,
-.agent:hover,.evidence:hover,.action:hover,.milestone:hover{color:#fff}
-.card:hover:before{opacity:.75;background:linear-gradient(180deg,#fff,#bfc9bd)}
-.card:hover a,.card:hover button,.overview-metric:hover a{color:inherit}
-.card:hover .tag,.card:hover .badge,.card:hover .pill{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff}
 .card svg,.overview-metric svg{transition:opacity .22s ease,filter .22s ease}
-.card:hover svg,.overview-metric:hover svg{filter:brightness(0) invert(1);opacity:.92}
-.card button:hover,.overview-metric button:hover{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4)}
 .card:focus-within,.overview-metric:focus-within{outline:2px solid #91a182;outline-offset:2px}
-.top-tabs button:hover{background:#dfe2d8;color:#20241d;box-shadow:none}
-.top-tabs button.active:hover{background:#151813;color:#fff}
 @media(prefers-reduced-motion:reduce){.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone{transition:none}}
 
 /* FR9 dashboard feature panels */
@@ -242,151 +225,22 @@ header #health{justify-self:end}
 .graph-shell{margin-bottom:4px}
 @media(max-width:650px){#overviewMetrics{margin-bottom:20px;gap:14px}#homeGraph{margin-top:22px!important;margin-bottom:24px!important}#dash>.card,#dash>.page-view{margin-top:22px!important;margin-bottom:24px!important}.page-view>.page-grid{row-gap:16px;column-gap:14px}}
 
-/* Large structural panels (graph and portfolio sections) stay neutral on hover.
-   Only the smaller modular cards inside them receive the charcoal hover treatment. */
-#dash>.card.full:hover,
-#dash>.page-view>.card.full:hover,
-.card.full:has(.graph-shell):hover,
-.card.full:has(#fr9Graph):hover{
-  color:#171b15!important;
-  background:#fff!important;
-  border-color:#e0e3da!important;
-  box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
-  transform:none!important;
-}
-#dash>.card.full:hover h1,#dash>.card.full:hover h2,#dash>.card.full:hover h3,
-#dash>.card.full:hover h4,#dash>.card.full:hover p,#dash>.card.full:hover li,
-#dash>.card.full:hover small,#dash>.card.full:hover label,
-#dash>.card.full:hover .value,#dash>.card.full:hover .muted,
-#dash>.card.full:hover .label,#dash>.card.full:hover .hint,
-.card.full:has(.graph-shell):hover h1,.card.full:has(.graph-shell):hover h2,
-.card.full:has(.graph-shell):hover h3,.card.full:has(.graph-shell):hover p,
-.card.full:has(#fr9Graph):hover h1,.card.full:has(#fr9Graph):hover h2,
-.card.full:has(#fr9Graph):hover h3,.card.full:has(#fr9Graph):hover p{
-  color:#171b15!important;
-}
-#dash>.card.full:hover:before{opacity:0!important}
-#dash>.card.full:hover svg{filter:none!important}
-
 /* Hover belongs to leaf cards only. Section/panel wrappers never recolor,
-   including when the pointer is over an interactive card nested inside them. */
-.card.full:hover,
-.card.full:focus-within,
-.card.full:has(.card:hover),
-.card.full:has(.overview-metric:hover),
-.card.full:has(.metric:hover),
-.card.full:has(.agent:hover),
-.card.full:has(.evidence:hover),
-.card.full:has(.action:hover),
-.card.full:has(.milestone:hover),
-.card.full:has(.graph-shell):hover,
-.card.full:has(#fr9Graph):hover{
+.card.full:focus-within{
   color:#171b15!important;
   background:#fff!important;
   border-color:#e0e3da!important;
   box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
   transform:none!important;
 }
-.card.full:hover h1,.card.full:hover h2,.card.full:hover h3,.card.full:hover h4,
-.card.full:hover p,.card.full:hover li,.card.full:hover small,.card.full:hover label,
-.card.full:hover .value,.card.full:hover .muted,.card.full:hover .label,.card.full:hover .hint,
 .card.full:focus-within h1,.card.full:focus-within h2,.card.full:focus-within h3,
-.card.full:focus-within h4,.card.full:focus-within p,.card.full:focus-within small,
-.card.full:has(.card:hover) h1,.card.full:has(.card:hover) h2,
-.card.full:has(.card:hover) h3,.card.full:has(.card:hover) p,
-.card.full:has(.overview-metric:hover) h1,.card.full:has(.overview-metric:hover) h2,
-.card.full:has(.overview-metric:hover) h3,.card.full:has(.overview-metric:hover) p{
+.card.full:focus-within h4,.card.full:focus-within p,.card.full:focus-within small{
   color:#171b15!important;
-}
-.card.full:hover:before,.card.full:focus-within:before{opacity:0!important}
-.card.full:hover svg,.card.full:focus-within svg{filter:none!important;opacity:1!important}
-/* A small card remains responsible for its own hover styling. */
-.card.full .card:hover,.card.full .overview-metric:hover,
-.card.full .metric:hover,.card.full .agent:hover,.card.full .evidence:hover,
-.card.full .action:hover,.card.full .milestone:hover{
-  color:#fff;
-  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%);
-}
+}.card.full:focus-within:before{opacity:0!important}.card.full:focus-within svg{filter:none!important;opacity:1!important}
 
 /* Hover contrast fix: apply white typography to the contents of the small
-   interactive cards, without recolouring their enclosing section panels. */
-.card .card:hover,
-.card .overview-metric:hover,
-.card .metric:hover,
-.card .agent:hover,
-.card .evidence:hover,
-.card .action:hover,
-.card .milestone:hover,
-.page-grid > .card:not(.full):hover,
-.graph-edge-row:hover,
-.fr9-subcard:hover,
-.debate-column:hover,
-.draft-action:hover {
+   interactive cards{
   color:#fff!important;
-}
-.card .card:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,summary,dt,dd,blockquote,code,time),
-.card .overview-metric:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.card .metric:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.card .agent:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.card .evidence:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,blockquote),
-.card .action:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.card .milestone:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,time),
-.page-grid > .card:not(.full):hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,summary,dt,dd,blockquote,code,time),
-.graph-edge-row:hover :is(b,span,small,p),
-.fr9-subcard:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.debate-column:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
-.draft-action:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li) {
-  color:#fff!important;
-}
-.card .card:hover .tag,
-.card .agent:hover .tag,
-.card .evidence:hover .tag,
-.card .action:hover .tag,
-.card .milestone:hover .tag,
-.page-grid > .card:not(.full):hover .tag {
-  color:#fff!important;
-  background:rgba(255,255,255,.16)!important;
-  border-color:rgba(255,255,255,.28)!important;
-}
-.card .card:hover a,
-.card .agent:hover a,
-.card .evidence:hover a,
-.card .action:hover a,
-.card .milestone:hover a,
-.page-grid > .card:not(.full):hover a {
-  color:#fff!important;
-}
-.card .card:hover svg,
-.card .agent:hover svg,
-.card .evidence:hover svg,
-.card .action:hover svg,
-.card .milestone:hover svg,
-.page-grid > .card:not(.full):hover svg {
-  filter:brightness(0) invert(1);
-}
-
-
-/* Final contrast override for nested metric cards: include div-based values
-   and every text-bearing descendant (e.g. the "Not calculated" value). */
-.card.full .agent:hover *,
-.card.full .card:hover *,
-.card.full .overview-metric:hover *,
-.card.full .metric:hover *,
-.card.full .evidence:hover *,
-.card.full .action:hover *,
-.card.full .milestone:hover *,
-.page-grid > .card:not(.full):hover * {
-  color:#fff!important;
-}
-.card.full .agent:hover button,
-.card.full .card:hover button,
-.card.full .overview-metric:hover button,
-.card.full .metric:hover button,
-.card.full .evidence:hover button,
-.card.full .action:hover button,
-.card.full .milestone:hover button,
-.page-grid > .card:not(.full):hover button {
-  color:#171b15!important;
 }
 
 
@@ -475,14 +329,6 @@ header #health{justify-self:end}
   line-height:1.65;
   overflow-wrap:anywhere;
 }
-.contract-explorer-card details[open] .evidence:hover{
-  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%)!important;
-  border-color:#6d7770!important;
-}
-.contract-explorer-card details[open] .evidence:hover,
-.contract-explorer-card details[open] .evidence:hover *{
-  color:#fff!important;
-}
 .contract-explorer-card details[open] summary{
   color:#657653!important;
   padding:10px 12px;
@@ -491,16 +337,12 @@ header #health{justify-self:end}
   border-radius:10px;
   line-height:1.5;
 }
-.contract-explorer-card details[open] summary:hover{
-  background:#eaf0e2;
-}
 
 
 /* Final contract explorer contrast correction:
    the contract tile itself stays neutral; only individual source-term evidence cards
    receive the dark hover state. This prevents inherited white text on white evidence. */
 .contract-explorer-card.agent,
-.contract-explorer-card.agent:hover,
 .contract-explorer-card.agent:focus-within{
   color:#171b15!important;
   background:#fff!important;
@@ -508,51 +350,25 @@ header #health{justify-self:end}
   box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
   transform:none!important;
 }
-.contract-explorer-card.agent:hover > b,
-.contract-explorer-card.agent:hover > p,
-.contract-explorer-card.agent:hover > .small,
-.contract-explorer-card.agent:hover > details > summary,
 .contract-explorer-card.agent:focus-within > b,
 .contract-explorer-card.agent:focus-within > p,
 .contract-explorer-card.agent:focus-within > .small,
 .contract-explorer-card.agent:focus-within > details > summary{
   color:#171b15!important;
 }
-.contract-explorer-card details[open] .evidence,
-.contract-explorer-card details[open] .evidence:not(:hover){
+.contract-explorer-card details[open] .evidence{
   color:#252a22!important;
   background:linear-gradient(145deg,#fbfcf8,#f0f3eb)!important;
   border-color:#dce2d5!important;
-}
-.contract-explorer-card details[open] .evidence:not(:hover) :is(b,strong,p,small,.meta,blockquote,span,li){
-  color:#252a22!important;
-}
-.contract-explorer-card details[open] .evidence:hover{
-  color:#fff!important;
-  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%)!important;
-  border-color:#6d7770!important;
-  transform:translateY(-2px);
-}
-.contract-explorer-card details[open] .evidence:hover :is(b,strong,p,small,.meta,blockquote,span,li){
-  color:#fff!important;
-}
-.contract-explorer-card details[open] .evidence:hover blockquote{
-  background:rgba(255,255,255,.12)!important;
-  border-left-color:#dce8d0!important;
 }
 .contract-explorer-card details > summary{
   color:#657653!important;
   background:#f4f6ef!important;
 }
-.contract-explorer-card details > summary:hover{
-  color:#34402b!important;
-  background:#eaf0e2!important;
-}
 
 
 /* Hard override for nested contract evidence: readable at rest, white only on the evidence card hover. */
 #contractExplorer .contract-explorer-card,
-#contractExplorer .contract-explorer-card:hover,
 #contractExplorer .contract-explorer-card:focus,
 #contractExplorer .contract-explorer-card:focus-within {
   color:#171b15!important;
@@ -578,10 +394,6 @@ header #health{justify-self:end}
   padding:10px 12px!important;
   outline-offset:2px;
 }
-#contractExplorer .contract-explorer-card > details > summary:hover {
-  color:#34402b!important;
-  background:#eaf0e2!important;
-}
 #contractExplorer .contract-explorer-card details[open] .evidence,
 #contractExplorer .contract-explorer-card details[open] .evidence * {
   color:#252a22!important;
@@ -592,51 +404,26 @@ header #health{justify-self:end}
   box-shadow:0 4px 14px rgba(30,36,25,.045)!important;
   transform:none!important;
 }
-#contractExplorer .contract-explorer-card details[open] .evidence:hover,
-#contractExplorer .contract-explorer-card details[open] .evidence:hover * {
-  color:#fff!important;
-}
-#contractExplorer .contract-explorer-card details[open] .evidence:hover {
-  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%)!important;
-  border-color:#6d7770!important;
-  box-shadow:0 12px 25px rgba(35,42,34,.14)!important;
-  transform:translateY(-2px)!important;
-}
 #contractExplorer .contract-explorer-card details[open] .evidence blockquote {
   color:#252a22!important;
   background:#fff!important;
 }
-#contractExplorer .contract-explorer-card details[open] .evidence:hover blockquote {
-  color:#fff!important;
-  background:rgba(255,255,255,.12)!important;
-  border-left-color:#dce8d0!important;
-}
 
 
 /* Contract page evidence readability fix: keep nested source cards readable at rest and hover.
-   Covers Contract explorer, multi-contract workstreams, and Thor portfolio scan. */
-.page-view[data-view="contracts"] .card:has(.agent:hover),
-.page-view[data-view="contracts"] .card:has(.evidence:hover),
-.page-view[data-view="contracts"] .card.full:has(.agent:hover),
-.page-view[data-view="contracts"] .card.full:has(.evidence:hover) {
+   Covers Contract explorer, multi-contract workstreams{
   color:#20251d!important;background:#fff!important;border-color:#e0e3da!important;
   box-shadow:0 8px 24px rgba(30,36,25,.04)!important;
 }
 .page-view[data-view="contracts"] .agentlist .agent,
-.page-view[data-view="contracts"] .agentlist .evidence,
-.page-view[data-view="contracts"] .agentlist .agent:hover,
-.page-view[data-view="contracts"] .agentlist .evidence:hover {
+.page-view[data-view="contracts"] .agentlist .evidence{
   color:#20251d!important;background:#fbfcf8!important;border:1px solid #dfe4d8!important;
   box-shadow:0 4px 14px rgba(30,36,25,.045)!important;transform:none!important;
 }
 .page-view[data-view="contracts"] .agentlist .agent *,
-.page-view[data-view="contracts"] .agentlist .evidence *,
-.page-view[data-view="contracts"] .agentlist .agent:hover *,
-.page-view[data-view="contracts"] .agentlist .evidence:hover * {color:#20251d!important}
+.page-view[data-view="contracts"] .agentlist .evidence *{color:#20251d!important}
 .page-view[data-view="contracts"] .agentlist .agent blockquote,
-.page-view[data-view="contracts"] .agentlist .evidence blockquote,
-.page-view[data-view="contracts"] .agentlist .agent:hover blockquote,
-.page-view[data-view="contracts"] .agentlist .evidence:hover blockquote {
+.page-view[data-view="contracts"] .agentlist .evidence blockquote{
   color:#20251d!important;background:#fff!important;border-left:3px solid #8a9a78!important;
   border-radius:0 8px 8px 0!important;padding:10px 12px!important;line-height:1.7!important;
   overflow-wrap:anywhere!important;white-space:pre-wrap!important;
@@ -644,7 +431,6 @@ header #health{justify-self:end}
 .page-view[data-view="contracts"] .agentlist details>summary {
   color:#596b49!important;background:#f4f6ef!important;border-radius:9px!important;padding:9px 11px!important;
 }
-.page-view[data-view="contracts"] .agentlist details>summary:hover {color:#34402b!important;background:#eaf0e2!important}
 .page-view[data-view="contracts"] .agentlist .agent p,
 .page-view[data-view="contracts"] .agentlist .evidence p {font-size:13px!important;line-height:1.7!important;overflow-wrap:anywhere}
 .page-view[data-view="contracts"] .agentlist .meta,
@@ -683,7 +469,6 @@ button,.btn,.nav button,.nav a{
   border-radius:999px;
   transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
 }
-button:hover,.btn:hover{transform:translateY(-1px)}
 .card,.panel,.fr9-panel,.fr9-subcard,.graph-wrap,.graph-stage,.graph-toolbar,
 .agent,.evidence,.metric,.overview-metric,.orch-stats,.contract-explorer-card{
   color:var(--txt)!important;
@@ -765,20 +550,8 @@ hr{border-color:rgba(196,178,255,.13)!important}
 html,body{color:#f7f5ff}
 button,button *,
 .btn,.btn *,
-a,select,input,textarea{transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}
-button:hover,button:focus,button:focus-visible,button:active,
-.btn:hover,.btn:focus,.btn:focus-visible,.btn:active,
-a:hover,a:focus,a:focus-visible,
-.card button:hover,.card button:focus,
-.card.full .metric:hover button,.card.full .evidence:hover button,
-.card.full .action:hover button,.card.full .milestone:hover button,
-.page-grid > .card:not(.full):hover button{
+a,select,input,textarea{transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}button:focus,button:focus-visible,button:active,.btn:focus,.btn:focus-visible,.btn:active,a:focus,a:focus-visible,.card button:focus{
   color:#fbfaff!important;
-}
-button:hover,.btn:hover{
-  background:linear-gradient(120deg,rgba(176,145,255,.22),rgba(122,94,206,.18))!important;
-  border-color:rgba(196,168,255,.72)!important;
-  box-shadow:0 7px 22px rgba(128,91,235,.2);
 }
 button:focus-visible,.btn:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
   outline:2px solid #c3a8ff!important;outline-offset:3px;
@@ -788,7 +561,6 @@ button:disabled,.btn:disabled,button[disabled]{
   color:#777188!important;background:#211e2d!important;border-color:#373148!important;
   box-shadow:none!important;opacity:.58;cursor:not-allowed;
 }
-button.primary:hover,button#run:hover,button[type=submit]:hover,.btn-primary:hover,
 button.primary:focus-visible,button#run:focus-visible,button[type=submit]:focus-visible{
   color:#100d1c!important;background:linear-gradient(115deg,#f4d7ff,#c5b0ff 58%,#a99aff)!important;
   border-color:#e0d1ff!important;box-shadow:0 9px 26px rgba(160,121,255,.3);
@@ -797,25 +569,16 @@ nav a,nav button,.nav a,.nav button,[role=tab]{
   color:#bdb6d3!important;background:rgba(18,17,29,.76)!important;
   border:1px solid rgba(194,177,255,.2)!important;
 }
-nav a:hover,nav button:hover,.nav a:hover,.nav button:hover,[role=tab]:hover{
-  color:#fff!important;background:rgba(111,82,175,.25)!important;border-color:rgba(196,168,255,.62)!important;
-}
 nav a.active,nav button.active,.nav a.active,.nav button.active,
 nav [aria-current=page],.nav [aria-current=page],[role=tab][aria-selected=true]{
   color:#fff!important;background:linear-gradient(130deg,rgba(160,126,255,.23),rgba(91,71,140,.2))!important;
   border-color:#bca1ff!important;box-shadow:0 0 0 1px rgba(188,161,255,.14),0 5px 18px rgba(124,91,218,.14);
-}
-select:hover,input:hover,textarea:hover{
-  color:#fbfaff!important;border-color:rgba(196,168,255,.55)!important;
 }
 input[type=file]{
   color:#d5cfea!important;background:rgba(8,8,15,.72)!important;border-color:rgba(194,177,255,.35)!important;
 }
 input[type=file]::file-selector-button{
   color:#f6f2ff!important;background:#252137!important;border:1px solid rgba(194,177,255,.32)!important;
-}
-input[type=file]::file-selector-button:hover{
-  color:#fff!important;background:#3a2e58!important;border-color:#bca1ff!important;
 }
 .notice,.err,.flow .step,.contract-explorer-card,.agentlist .agent{
   color:#f1edff;
@@ -828,12 +591,6 @@ input[type=file]::file-selector-button:hover{
 .card,.panel,.fr9-panel,.fr9-subcard,.agent,.evidence,.action,.milestone,
 .contract-explorer-card,.agentlist .agent{
   transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background-color .18s ease;
-}
-.card:hover,.panel:hover,.fr9-panel:hover,.fr9-subcard:hover,
-.agent:hover,.evidence:hover,.action:hover,.milestone:hover,
-.contract-explorer-card:hover,.agentlist .agent:hover{
-  border-color:rgba(174,148,240,.34)!important;
-  box-shadow:0 18px 48px rgba(0,0,0,.24),0 0 0 1px rgba(174,148,240,.045);
 }
 #customPortfolioInput input[type=file]{background:rgba(8,8,15,.72)!important;color:#d5cfea!important;border-color:rgba(194,177,255,.35)!important}
 #customPortfolioInput input[type=file]::file-selector-button{background:#252137!important;color:#f6f2ff!important;border-color:rgba(194,177,255,.32)!important}
@@ -875,7 +632,6 @@ input[type=file]::file-selector-button:hover{
 .hero-control-card label{display:block;color:#aaa1c1;font-size:11px;margin-bottom:7px}
 .hero-control-card select{width:100%;margin-bottom:10px;background:#0b0a14!important;border-color:rgba(194,177,255,.24)!important}
 .hero-control-card #run{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 18px!important;border-radius:12px!important;color:#130f20!important;background:linear-gradient(110deg,#e1c9ff,#b5a0ff 65%,#9b8af5)!important;box-shadow:0 8px 28px rgba(145,112,235,.2)}
-.hero-control-card #run:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(145,112,235,.34)}
 .hero-control-card>small{display:block;color:#9189a7;font-size:10px;line-height:1.6;margin-top:12px}
 .hero-orbit{position:absolute;z-index:0;pointer-events:none;border:1px solid rgba(160,128,236,.15);border-radius:50%;width:560px;height:560px;right:-115px;top:50%;transform:translateY(-50%) rotate(-25deg)}
 .hero-orbit:before,.hero-orbit:after{content:"";position:absolute;inset:35px;border:1px dashed rgba(181,152,255,.15);border-radius:50%}
@@ -929,17 +685,7 @@ main>.odin-hero .hero-globe-media{
 
 
 /* Disable hover recolouring on dashboard panels and portfolio metric boxes.
-   Preserve their dark theme, typography, border and position on hover. */
-.card:hover,
-.card.full:hover,
-.card .card:hover,
-.card.full .metric:hover,
-.card.full .overview-metric:hover,
-.card.full .agent:hover,
-.page-grid > .card:not(.full):hover,
-#portfolioOverview .agent:hover,
-#portfolioOverview .metric:hover,
-#portfolioOverview .overview-metric:hover{
+   Preserve their dark theme, typography{
   background:linear-gradient(145deg,rgba(20,19,32,.98) 0%,rgba(13,13,23,.98) 100%)!important;
   color:#f8f6ff!important;
   border-color:rgba(190,165,255,.16)!important;
@@ -947,54 +693,14 @@ main>.odin-hero .hero-globe-media{
   transform:none!important;
   filter:none!important;
 }
-.card:hover *,
-.card.full .metric:hover *,
-.card.full .overview-metric:hover *,
-.card.full .agent:hover *,
-#portfolioOverview .agent:hover *,
-#portfolioOverview .metric:hover *,
-#portfolioOverview .overview-metric:hover *{
-  color:inherit;
-}
-.card:hover h1,.card:hover h2,.card:hover h3,.card:hover h4,
-.card:hover p,.card:hover .muted,.card:hover .small,
-.card.full .metric:hover h1,.card.full .metric:hover h2,
-.card.full .metric:hover h3,.card.full .metric:hover h4,
-.card.full .metric:hover p,.card.full .metric:hover .muted,
-.card.full .overview-metric:hover h1,.card.full .overview-metric:hover h2,
-.card.full .overview-metric:hover h3,.card.full .overview-metric:hover h4,
-.card.full .overview-metric:hover p,.card.full .overview-metric:hover .muted,
-#portfolioOverview .agent:hover *,
-#portfolioOverview .metric:hover *,
-#portfolioOverview .overview-metric:hover *{
-  color:#f8f6ff!important;
-}
-
-
-/* Definitive fix: nested portfolio metric hover must never recolor its parent panel. */
-.card.full:has(#portfolioOverview .agent:hover),
-.card.full:has(#portfolioOverview .agent:focus-within),
-.card.full:has(#portfolioOverview .agent:hover)::before{
+.card.full:has(#portfolioOverview .agent:focus-within){
   background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;
   color:#f8f6ff!important;
   border-color:rgba(190,165,255,.16)!important;
   box-shadow:0 8px 26px rgba(0,0,0,.18)!important;
   filter:none!important;
 }
-.card.full:has(#portfolioOverview .agent:hover) h1,
-.card.full:has(#portfolioOverview .agent:hover) h2,
-.card.full:has(#portfolioOverview .agent:hover) h3,
-.card.full:has(#portfolioOverview .agent:hover) h4,
-.card.full:has(#portfolioOverview .agent:hover) p,
-.card.full:has(#portfolioOverview .agent:hover) span,
-.card.full:has(#portfolioOverview .agent:hover) b,
-.card.full:has(#portfolioOverview .agent:hover) small,
-.card.full:has(#portfolioOverview .agent:hover) .muted,
-.card.full:has(#portfolioOverview .agent:hover) .value{
-  color:#f8f6ff!important;
-}
 #portfolioOverview .agent,
-#portfolioOverview .agent:hover,
 #portfolioOverview .agent:focus-within{
   background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;
   color:#f8f6ff!important;
@@ -1004,22 +710,18 @@ main>.odin-hero .hero-globe-media{
   filter:none!important;
 }
 #portfolioOverview .agent *,
-#portfolioOverview .agent:hover *,
 #portfolioOverview .agent:focus-within *{
   color:#f8f6ff!important;
 }
 
 
 /* Lock the Portfolio Command Center header and description against hover recoloring. */
-.card.full:has(#portfolioOverview),.card.full:has(#portfolioOverview):hover,.card.full:has(#portfolioOverview):focus-within{background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;color:#f8f6ff!important;border-color:rgba(190,165,255,.16)!important;box-shadow:0 8px 26px rgba(0,0,0,.18)!important;transform:none!important;filter:none!important}
-.card.full:has(#portfolioOverview):hover h3,.card.full:has(#portfolioOverview):hover p,.card.full:has(#portfolioOverview):hover span,.card.full:has(#portfolioOverview):hover .muted,.card.full:has(#portfolioOverview):hover .tag,.card.full:has(#portfolioOverview):focus-within h3,.card.full:has(#portfolioOverview):focus-within p,.card.full:has(#portfolioOverview):focus-within span,.card.full:has(#portfolioOverview):focus-within .muted,.card.full:has(#portfolioOverview):focus-within .tag{color:#f8f6ff!important;background-color:transparent;filter:none!important}
+.card.full:has(#portfolioOverview),.card.full:has(#portfolioOverview):focus-within{background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;color:#f8f6ff!important;border-color:rgba(190,165,255,.16)!important;box-shadow:0 8px 26px rgba(0,0,0,.18)!important;transform:none!important;filter:none!important}.card.full:has(#portfolioOverview):focus-within h3,.card.full:has(#portfolioOverview):focus-within p,.card.full:has(#portfolioOverview):focus-within span,.card.full:has(#portfolioOverview):focus-within .muted,.card.full:has(#portfolioOverview):focus-within .tag{color:#f8f6ff!important;background-color:transparent;filter:none!important}
 
 /* Contract relationship graph: keep the outer graph card dark on hover/focus. */
 .card.full:has(.graph-wrap),
-.card.full:has(.graph-wrap):hover,
 .card.full:has(.graph-wrap):focus-within,
 .card.full:has(#homeGraph),
-.card.full:has(#homeGraph):hover,
 .card.full:has(#homeGraph):focus-within{
   color:#f8f6ff!important;
   background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;
@@ -1028,31 +730,10 @@ main>.odin-hero .hero-globe-media{
   transform:none!important;
   filter:none!important;
 }
-.card.full:has(.graph-wrap):hover h1,
-.card.full:has(.graph-wrap):hover h2,
-.card.full:has(.graph-wrap):hover h3,
-.card.full:has(.graph-wrap):hover h4,
-.card.full:has(.graph-wrap):hover p,
-.card.full:has(.graph-wrap):hover span,
-.card.full:has(.graph-wrap):hover .muted,
-.card.full:has(.graph-wrap):hover .tag,
-.card.full:has(#homeGraph):hover h1,
-.card.full:has(#homeGraph):hover h2,
-.card.full:has(#homeGraph):hover h3,
-.card.full:has(#homeGraph):hover h4,
-.card.full:has(#homeGraph):hover p,
-.card.full:has(#homeGraph):hover span,
-.card.full:has(#homeGraph):hover .muted,
-.card.full:has(#homeGraph):hover .tag{
-  color:#f8f6ff!important;
-}
-.card.full:has(.graph-wrap):hover::before,
-.card.full:has(#homeGraph):hover::before{opacity:0!important}
 
 
 /* Graph card hover regression fix — override legacy #dash/.card hover rules at higher specificity. */
 html body #dash .card.full:has(> #homeGraph),
-html body #dash .card.full:has(> #homeGraph):hover,
 html body #dash .card.full:has(> #homeGraph):focus-within,
 html body #dash .card.full:has(> #homeGraph):has(#homeGraph){
   color:#f8f6ff!important;
@@ -1063,76 +744,26 @@ html body #dash .card.full:has(> #homeGraph):has(#homeGraph){
   transform:none!important;
   filter:none!important;
 }
-html body #dash .card.full:has(> #homeGraph):hover h1,
-html body #dash .card.full:has(> #homeGraph):hover h2,
-html body #dash .card.full:has(> #homeGraph):hover h3,
-html body #dash .card.full:has(> #homeGraph):hover h4,
-html body #dash .card.full:has(> #homeGraph):hover p,
-html body #dash .card.full:has(> #homeGraph):hover span,
-html body #dash .card.full:has(> #homeGraph):hover .muted,
-html body #dash .card.full:has(> #homeGraph):hover .tag,
 html body #dash .card.full:has(> #homeGraph):focus-within h1,
 html body #dash .card.full:has(> #homeGraph):focus-within h2,
 html body #dash .card.full:has(> #homeGraph):focus-within h3,
 html body #dash .card.full:has(> #homeGraph):focus-within p{
   color:#f8f6ff!important;
 }
-html body #dash .card.full:has(> #homeGraph):hover::before,
 html body #dash .card.full:has(> #homeGraph):focus-within::before{
   opacity:0!important;
 }
 
 
-/* Contract page hover fix: keep contract text readable, avoid the dark hover wash. */
-#contracts .card:hover,
-#contracts .card:focus-within,
-#contracts .agent:hover,
-#contracts .evidence:hover,
-#contracts .action:hover,
-#contracts .milestone:hover,
-#contracts .overview-metric:hover {
+/* Contract page hover fix: keep contract text readable,
+#contracts .card:focus-within{
   color: var(--txt, #151813) !important;
   background: #fff !important;
   border-color: #d7d9cf !important;
   box-shadow: 0 4px 18px rgba(30,36,25,.025) !important;
   transform: none !important;
 }
-#contracts .card:hover h1,
-#contracts .card:hover h2,
-#contracts .card:hover h3,
-#contracts .card:hover h4,
-#contracts .card:hover p,
-#contracts .card:hover li,
-#contracts .card:hover small,
-#contracts .card:hover label,
-#contracts .card:hover .value,
-#contracts .card:hover .muted,
-#contracts .card:hover .label,
-#contracts .card:hover .hint,
-#contracts .agent:hover,
-#contracts .evidence:hover,
-#contracts .action:hover,
-#contracts .milestone:hover {
-  color: var(--txt, #151813) !important;
-  -webkit-text-fill-color: currentColor !important;
-}
-#contracts .card:hover .tag,
-#contracts .card:hover .badge,
-#contracts .card:hover .pill {
-  background: #edf0e8 !important;
-  border-color: #d7d9cf !important;
-  color: #62695d !important;
-}
-
-
-/* Contracts page: disable card hover recoloring that makes text disappear. */
-.page-view[data-view="contracts"] .card:hover,
-.page-view[data-view="contracts"] .card:focus-within,
-.page-view[data-view="contracts"] .agent:hover,
-.page-view[data-view="contracts"] .evidence:hover,
-.page-view[data-view="contracts"] .action:hover,
-.page-view[data-view="contracts"] .milestone:hover,
-.page-view[data-view="contracts"] .overview-metric:hover {
+.page-view[data-view="contracts"] .card:focus-within{
   color: #151813 !important;
   background: #fff !important;
   border-color: var(--line, #d7d9cf) !important;
@@ -1140,33 +771,13 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform: none !important;
   filter: none !important;
 }
-.page-view[data-view="contracts"] .card:hover :is(h1,h2,h3,h4,p,li,small,label,b,strong,span,div,summary,blockquote,.value,.muted,.label,.hint,.meta),
-.page-view[data-view="contracts"] .agent:hover :is(*),
-.page-view[data-view="contracts"] .evidence:hover :is(*),
-.page-view[data-view="contracts"] .action:hover :is(*),
-.page-view[data-view="contracts"] .milestone:hover :is(*) {
-  color: inherit !important;
-  -webkit-text-fill-color: currentColor !important;
-}
-.page-view[data-view="contracts"] .card:hover svg,
-.page-view[data-view="contracts"] .overview-metric:hover svg {
-  filter: none !important;
-  opacity: 1 !important;
-}
-.page-view[data-view="contracts"] .card:hover:before,
 .page-view[data-view="contracts"] .card:focus-within:before {
   opacity: 0 !important;
-}
-.page-view[data-view="contracts"] .contract-explorer-card details[open] .evidence:hover {
-  background: #fff !important;
-  border-color: #dce2d5 !important;
-  transform: none !important;
 }
 
 
 /* Contracts intake form: keep the dark theme stable on hover/focus. */
 #customPortfolioInput,
-#customPortfolioInput:hover,
 #customPortfolioInput:focus-within {
   color: #f3efff !important;
   background: linear-gradient(145deg,rgba(24,23,39,.97),rgba(13,13,23,.97)) !important;
@@ -1185,10 +796,8 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   color: #f3efff !important;
 }
 #customPortfolioInput textarea,
-#customPortfolioInput textarea:hover,
 #customPortfolioInput textarea:focus,
 #customPortfolioInput input:not([type="checkbox"]):not([type="file"]),
-#customPortfolioInput input:not([type="checkbox"]):not([type="file"]):hover,
 #customPortfolioInput input:not([type="checkbox"]):not([type="file"]):focus {
   color: #f3efff !important;
   -webkit-text-fill-color: #f3efff !important;
@@ -1200,7 +809,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color: #858099 !important;
 }
 #customPortfolioInput input[type="file"],
-#customPortfolioInput input[type="file"]:hover,
 #customPortfolioInput input[type="file"]:focus {
   color: #d5cfea !important;
   background: rgba(8,8,15,.72) !important;
@@ -1217,9 +825,7 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 /* Time machine: timeline rows must keep dark surfaces and readable light text,
    including when the pointer is over a row or its parent panel. */
 .page-view[data-view="timeline"] .milestone,
-.page-view[data-view="timeline"] .milestone:hover,
 .page-view[data-view="timeline"] .milestone:focus-within,
-.page-view[data-view="timeline"] .card:has(.milestone:hover),
 .page-view[data-view="timeline"] .card:has(.milestone:focus-within) {
   color: #f3efff !important;
   background: linear-gradient(125deg,rgba(25,23,40,.98),rgba(14,13,24,.98)) !important;
@@ -1229,18 +835,15 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   filter: none !important;
 }
 .page-view[data-view="timeline"] .milestone *,
-.page-view[data-view="timeline"] .milestone:hover *,
 .page-view[data-view="timeline"] .milestone:focus-within * {
   color: #f3efff !important;
   -webkit-text-fill-color: #f3efff !important;
 }
-.page-view[data-view="timeline"] .milestone .date,
-.page-view[data-view="timeline"] .milestone:hover .date {
+.page-view[data-view="timeline"] .milestone .date{
   color: #bda4ff !important;
   -webkit-text-fill-color: #bda4ff !important;
 }
-.page-view[data-view="timeline"] .milestone .tag,
-.page-view[data-view="timeline"] .milestone:hover .tag {
+.page-view[data-view="timeline"] .milestone .tag{
   color: #dcd2ff !important;
   -webkit-text-fill-color: #dcd2ff !important;
   background: rgba(155,126,229,.14) !important;
@@ -1266,7 +869,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Phase 3 portfolio operations: prevent dark text on dark cards across hover/focus. */
 .page-view[data-view="overview"] .card:has(#opsTimelineCount),
-.page-view[data-view="overview"] .card:has(#opsTimelineCount):hover,
 .page-view[data-view="overview"] .card:has(#opsTimelineCount):focus-within {
   color:#f3efff!important;
   background:linear-gradient(145deg,rgba(24,23,39,.97),rgba(13,13,23,.97))!important;
@@ -1280,9 +882,7 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 .page-view[data-view="overview"] .card:has(#opsTimelineCount) > h3 *,
 .page-view[data-view="overview"] .card:has(#opsTimelineCount) > p *,
 .page-view[data-view="overview"] .card:has(#opsTimelineCount) .agent,
-.page-view[data-view="overview"] .card:has(#opsTimelineCount) .agent *,
-.page-view[data-view="overview"] .card:has(#opsTimelineCount) > h3:hover,
-.page-view[data-view="overview"] .card:has(#opsTimelineCount) > p:hover {
+.page-view[data-view="overview"] .card:has(#opsTimelineCount) .agent *{
   color:#f3efff!important;
   -webkit-text-fill-color:#f3efff!important;
 }
@@ -1305,7 +905,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Robust Phase 3 fix: neutralize the global light-card hover skin on this section. */
 .page-view[data-view="timeline"] .card:has(#opsTimelineCount),
-.page-view[data-view="timeline"] .card:has(#opsTimelineCount):hover,
 .page-view[data-view="timeline"] .card:has(#opsTimelineCount):focus-within {
   background:linear-gradient(145deg,#191727,#0d0d17)!important;
   color:#f3efff!important;
@@ -1327,7 +926,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   border-color:rgba(194,177,255,.24)!important;
 }
 .page-view[data-view="timeline"] .card:has(#opsTimelineCount) .agent,
-.page-view[data-view="timeline"] .card:has(#opsTimelineCount) .agent:hover,
 .page-view[data-view="timeline"] .card:has(#opsTimelineCount) .agent:focus-within {
   background:linear-gradient(145deg,#171624,#10101b)!important;
   color:#f3efff!important;
@@ -1339,7 +937,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Phase 4 decision queue: keep the section and every queue card dark in all states. */
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems),
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems):hover,
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems):focus-within {
   background:linear-gradient(145deg,#191727,#0d0d17)!important;
   color:#f3efff!important;
@@ -1355,7 +952,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color:#f3efff!important;
 }
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover,
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:focus-within {
   background:linear-gradient(145deg,#191727,#10101b)!important;
   color:#f3efff!important;
@@ -1364,19 +960,14 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform:none!important;
   filter:none!important;
 }
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent *,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover * {
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent *{
   color:#cfc7e3!important;
   -webkit-text-fill-color:#cfc7e3!important;
 }
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent h3,
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent h4,
 .page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent b,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent strong,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover h3,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover h4,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover b,
-.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover strong {
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent strong{
   color:#ffffff!important;
   -webkit-text-fill-color:#ffffff!important;
 }
@@ -1390,7 +981,6 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Agents page / Odin orchestrator: keep every nested section readable in the dark theme. */
 #odinOrchestratorPanel,
-#odinOrchestratorPanel:hover,
 #odinOrchestratorPanel:focus-within {
   background:linear-gradient(145deg,rgba(24,23,39,.98),rgba(13,13,23,.98))!important;
   color:#f3efff!important;
@@ -1399,13 +989,11 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform:none!important;
   filter:none!important;
 }
-#odinOrchestratorPanel :is(h1,h2,h3,h4,h5,b,strong,label),
-#odinOrchestratorPanel :is(h1,h2,h3,h4,h5,b,strong,label):hover {
+#odinOrchestratorPanel :is(h1,h2,h3,h4,h5,b,strong,label){
   color:#f8f5ff!important;
   -webkit-text-fill-color:#f8f5ff!important;
 }
-#odinOrchestratorPanel :is(p,span,small,li,div,i,em,code),
-#odinOrchestratorPanel :is(p,span,small,li,div,i,em,code):hover {
+#odinOrchestratorPanel :is(p,span,small,li,div,i,em,code){
   -webkit-text-fill-color:currentColor!important;
 }
 #odinOrchestratorPanel .muted,
@@ -1416,15 +1004,10 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color:#bdb6d0!important;
 }
 #odinOrchestratorPanel .orch-step,
-#odinOrchestratorPanel .orch-step:hover,
 #odinOrchestratorPanel .orch-stats > div,
-#odinOrchestratorPanel .orch-stats > div:hover,
 #odinOrchestratorPanel .orch-fr-list > *,
-#odinOrchestratorPanel .orch-fr-list > *:hover,
 #odinOrchestratorPanel .orch-workstreams > *,
-#odinOrchestratorPanel .orch-workstreams > *:hover,
-#odinOrchestratorPanel .orch-trace > *,
-#odinOrchestratorPanel .orch-trace > *:hover {
+#odinOrchestratorPanel .orch-trace > *{
   background:linear-gradient(145deg,#191727,#10101b)!important;
   color:#d8d1e8!important;
   border-color:rgba(190,165,255,.18)!important;
@@ -1439,8 +1022,7 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 #odinOrchestratorPanel .orch-trace > * * {
   -webkit-text-fill-color:currentColor!important;
 }
-#odinOrchestratorPanel .tag,
-#odinOrchestratorPanel .tag:hover {
+#odinOrchestratorPanel .tag{
   background:rgba(155,126,229,.16)!important;
   color:#e3d8ff!important;
   -webkit-text-fill-color:#e3d8ff!important;
@@ -1450,10 +1032,8 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Risk & review and Audit pages: consistent dark surfaces and readable text in every hover state. */
 .page-view[data-view="review"] .card,
-.page-view[data-view="review"] .card:hover,
 .page-view[data-view="review"] .card:focus-within,
 .page-view[data-view="audit"] .card,
-.page-view[data-view="audit"] .card:hover,
 .page-view[data-view="audit"] .card:focus-within {
   background:linear-gradient(145deg,rgba(24,23,39,.98),rgba(13,13,23,.98))!important;
   color:#f3efff!important;
@@ -1463,16 +1043,12 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   filter:none!important;
 }
 .page-view[data-view="review"] .card :is(h1,h2,h3,h4,h5,b,strong,label),
-.page-view[data-view="review"] .card:hover :is(h1,h2,h3,h4,h5,b,strong,label),
-.page-view[data-view="audit"] .card :is(h1,h2,h3,h4,h5,b,strong,label),
-.page-view[data-view="audit"] .card:hover :is(h1,h2,h3,h4,h5,b,strong,label) {
+.page-view[data-view="audit"] .card :is(h1,h2,h3,h4,h5,b,strong,label){
   color:#f8f5ff!important;
   -webkit-text-fill-color:#f8f5ff!important;
 }
 .page-view[data-view="review"] .card :is(p,span,small,li,div,i,em,code),
-.page-view[data-view="review"] .card:hover :is(p,span,small,li,div,i,em,code),
-.page-view[data-view="audit"] .card :is(p,span,small,li,div,i,em,code),
-.page-view[data-view="audit"] .card:hover :is(p,span,small,li,div,i,em,code) {
+.page-view[data-view="audit"] .card :is(p,span,small,li,div,i,em,code){
   -webkit-text-fill-color:currentColor!important;
 }
 .page-view[data-view="review"] .card .muted,
@@ -1489,21 +1065,11 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 .page-view[data-view="review"] .card .action,
 .page-view[data-view="review"] .card .milestone,
 .page-view[data-view="review"] .card .auditrow,
-.page-view[data-view="review"] .card .agent:hover,
-.page-view[data-view="review"] .card .evidence:hover,
-.page-view[data-view="review"] .card .action:hover,
-.page-view[data-view="review"] .card .milestone:hover,
-.page-view[data-view="review"] .card .auditrow:hover,
 .page-view[data-view="audit"] .card .agent,
 .page-view[data-view="audit"] .card .evidence,
 .page-view[data-view="audit"] .card .action,
 .page-view[data-view="audit"] .card .milestone,
-.page-view[data-view="audit"] .card .auditrow,
-.page-view[data-view="audit"] .card .agent:hover,
-.page-view[data-view="audit"] .card .evidence:hover,
-.page-view[data-view="audit"] .card .action:hover,
-.page-view[data-view="audit"] .card .milestone:hover,
-.page-view[data-view="audit"] .card .auditrow:hover {
+.page-view[data-view="audit"] .card .auditrow{
   background:linear-gradient(145deg,#191727,#10101b)!important;
   color:#d8d1e8!important;
   border-color:rgba(190,165,255,.18)!important;
@@ -1524,9 +1090,7 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color:currentColor!important;
 }
 .page-view[data-view="review"] .card .tag,
-.page-view[data-view="review"] .card .tag:hover,
-.page-view[data-view="audit"] .card .tag,
-.page-view[data-view="audit"] .card .tag:hover {
+.page-view[data-view="audit"] .card .tag{
   background:rgba(155,126,229,.16)!important;
   color:#e3d8ff!important;
   -webkit-text-fill-color:#e3d8ff!important;
@@ -1540,23 +1104,17 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color: currentColor !important;
 }
 .page-view[data-view="review"] .card,
-.page-view[data-view="review"] .card:hover,
 .page-view[data-view="review"] .card:focus-within,
 .page-view[data-view="review"] .card *,
-.page-view[data-view="review"] .card:hover *,
 .page-view[data-view="audit"] .card,
-.page-view[data-view="audit"] .card:hover,
 .page-view[data-view="audit"] .card:focus-within,
-.page-view[data-view="audit"] .card *,
-.page-view[data-view="audit"] .card:hover * {
+.page-view[data-view="audit"] .card *{
   color: #ded8ed !important;
   -webkit-text-fill-color: #ded8ed !important;
 }
 .page-view[data-view="review"] .card,
-.page-view[data-view="review"] .card:hover,
 .page-view[data-view="review"] .card:focus-within,
 .page-view[data-view="audit"] .card,
-.page-view[data-view="audit"] .card:hover,
 .page-view[data-view="audit"] .card:focus-within {
   background: #141320 !important;
   border-color: rgba(190,165,255,.2) !important;
@@ -1565,73 +1123,47 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   filter: none !important;
 }
 .page-view[data-view="review"] .card :is(h1,h2,h3,h4,h5,strong,b,label),
-.page-view[data-view="review"] .card:hover :is(h1,h2,h3,h4,h5,strong,b,label),
-.page-view[data-view="audit"] .card :is(h1,h2,h3,h4,h5,strong,b,label),
-.page-view[data-view="audit"] .card:hover :is(h1,h2,h3,h4,h5,strong,b,label) {
+.page-view[data-view="audit"] .card :is(h1,h2,h3,h4,h5,strong,b,label){
   color: #faf7ff !important;
   -webkit-text-fill-color: #faf7ff !important;
 }
 .page-view[data-view="review"] .card :is(.muted,.small,.meta,.hint),
-.page-view[data-view="review"] .card:hover :is(.muted,.small,.meta,.hint),
-.page-view[data-view="audit"] .card :is(.muted,.small,.meta,.hint),
-.page-view[data-view="audit"] .card:hover :is(.muted,.small,.meta,.hint) {
+.page-view[data-view="audit"] .card :is(.muted,.small,.meta,.hint){
   color: #bdb6d0 !important;
   -webkit-text-fill-color: #bdb6d0 !important;
 }
 .page-view[data-view="review"] .card :is(.tag,.badge,.pill),
-.page-view[data-view="review"] .card:hover :is(.tag,.badge,.pill),
-.page-view[data-view="audit"] .card :is(.tag,.badge,.pill),
-.page-view[data-view="audit"] .card:hover :is(.tag,.badge,.pill) {
+.page-view[data-view="audit"] .card :is(.tag,.badge,.pill){
   color: #e3d8ff !important;
   -webkit-text-fill-color: #e3d8ff !important;
   background: rgba(155,126,229,.16) !important;
 }
-
-
-/* FR9 Risk & Review: keep the outer dashboard panel and all its text readable on hover.
-   The relationship graph's canvas rendering and dark graph viewport are left intact. */
-#dash .fr9-panel,
-#dash .fr9-panel:hover,
-#dash .fr9-panel:focus-within {
-  color: #171b15 !important;
-  background: #fff !important;
-  border-color: #e0e3da !important;
-  box-shadow: none !important;
-  transform: none !important;
-  filter: none !important;
-}
 #dash .fr9-panel *,
-#dash .fr9-panel:hover *,
 #dash .fr9-panel:focus-within * {
   color: #343a30 !important;
   -webkit-text-fill-color: currentColor !important;
 }
-#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,.fr9-title,.fr9-section-head),
-#dash .fr9-panel:hover :is(h1,h2,h3,h4,h5,h6,.fr9-title,.fr9-section-head) {
+#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,.fr9-title,.fr9-section-head){
   color: #171b15 !important;
   -webkit-text-fill-color: #171b15 !important;
 }
-#dash .fr9-panel :is(.tag,.badge,.pill),
-#dash .fr9-panel:hover :is(.tag,.badge,.pill) {
+#dash .fr9-panel :is(.tag,.badge,.pill){
   color: #51456e !important;
   -webkit-text-fill-color: #51456e !important;
   background: #eee8fb !important;
   border-color: #e0d6f7 !important;
 }
-#dash .fr9-panel .fr9-graph-shell,
-#dash .fr9-panel:hover .fr9-graph-shell {
+#dash .fr9-panel .fr9-graph-shell{
   background: radial-gradient(ellipse at center,#fff,#f4f6ef) !important;
   color: #343a30 !important;
 }
-#dash .fr9-panel .fr9-graph-shell *,
-#dash .fr9-panel:hover .fr9-graph-shell * {
+#dash .fr9-panel .fr9-graph-shell *{
   -webkit-text-fill-color: currentColor !important;
 }
 
 
 /* FR9 final visual correction: keep the cockpit consistently dark; prevent light outer panels with dark inner cards. */
 #dash .fr9-panel,
-#dash .fr9-panel:hover,
 #dash .fr9-panel:focus-within {
   color: #d8d3e8 !important;
   background: #11101a !important;
@@ -1640,35 +1172,29 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform: none !important;
   filter: none !important;
 }
-#dash .fr9-panel :is(.fr9-section,.fr9-subcard,.fr9-debate,.fr9-alert-action),
-#dash .fr9-panel :is(.fr9-section,.fr9-subcard,.fr9-debate,.fr9-alert-action):hover {
+#dash .fr9-panel :is(.fr9-section,.fr9-subcard,.fr9-debate,.fr9-alert-action){
   color: #d8d3e8 !important;
   background: #151320 !important;
   border-color: rgba(190,165,255,.18) !important;
 }
-#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,b,strong,label),
-#dash .fr9-panel:hover :is(h1,h2,h3,h4,h5,h6,b,strong,label) {
+#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,b,strong,label){
   color: #faf7ff !important;
   -webkit-text-fill-color: #faf7ff !important;
 }
-#dash .fr9-panel :is(p,span,small,div,li,summary,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
-#dash .fr9-panel:hover :is(p,span,small,div,li,summary,.muted,.small,.meta,.fr9-time-status,.fr9-scale) {
+#dash .fr9-panel :is(p,span,small,div,li,summary,.muted,.small,.meta,.fr9-time-status,.fr9-scale){
   -webkit-text-fill-color: currentColor !important;
 }
-#dash .fr9-panel :is(.tag,.badge,.pill),
-#dash .fr9-panel:hover :is(.tag,.badge,.pill) {
+#dash .fr9-panel :is(.tag,.badge,.pill){
   color: #e3d8ff !important;
   -webkit-text-fill-color: #e3d8ff !important;
   background: rgba(155,126,229,.16) !important;
   border-color: rgba(194,177,255,.24) !important;
 }
-#dash .fr9-panel .fr9-graph-shell,
-#dash .fr9-panel:hover .fr9-graph-shell {
+#dash .fr9-panel .fr9-graph-shell{
   background: #090910 !important;
   color: #ded8ed !important;
 }
-#dash .fr9-panel .fr9-graph-shell * ,
-#dash .fr9-panel:hover .fr9-graph-shell * {
+#dash .fr9-panel .fr9-graph-shell * {
   -webkit-text-fill-color: currentColor !important;
 }
 
@@ -1676,8 +1202,7 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 
 /* Global readability guard: hover must never recolor card text independently
    of its surface. Applies to Overview, Contracts, Time machine, Agents,
-   Risk & review, Audit, and the nested FR9 dashboard cards. */
-:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within) {
+   Risk & review, Audit{
   color: inherit !important;
   background: inherit !important;
   border-color: inherit !important;
@@ -1685,62 +1210,14 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform: none !important;
   filter: none !important;
 }
-:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within) * {
-  color: inherit !important;
-  -webkit-text-fill-color: currentColor !important;
-  text-shadow: none !important;
-}
-:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within)::before {
-  opacity: 0 !important;
-}
-
-
-/* Final fix: stop hover rules from changing card surfaces or making text low-contrast.
-   Use explicit stable theme values instead of inheriting the hovered element's color. */
-html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
-html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):focus-within {
-  transform: none !important;
-  filter: none !important;
-  box-shadow: none !important;
-  border-color: rgba(190,165,255,.16) !important;
-}
-html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
 html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):focus-within * {
   text-shadow: none !important;
   -webkit-text-fill-color: currentColor !important;
 }
-html body #dash .page-view[data-view="agents"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
-html body #dash .page-view[data-view="review"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
-html body #dash .page-view[data-view="audit"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
-html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover {
-  background: linear-gradient(145deg,#141320 0%,#0d0d17 100%) !important;
-  color: #f8f6ff !important;
-}
-html body #dash .page-view[data-view="agents"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
-html body #dash .page-view[data-view="review"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
-html body #dash .page-view[data-view="audit"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
-html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover * {
-  color: #f8f6ff !important;
-  -webkit-text-fill-color: #f8f6ff !important;
-}
 
 /* FINAL FIX — disable card hover recoloring across every Odin page.
-   Previous hover rules set white text while some cards stay light, making copy disappear. */
-#dash .card:hover,
-#dash .card:focus-within,
-#dash .overview-metric:hover,
-#dash .metric:hover,
-#dash .agent:hover,
-#dash .evidence:hover,
-#dash .action:hover,
-#dash .milestone:hover,
-#dash .orch-fr:hover,
-#dash .orch-ws:hover,
-#dash .fr9-subcard:hover,
-#dash .debate-column:hover,
-#dash .draft-action:hover,
-#dash .graph-edge-row:hover,
-#dash .quick-link:hover {
+   Previous hover rules set white text while some cards stay light,
+#dash .card:focus-within{
   color: inherit !important;
   background-color: inherit !important;
   border-color: inherit !important;
@@ -1748,47 +1225,22 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
   transform: none !important;
   filter: none !important;
 }
-#dash .card:hover *,
-#dash .card:focus-within *,
-#dash .overview-metric:hover *,
-#dash .metric:hover *,
-#dash .agent:hover *,
-#dash .evidence:hover *,
-#dash .action:hover *,
-#dash .milestone:hover *,
-#dash .orch-fr:hover *,
-#dash .orch-ws:hover *,
-#dash .fr9-subcard:hover *,
-#dash .debate-column:hover *,
-#dash .draft-action:hover *,
-#dash .graph-edge-row:hover *,
-#dash .quick-link:hover * {
+#dash .card:focus-within *{
   color: inherit !important;
   -webkit-text-fill-color: currentColor !important;
   text-shadow: none !important;
   filter: none !important;
 }
-#dash .card:hover:before,
 #dash .card:focus-within:before {
   opacity: 0 !important;
-}
-#dash .card:hover svg,
-#dash .overview-metric:hover svg,
-#dash .metric:hover svg,
-#dash .agent:hover svg,
-#dash .evidence:hover svg {
-  filter: none !important;
-  opacity: 1 !important;
 }
 
 
 /* Agents workflow: lock label colors so global card-hover styles cannot wash them out. */
 #dash #flow .step,
-#dash #flow .step:hover,
 #dash #flow .step:active,
 #dash #flow .step:focus,
 #dash #flow .step:focus-visible,
-#dash #flow .step:hover *,
 #dash #flow .step:active *,
 #dash #flow .step:focus *,
 #dash #flow .step:focus-visible * {
@@ -1800,7 +1252,6 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
   filter: none !important;
   opacity: 1 !important;
 }
-#dash #flow .step:hover,
 #dash #flow .step:active,
 #dash #flow .step:focus,
 #dash #flow .step:focus-visible {
@@ -1811,31 +1262,25 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
 
 /* FR9 final contrast fix: keep all cockpit copy white on its dark surfaces, including hover. */
 html body #dash #fr9Dashboard,
-html body #dash #fr9Dashboard:hover,
 html body #dash #fr9Dashboard:focus-within {
   color: #f8f6ff !important;
   background: #11101a !important;
 }
-html body #dash #fr9Dashboard :is(.fr9-title,.fr9-section,.fr9-section-head,.fr9-subcard,.fr9-debate,.fr9-alert-action),
-html body #dash #fr9Dashboard :is(.fr9-title,.fr9-section,.fr9-section-head,.fr9-subcard,.fr9-debate,.fr9-alert-action):hover {
+html body #dash #fr9Dashboard :is(.fr9-title,.fr9-section,.fr9-section-head,.fr9-subcard,.fr9-debate,.fr9-alert-action){
   color: #f8f6ff !important;
   background-color: #151320 !important;
 }
-html body #dash #fr9Dashboard :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
-html body #dash #fr9Dashboard:hover :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
-html body #dash #fr9Dashboard :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale):hover {
+html body #dash #fr9Dashboard :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale){
   color: #f8f6ff !important;
   -webkit-text-fill-color: #f8f6ff !important;
   text-shadow: none !important;
 }
-html body #dash #fr9Dashboard :is(.tag,.badge,.pill),
-html body #dash #fr9Dashboard :is(.tag,.badge,.pill):hover {
+html body #dash #fr9Dashboard :is(.tag,.badge,.pill){
   color: #e3d8ff !important;
   -webkit-text-fill-color: #e3d8ff !important;
   background: rgba(155,126,229,.16) !important;
 }
-html body #dash #fr9Dashboard .fr9-graph-shell,
-html body #dash #fr9Dashboard .fr9-graph-shell:hover {
+html body #dash #fr9Dashboard .fr9-graph-shell{
   background: #090910 !important;
   color: #f8f6ff !important;
 }
@@ -1890,7 +1335,6 @@ body:not(.page-is-overview) main > #dash {
 
 /* Audit page: keep the Inspect history button label black on hover/focus. */
 html body #dash .page-view[data-view="audit"] button[data-audit-run],
-html body #dash .page-view[data-view="audit"] button[data-audit-run]:hover,
 html body #dash .page-view[data-view="audit"] button[data-audit-run]:focus,
 html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   color: #111 !important;
@@ -1934,7 +1378,6 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 
 /* Contracts page: prevent hover/focus from washing out neighboring cards. */
 #contractExplorer .contract-explorer-card,
-#contractExplorer .contract-explorer-card:hover,
 #contractExplorer .contract-explorer-card:focus,
 #contractExplorer .contract-explorer-card:focus-within {
   opacity: 1 !important;
@@ -1942,13 +1385,6 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   color: #151813 !important;
   background: #fff !important;
   transform: none !important;
-}
-#contractExplorer .contract-explorer-card:not(:hover),
-#contractExplorer:has(.contract-explorer-card:hover) .contract-explorer-card:not(:hover) {
-  opacity: 1 !important;
-  filter: none !important;
-  color: #151813 !important;
-  background: #fff !important;
 }
 #contractExplorer .contract-explorer-card h3,
 #contractExplorer .contract-explorer-card p,
