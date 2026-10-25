@@ -440,7 +440,17 @@ def reconcile_payment_events(
         "payment_candidates": candidates,
         "invoice_groups": groups,
         "unlinked_candidates": unlinked,
-        "counts": {"payment_candidates": len(candidates), "invoice_groups": len(groups), "unlinked_candidates": len(unlinked)},
+        "counts": {
+            "payment_candidates": len(candidates),
+            "invoice_groups": len(groups),
+            "unlinked_candidates": len(unlinked),
+            "candidate_balances_calculated": sum(group.get("candidate_ledger_balance") is not None for group in groups),
+            "candidate_outstanding_balances": sum(
+                group.get("candidate_balance_status") == "candidate_outstanding_balance_requires_verification"
+                for group in groups
+            ),
+            "reconciliation_blockers": sum(group.get("candidate_ledger_balance") is None for group in groups),
+        },
         "verified_financial_exposure": None,
         "note": "No financial exposure is aggregated from unverified events. Reconcile original invoice, due date, contractual trigger, payment/credit record, and source authenticity first.",
     }
