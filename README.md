@@ -208,8 +208,20 @@ This increment adds a multi-contract intake path and structured report synthesis
 - **Draft actions:** the custom path prepares category-specific review drafts for renewal, termination, penalty, notice, liability, and other candidate clauses. Drafts are not sent automatically.
 - **Audit fingerprint:** custom portfolio source identity is included in run fingerprinting.
 
-### Important acceptance-test boundary
+### Current acceptance-test boundary
 
-The custom-input endpoint is a deterministic source-triage path, not yet the same full agentic workflow used by the configured Quillhub demo. The A1 timeline/risk path remains scenario-specific; generalized per-contract debate loops, completion gates, robust semantic party extraction, and reconciled portfolio exposure are still open. The graph is canvas-based pseudo-3D, not a WebGL 3D engine. GitHub Actions run 40195717406 passed dependency installation, Python compileall, and unittest discovery for commit 4ff4886d9280529cd3c1f7b1270ae1d0da7c0286. The dashboard JavaScript also passed a syntax compilation check. A full browser/API end-to-end acceptance test is still required; CI success does not prove every FR is complete.
+The custom-input path now runs a bounded per-contract Thor → Norns → Loki → Heimdall → Tyr workflow with targeted clarification, explicit stopping reasons, and human-review gates. It is still deterministic by default; optional Claude-assisted review is opt-in and only runs when `ANTHROPIC_API_KEY` is configured. Model-proposed quotations are validated against source text before inclusion.
+
+The fixed-pack demo also exposes generalized bounded workflow traces and cross-contract candidate findings. Cross-contract differences are still **review candidates**, not semantic/legal conflict conclusions. Event records are normalized and future/malformed records are handled explicitly. Invoice/payment records can be linked structurally by contract and invoice ID, but their authenticity and contractual trigger are not independently established; financial exposure remains uncalculated unless supported reconciliation evidence is available. The graph is an evidence-linked visualization, not a full WebGL 3D engine. GitHub Actions validate Python compilation/unit tests and inline dashboard JavaScript syntax. A full browser/API end-to-end acceptance test and real-provider smoke test still remain; CI success does not prove every FR is complete.
 
 See [docs/TECHNICAL_IMPLEMENTATION_GUIDE.md](docs/TECHNICAL_IMPLEMENTATION_GUIDE.md) for the stack, architecture, API, FR/NFR status, safety constraints, and remaining work.
+
+## Phase 11 — Bounded agent collaboration, cross-contract review, and reconciliation
+
+- **Bounded workflow:** per-contract agent stages record messages, iterations, budget usage, stop reasons, unresolved evidence, and human-review status. A budget-exhausted workstream is not reported as complete.
+- **Optional LLM agents:** Thor can add exact-quote-validated extraction candidates; Loki can suggest adversarial risk candidates; Heimdall can suggest event-evidence challenges; Tyr can add a qualified rationale and draft suggestions. This is opt-in, requires a configured provider key, counts calls against a budget, and never sends actions automatically.
+- **Cross-contract candidates:** differing numeric terms, opposing modal language, exclusivity wording, and amendment/precedence signals create graph/report candidates with citations to both sources. Party, scope, precedence, incorporated terms, and legal effect remain explicit review questions.
+- **Event normalization:** records with missing bodies or invalid timestamps are rejected; future records are excluded from a simulated-date run. Supplied event authenticity is not independently verified.
+- **Invoice/payment candidate matching:** structured invoice IDs, contract IDs, event kinds, and amounts can be grouped for reconciliation. Structural linkage is not treated as proof of payment, outstanding liability, or financial exposure.
+- **Dashboard and CI:** both the custom portfolio panel and fixed-pack synthesis surface bounded-workflow status, cross-contract evidence, and reconciliation counts. CI now syntax-checks the inline JavaScript in addition to compiling Python and running unit tests.
+- **Remaining limits:** a real external event connector and authenticated event provenance, semantic legal reasoning over all amendments/precedence rules, invoice-to-ledger/contract trigger reconciliation, and full browser/API end-to-end acceptance are still required before production use.
