@@ -33,6 +33,8 @@ class PortfolioOperationsTests(unittest.TestCase):
         self.assertTrue(all(item["status"] not in {"overdue", "due_today"} or item["action_required_by_date"]
                             for item in timeline["milestones"]))
         self.assertTrue(any(item["date_type"] == "historical_reference" for item in timeline["milestones"]))
+        self.assertTrue(any(item["date_type"] == "action_deadline" and item["title"].lower().startswith("due date")
+                            for item in timeline["milestones"]))
         for item in timeline["milestones"]:
             evidence = item["evidence"]
             self.assertTrue(evidence["verified"])
