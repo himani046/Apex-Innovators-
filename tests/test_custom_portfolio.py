@@ -53,6 +53,31 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertIn("party", types)
         self.assertTrue(all("source" in edge and "target" in edge for edge in result["contract_graph"]["edges"]))
 
+    def test_cross_contract_candidates_and_bounded_workflow_reach_reports(self):
+        contracts = [
+            {"id": "A", "text": "Provider shall provide written notice within 4 hours after incident awareness."},
+            {"id": "B", "text": "Provider shall provide written notice within 24 hours after incident awareness."},
+        ]
+        result = analyze_custom_portfolio(
+            company_context="Example Buyer manages provider contracts and incident notice obligations.",
+            contract_items=contracts,
+            events=[],
+            as_of="2027-03-15",
+        )
+        self.assertTrue(result["cross_contract_candidates"])
+        candidate = result["cross_contract_candidates"][0]
+        self.assertEqual(candidate["classification"], "numeric_term_difference")
+        self.assertEqual(len(candidate["evidence"]), 2)
+        self.assertIn("agent_workflow", result)
+        self.assertEqual(
+            result["shared_state"]["execution"]["mode"],
+            "bounded_deterministic_multi_agent_workflow",
+        )
+        self.assertTrue(any(node.get("type") == "conflict_candidate"
+                            for node in result["contract_graph"]["nodes"]))
+        self.assertTrue(result["company_risk_report"]["cross_contract_candidates"])
+        self.assertFalse(candidate["legal_conflict_determined"])
+
     def test_alerts_are_triage_not_breach_conclusions(self):
         result = analyze_custom_portfolio(
             company_context="Example Buyer manages vendor agreements and renewal obligations.",
