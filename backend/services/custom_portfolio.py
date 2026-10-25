@@ -49,13 +49,21 @@ def build_rich_contract_graph(contracts: dict[str, str], extractions: dict[str, 
         for idx, raw in enumerate(lines, start=1):
             line = raw.strip()
             # Only accept explicit party labels; avoid guessing names from arbitrary prose.
+            party_names = []
             match = re.match(r"^(?:customer|client|buyer|supplier|provider|vendor|landlord|tenant|party\s+[ab])\s*:\s*(.{2,100})$", line, re.I)
             if match:
-                name = match.group(1).strip().rstrip(".,;")
+                party_names.append(match.group(1).strip().rstrip(".,;"))
+            elif re.search(r"\b(agreement|contract|parties|entered into)\b", line, re.I):
+                between = re.search(r"\bbetween\s+(.{2,80}?)\s+and\s+(.{2,80}?)(?:,|;|\.|$)", line, re.I)
+                if between:
+                    party_names.extend([between.group(1).strip().strip(' \\"'), between.group(2).strip().strip(' \\"')])
+            for name in party_names:
+                if len(name) < 2 or len(name) > 100:
+                    continue
                 key = name.casefold()
                 parties_seen.setdefault(key, {"id": "party:" + key, "type": "party", "label": name, "name": name,
-                                              "source_document_id": cid, "line_number": idx, "quote": raw,
-                                              "verified": raw in text})
+                                              "confidence": 0.75, "source_document_id": cid, "line_number": idx,
+                                              "quote": raw, "verified": raw in text})
                 edges.append({"source": cid, "target": "party:" + key,
                               "relation": "names_party", "status": "evidence_linked",
                               "evidence": {"document_id": cid, "line_number": idx, "quote": raw, "verified": raw in text}})
