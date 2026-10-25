@@ -40,6 +40,64 @@ def _date_status(raw: str, as_of: date) -> tuple[str, str]:
     return ("past" if parsed < as_of else "upcoming"), "Explicit source date compared with simulated date; legal trigger is not inferred."
 
 
+def _event_alert_level(category: str, body: str, matched_clauses: list[dict], event_date: str, as_of: date) -> tuple[str, str]:
+    """Conservative alert severity; distinguish observed events from scheduled dates."""
+    text = body.casefold()
+    try:
+        parsed = date.fromisoformat(str(event_date)[:10]) if event_date else None
+    except ValueError:
+        parsed = None
+    if parsed and parsed > as_of:
+        days = (parsed - as_of).days
+        if category in {"payment_event", "contract_milestone_event"} and days <= 7:
+            return "high", "Scheduled obligation/event is within 7 days; confirm owner, trigger, and completion status."
+        if category in {"payment_event", "contract_milestone_event"} and days <= 30:
+            return "medium", "Scheduled obligation/event is within 30 days; verify contractual date and responsible owner."
+        return "low", "Future-dated feed item; treat as a scheduled candidate, not an occurred event."
+    if re.search(r"\\b(data breach|security incident|unauthorized access|regulatory violation|service outage|material breach|missed deadline|payment overdue|unpaid invoice|failed payment)\\b", text):
+        return "high", "Event text describes a potentially material incident or missed obligation; verify source and contractual trigger."
+    if matched_clauses:
+        return "medium", "Event text overlaps a source-cited clause candidate; verify authenticity, timing, and trigger before escalation."
+    if category in {"payment_event", "contract_milestone_event"}:
+        return "medium", "Payment or milestone language was detected, but no verified clause association establishes a breach."
+    return "low", "Weak or generic event signal; retained for traceability but not prioritized as an urgent alert."
+
+
+def _filter_alert_noise(alerts: list[dict], as_of: date) -> tuple[list[dict], dict]:
+    """Deduplicate feed alerts and suppress low-value generic clause mentions."""
+    selected, seen = [], set()
+    suppressed_low = 0
+    duplicates = 0
+    for alert in alerts:
+        alert_id = str(alert.get("id") or "")
+        dedupe_key = alert_id or "|".join([
+            str(alert.get("contract_id", "")), str(alert.get("category", "")),
+            str(alert.get("date", "")), str(alert.get("title", "")),
+        ])
+        if dedupe_key in seen:
+            duplicates += 1
+            continue
+        seen.add(dedupe_key)
+        level = str(alert.get("severity", alert.get("priority", "medium"))).lower()
+        category = str(alert.get("category", ""))
+        concrete = bool(alert.get("matched_clauses") or alert.get("candidate_deadline_dates") or alert.get("date"))
+        if level == "low" and not concrete:
+            suppressed_low += 1
+            continue
+        if category == "contract_clause_triage" and level not in {"high", "critical"} and not concrete:
+            suppressed_low += 1
+            continue
+        selected.append(alert)
+    selected.sort(key=lambda a: (
+        {"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(a.get("severity", a.get("priority", "medium"))).lower(), 2),
+        str(a.get("date") or "9999-12-31"),
+        str(a.get("contract_id") or ""),
+    ))
+    return selected, {"input": len(alerts), "emitted": len(selected), "duplicates_suppressed": duplicates,
+                      "low_signal_suppressed": suppressed_low,
+                      "policy": "Deduplicate by alert ID; prioritize critical/high, dated obligations, and event-to-clause overlaps. Low-signal generic mentions are suppressed."}
+
+
 def build_rich_contract_graph(contracts: dict[str, str], extractions: dict[str, dict], base_graph: dict) -> dict:
     nodes = []
     for item in base_graph.get("nodes", []):
@@ -129,6 +187,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             return True
 
     visible_events = [event for event in events if isinstance(event, dict) and event_is_visible(event)]
+    # FR5 reviews future-dated feed items too, but labels them as scheduled candidates rather than occurred events.
+    event_feed_for_mapping = [event for event in events if isinstance(event, dict)]
     for cid, source in contracts.items():
         extraction = extractions[cid]
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
@@ -136,7 +196,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         timeline.extend(contract_timeline)
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
-        heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
+        heimdall_result = verify_contract_review(cid, source, contract_risks, event_feed_for_mapping)
         verification_records.append({"contract_id": cid, **heimdall_result})
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
@@ -170,12 +230,17 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             if event_category is None and mapped.get("matched_clauses"):
                 event_category = "contract_clause_trigger_candidate"
             if event_category:
+                alert_severity, severity_reason = _event_alert_level(
+                    event_category, event_body, mapped.get("matched_clauses", []),
+                    str(mapped.get("timestamp") or ""), clock
+                )
                 alerts.append({
                     "id": str(mapped.get("event_id") or "event") + ":" + cid,
                     "contract_id": cid, "category": event_category,
                     "title": "Review event against " + str(len(mapped.get("matched_clauses", []))) + " candidate clause(s)" if mapped.get("matched_clauses") else "Review supplied " + event_category.replace("_", " "),
-                    "severity": "medium", "priority": "medium",
-                    "status": "event_clause_mapping_candidate_requires_review" if mapped.get("matched_clauses") else "event_candidate_requires_review",
+                    "severity": alert_severity, "priority": alert_severity,
+                    "severity_rationale": severity_reason,
+                    "status": ("scheduled_event_candidate" if str(mapped.get("timestamp") or "")[:10] > as_of else "event_clause_mapping_candidate_requires_review") if mapped.get("matched_clauses") else "event_candidate_requires_review",
                     "reason": "Event-to-contract link method: " + str((mapped.get("contract_link") or {}).get("method", "unknown")) + ". Candidate event families: " + ", ".join(mapped.get("event_families", [])) + ". Clause-family mapping is heuristic; verify event authenticity, timing, operative wording, exceptions, amendments, and trigger facts before treating this as a breach or financial obligation.",
                     "date": mapped.get("timestamp"),
                     "candidate_deadline_dates": mapped.get("candidate_deadline_dates", []),
@@ -185,6 +250,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                  "quote": event_body, "verified": False,
                                  "verification_note": "User-supplied event record; source authenticity not independently verified."},
                     "matched_clauses": mapped.get("matched_clauses", []),
+                    "reassessment": {"loki_claims_challenged": [m.get("finding_id") for m in mapped.get("matched_clauses", [])],
+                                     "potential_exposure_status": "requires_clause_trigger_and_financial_reconciliation"},
                     "recommended_next_step": "Verify the source, determine whether the matched clause applies, check trigger timing and exceptions, then obtain human approval for any action.",
                     "human_review_required": True,
                     "source_authenticity_verified": False,
@@ -573,11 +640,23 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         else "complete_with_limitations"
     )
     company_report["status"] = final_status
+    alerts, alert_noise = _filter_alert_noise(alerts, clock)
+    heimdall_event_summary = {
+        "agent": "Heimdall",
+        "status": "complete_with_review_items" if event_feed_for_mapping else "no_events_supplied",
+        "event_feed_items": len(event_feed_for_mapping),
+        "mapped_event_count": sum(len(report.get("mapped_events", [])) for report in contract_reports),
+        "events_with_clause_candidates": sum(report.get("event_clause_mapping", {}).get("events_with_clause_candidates", 0) for report in contract_reports),
+        "findings_verified": sum(1 for record in verification_records for item in record.get("findings", []) if item.get("citation_checks_passed")),
+        "findings_challenged_or_unresolved": sum(1 for record in verification_records for item in record.get("findings", []) if item.get("claim_assessment") != "qualified_support"),
+        "alert_noise_filter": alert_noise,
+        "notice": "Event-to-clause associations are candidates. Event authenticity, trigger, causation, breach, and realized exposure require verification."
+    }
     return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
-            "risk_signals": risks, "alert_feed": alerts, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
+            "risk_signals": risks, "alert_feed": alerts, "alert_summary": {"count": len(alerts), "by_severity": {level: sum(1 for item in alerts if str(item.get("severity", "")).lower() == level) for level in ("critical", "high", "medium", "low")}, **alert_noise}, "heimdall_monitoring": heimdall_event_summary, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
             "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
             "loki_review": {
