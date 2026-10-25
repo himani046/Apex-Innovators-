@@ -66,7 +66,7 @@ class PortfolioAnalysisRequest(BaseModel):
     event_records: list[dict] = Field(default_factory=list, max_length=1000)
     payment_ledger: list[dict] = Field(default_factory=list, max_length=5000)
     as_of: date = Field(default=date(2027, 3, 15))
-    use_claude: bool = False
+    use_claude: bool = True
 
 class EventIngestionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -192,6 +192,8 @@ def health():
         "project": "Odin — The Contract War Room",
         "pack_found": PACK_DIR.exists(),
         "claude_configured": USE_CLAUDE,
+        "claude_model": __import__("backend.config", fromlist=["MODEL"]).MODEL,
+        "llm_limits": {"max_provider_calls": __import__("backend.config", fromlist=["MAX_LLM_CALLS"]).MAX_LLM_CALLS, "max_tokens": MAX_LLM_TOKENS},
         "persistent_audit_enabled": True,
         "persistent_event_store_enabled": True,
         "security_mode": security_mode(),
@@ -376,7 +378,7 @@ async def analyze_portfolio_upload(
     event_records: str = Form(default="[]"),
     payment_ledger: str = Form(default="[]"),
     as_of: str = Form(default="2027-03-15"),
-    use_claude: bool = Form(default=False),
+    use_claude: bool = Form(default=True),
 ):
     """Extract text from uploaded TXT/PDF contracts, then run the same portfolio workflow."""
     if not files:
