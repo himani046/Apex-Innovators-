@@ -155,3 +155,143 @@ def build_worst_case_projection(
 def project_at_date(extraction: dict[str, Any], as_of: str) -> dict[str, Any]:
     """Recompute a contract's date classification for a simulated clock position."""
     return build_timeline(extraction, as_of)
+
+
+def build_portfolio_timeline(workstream_analysis: dict[str, Any], portfolio_operations: dict[str, Any], as_of: str) -> dict[str, Any]:
+    """Build FR3's unified simulated timeline and conservative no-action exposure.
+
+    The result is a planning projection, not a legal/accounting conclusion. Only
+    source-stated dates, transaction statuses, amounts, and penalty triggers are
+    used; unlinked or ambiguous records remain review items.
+    """
+    current = date.fromisoformat(as_of)
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    ops_timeline = (portfolio_operations or {}).get("timeline", {})
+    for item in ops_timeline.get("milestones", []):
+        raw_date = str(item.get("date") or "")[:10]
+        try:
+            parsed = date.fromisoformat(raw_date)
+        except ValueError:
+            parsed = None
+        title = str(item.get("title") or "Contract milestone")
+        date_type = str(item.get("date_type") or "source_date_unclassified")
+        status = str(item.get("status") or "needs_review")
+        action_deadline = bool(item.get("action_required_by_date") or date_type == "action_deadline")
+        if parsed and action_deadline:
+            status = "overdue" if parsed < current else "due_today" if parsed == current else "upcoming"
+        elif parsed and not action_deadline:
+            status = "past_reference" if parsed < current else "today_reference" if parsed == current else "future_reference"
+        key = (str(item.get("contract_id") or "unknown"), raw_date, title)
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({**item, "status": status, "action_required_by_date": action_deadline,
+                     "days_from_as_of": (parsed-current).days if parsed else None,
+                     "timeline_source": "contract_extraction",
+                     "next_action": ("Escalate to the contract owner; verify notice/cure periods and required delivery method."
+                                     if status == "overdue" and action_deadline else
+                                     "Complete or confirm the obligation and retain evidence."
+                                     if action_deadline else
+                                     "Review as a contract milestone; do not treat it as overdue without an action trigger.")})
+
+    reconciliation = (portfolio_operations or {}).get("financial_reconciliation", {})
+    for item in reconciliation.get("payment_ledger_candidates", []):
+        source_date = str(item.get("timestamp") or "")[:10]
+        try:
+            parsed = date.fromisoformat(source_date)
+        except ValueError:
+            parsed = None
+        status_text = str(item.get("transaction_signal") or "unknown").casefold()
+        summary = str(item.get("summary") or "Payment ledger entry")
+        if any(word in status_text for word in ("paid", "settled", "completed", "cleared")):
+            payment_status = "recorded_paid"
+        elif any(word in status_text for word in ("unpaid", "pending", "outstanding", "overdue", "failed", "returned")):
+            payment_status = "payment_status_requires_review"
+        else:
+            payment_status = "transaction_status_unconfirmed"
+        key = (str(item.get("contract_id") or "unlinked"), source_date, summary)
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            "id": item.get("event_id"), "contract_id": item.get("contract_id"),
+            "date": source_date or None, "title": summary, "date_type": "payment_record",
+            "status": payment_status, "action_required_by_date": False,
+            "days_from_as_of": (parsed-current).days if parsed else None,
+            "timeline_source": item.get("event_source", "payment_ledger"),
+            "amounts_found": item.get("amounts_found", []),
+            "contract_match_status": item.get("contract_match_status"),
+            "next_action": ("Match to invoice and bank/ledger evidence before marking paid."
+                            if payment_status == "recorded_paid" else
+                            "Reconcile invoice, ledger, credits, and contract; confirm whether payment is outstanding."),
+            "evidence": {"summary": summary, "source": item.get("event_source"),
+                         "timestamp": source_date or None},
+        })
+    rows.sort(key=lambda x: (str(x.get("date") or "9999-99-99"), str(x.get("contract_id") or ""), str(x.get("title") or "")))
+
+    overdue = [x for x in rows if x.get("status") == "overdue" and x.get("action_required_by_date")]
+    due_today = [x for x in rows if x.get("status") == "due_today" and x.get("action_required_by_date")]
+    upcoming = [x for x in rows if x.get("status") == "upcoming" and x.get("action_required_by_date")]
+    review_items = [x for x in rows if x.get("status") in {"payment_status_requires_review", "transaction_status_unconfirmed"}]
+    scenarios = []
+    known_total = 0.0
+    known_count = 0
+    unknown_penalties = []
+    for stream in workstream_analysis.get("workstreams", []):
+        if stream.get("id") == "portfolio-wide":
+            continue
+        contract_id = str(stream.get("primary_contract_id") or stream.get("id", "").replace("contract-", "") or "unknown")
+        terms = stream.get("extracted_obligations", []) or []
+        amounts = (stream.get("financial_exposure") or {}).get("amounts_found", []) or []
+        for term in terms:
+            citation = term.get("citation") or term.get("evidence") or {}
+            quote = str(citation.get("quote") or "")
+            category = str(term.get("category") or "")
+            if not re.search(r"penalt|late fee|liquidated damages|default interest|interest on overdue|service credit", category + " " + quote, re.I):
+                continue
+            amount_matches = list(_AMOUNT.finditer(quote))
+            fixed_amounts = []
+            for match in amount_matches:
+                raw = match.group(0)
+                number = re.search(r"[\\d,]+(?:\\.\\d{2})?", raw)
+                if number:
+                    try:
+                        fixed_amounts.append(float(number.group(0).replace(",", "")))
+                    except ValueError:
+                        pass
+            explicit_trigger = bool(re.search(r"overdue|late|failure to pay|fails to pay|after the due date|per day|per month|per annum|daily|monthly", quote, re.I))
+            record = {"contract_id": contract_id, "term": category or "Penalty / interest clause",
+                      "trigger_supported": explicit_trigger, "amounts_as_written": [m.group(0) for m in amount_matches],
+                      "evidence": citation, "calculation_status": "needs_review",
+                      "projected_amount": None, "note": "Confirm due invoice, trigger date, grace period, principal, and applicable period before treating as payable."}
+            # Only fixed amounts with an explicit penalty context and a source-stated trigger
+            # can contribute to the known floor; rates/principal are never guessed.
+            if fixed_amounts and explicit_trigger and re.search(r"penalt|late fee|liquidated damages|service credit|charge", quote, re.I):
+                record["projected_amount"] = max(fixed_amounts)
+                record["calculation_status"] = "source_stated_fixed_amount_conditional"
+                known_total += max(fixed_amounts)
+                known_count += 1
+            else:
+                unknown_penalties.append(record)
+            scenarios.append(record)
+    projection = {
+        "as_of_date": as_of, "scenario": "No action taken after the selected simulated date",
+        "known_conditional_fixed_penalty_total": round(known_total, 2) if known_count else None,
+        "known_conditional_items": known_count, "items": scenarios,
+        "unknown_or_unquantified_items": len(unknown_penalties),
+        "status": "partial_source_backed_projection" if known_count else "quantification_requires_verified_inputs",
+        "limitations": [
+            "Conditional amounts are not proof that a penalty is legally due or has been incurred.",
+            "Percentage/rate-based charges are not calculated without a verified principal, trigger, grace period, and elapsed period.",
+            "Unpaid status must be reconciled against invoice, bank, and credit evidence; contract-stated values are not summed as losses.",
+        ],
+    }
+    return {
+        "as_of_date": as_of,
+        "items": rows,
+        "counts": {"total": len(rows), "overdue": len(overdue), "due_today": len(due_today),
+                   "upcoming_action_deadlines": len(upcoming), "payment_records_needing_review": len(review_items)},
+        "worst_case_projection": projection,
+        "clock": {"selected_date": as_of, "recomputed": True, "date_basis": "explicit source dates only"},
+    }
