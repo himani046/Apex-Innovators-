@@ -394,10 +394,16 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             "max_llm_tokens": MAX_LLM_TOKENS,
             "llm_requested": bool(body.use_claude and USE_CLAUDE),
         }
-        audit_store.update_run_payload(
-            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
-            details={"input_fingerprint": audit["input_fingerprint"]},
-        )
+        try:
+            audit_store.update_run_payload(
+                audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+                details={"input_fingerprint": audit["input_fingerprint"]},
+            )
+            result["audit"]["reproducibility_metadata_persisted"] = True
+        except KeyError:
+            # Test doubles or non-persistent audit adapters may return a run ID
+            # without creating a durable row. Analysis should still succeed.
+            result["audit"]["reproducibility_metadata_persisted"] = False
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid simulated date or portfolio input") from exc
