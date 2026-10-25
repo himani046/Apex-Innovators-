@@ -40,11 +40,21 @@ def _classify_date(title: str) -> tuple[str, str]:
     return "source_date_unclassified", "Source contains an explicit date but does not establish that it is an actionable deadline."
 
 
-def _contract_link(text: str) -> tuple[str | None, str]:
+def _contract_link(
+    text: str, contract_ids: list[str] | tuple[str, ...] | set[str] | None = None
+) -> tuple[str | None, str]:
+    """Link only explicit identifiers, including IDs from arbitrary uploaded portfolios."""
     explicit_refs = [ref for ref in CONTRACT_REF_MAP if ref.casefold() in text.casefold()]
     if len(explicit_refs) == 1:
         return CONTRACT_REF_MAP[explicit_refs[0]], "explicit_contract_reference"
-    ids = [cid for cid in CONTRACT_IDS if re.search(rf"(?<![A-Za-z0-9]){re.escape(cid)}(?![A-Za-z0-9])", text)]
+    # Keep the demo-pack identifiers for backwards compatibility, but derive
+    # additional identifiers from the actual loaded workstreams.
+    candidates = set(CONTRACT_IDS)
+    candidates.update(str(item).strip() for item in (contract_ids or []) if str(item).strip())
+    ids = [
+        cid for cid in sorted(candidates, key=lambda item: (-len(item), item.casefold()))
+        if re.search(rf"(?<![A-Za-z0-9]){re.escape(cid)}(?![A-Za-z0-9])", text, re.I)
+    ]
     if len(ids) == 1:
         return ids[0], "explicit_document_id"
     return None, "ambiguous_or_missing_contract_reference"
@@ -57,6 +67,16 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
     """Build contextual timeline and ledger candidates as of the simulated date."""
     as_of_date = date.fromisoformat(as_of)
     workstreams = workstream_analysis.get("workstreams", [])
+    known_contract_ids = {
+        str(contract_id).strip()
+        for stream in workstreams
+        for contract_id in (
+            list(stream.get("contract_ids", []) or [])
+            + [stream.get("primary_contract_id"), stream.get("id", "").replace("contract-", "")]
+            + list(stream.get("source_documents_analyzed", []) or [])
+        )
+        if contract_id and str(contract_id).strip() and stream.get("id") != "portfolio-wide"
+    }
     deadlines: list[dict[str, Any]] = []
     contract_amounts: list[dict[str, Any]] = []
     for stream in workstreams:
@@ -110,7 +130,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             continue
         reference = str(row.get("reference", ""))
         combined = " ".join(str(row.get(key, "")) for key in ("from", "to", "reference", "status", "amount"))
-        contract_id, match_status = _contract_link(combined)
+        contract_id, match_status = _contract_link(combined, known_contract_ids)
         amount = str(row.get("amount", "")).strip()
         try:
             amount_text = f"$ {float(amount):,.2f}"
@@ -150,7 +170,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             text = "\n".join(str(event.get(key, "")) for key in fields).strip()
             if not TRANSACTION_RE.search(text):
                 continue
-            contract_id, match_status = _contract_link(text)
+            contract_id, match_status = _contract_link(text, known_contract_ids)
             amounts = _amounts(text)
             signal = TRANSACTION_RE.search(text)
             ledger.append({
