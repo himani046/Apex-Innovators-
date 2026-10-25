@@ -261,6 +261,30 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             invoice_groups.setdefault((str(contract_id), str(invoice_ref)), []).append(item)
     invoice_reconciliation = []
     for (contract_id, invoice_ref), rows in sorted(invoice_groups.items()):
+        payment_trigger_candidates = []
+        penalty_trigger_candidates = []
+        for stream in workstreams:
+            stream_contract_ids = set(stream.get("contract_ids", []) or [])
+            if stream.get("primary_contract_id"):
+                stream_contract_ids.add(stream.get("primary_contract_id"))
+            if contract_id not in stream_contract_ids:
+                continue
+            for term in stream.get("extracted_obligations", []) or []:
+                citation = term.get("citation") or term.get("evidence") or {}
+                quote = str(citation.get("quote") or "").strip()
+                if not quote:
+                    continue
+                category_text = " ".join(str(term.get(key, "")) for key in ("category", "value", "context"))
+                evidence = {
+                    "document_id": citation.get("document_id", contract_id),
+                    "clause_reference": citation.get("clause_reference"),
+                    "quote": quote,
+                    "verified": bool(citation.get("verified")),
+                }
+                if re.search(r"\b(invoice|billing|payment|payable|pay within|net\s+\d+|due within|monthly fee|installment|milestone payment|upon acceptance|following acceptance)\b", category_text + " " + quote, re.I):
+                    payment_trigger_candidates.append(evidence)
+                if re.search(r"\b(late fee|late charge|interest|penalty|service credit|credit cap|liquidated damages|chargeback)\b", category_text + " " + quote, re.I):
+                    penalty_trigger_candidates.append(evidence)
         kinds = {
             "credit" if re.search(r"\b(credit|refund|refunded)\b", str(row.get("evidence_text", "")), re.I)
             else "payment" if str(row.get("payment_status", "")).casefold() in {"paid", "settled", "remitted"}
@@ -277,8 +301,16 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             "amounts_consistent": len(amounts) <= 1,
             "status": "linked_candidate_requires_human_review",
             "confirmed_liability": False,
+            "contractual_payment_trigger_candidates": payment_trigger_candidates[:20],
+            "penalty_or_credit_trigger_candidates": penalty_trigger_candidates[:20],
+            "trigger_evidence_status": {
+                "payment_trigger_candidate_found": bool(payment_trigger_candidates),
+                "penalty_or_credit_trigger_candidate_found": bool(penalty_trigger_candidates),
+                "trigger_occurrence_verified": False,
+                "applicability_verified": False,
+            },
             "human_review_required": True,
-            "note": "Exact invoice-reference linkage is a candidate only; contract trigger, billing period, credit application, and settlement evidence must still be reconciled.",
+            "note": "Exact invoice-reference linkage and contract quotations are candidates only; trigger occurrence, billing period, credit application, settlement, and penalty calculation remain unverified.",
         })
     return {
         "as_of_date": as_of,
