@@ -741,6 +741,10 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     )
     company_report["status"] = final_status
     alerts, alert_noise = _filter_alert_noise(alerts, clock)
+    company_report["prioritized_action_list"] = alerts
+    company_report["action_priority_order"] = ["critical", "high", "medium", "low"]
+    company_report["action_count"] = len(alerts)
+    company_report["references_count"] = len(company_report.get("references", []))
     heimdall_event_summary = {
         "agent": "Heimdall",
         "status": "complete_with_review_items" if event_feed_for_mapping else "no_events_supplied",
