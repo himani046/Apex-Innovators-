@@ -1047,6 +1047,39 @@ main>.odin-hero .hero-globe-media{
 .card.full:has(.graph-wrap):hover::before,
 .card.full:has(#homeGraph):hover::before{opacity:0!important}
 
+
+/* Graph card hover regression fix — override legacy #dash/.card hover rules at higher specificity. */
+html body #dash .card.full:has(> #homeGraph),
+html body #dash .card.full:has(> #homeGraph):hover,
+html body #dash .card.full:has(> #homeGraph):focus-within,
+html body #dash .card.full:has(> #homeGraph):has(#homeGraph){
+  color:#f8f6ff!important;
+  background:#0d0d17!important;
+  background-image:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;
+  border-color:rgba(190,165,255,.16)!important;
+  box-shadow:0 8px 26px rgba(0,0,0,.18)!important;
+  transform:none!important;
+  filter:none!important;
+}
+html body #dash .card.full:has(> #homeGraph):hover h1,
+html body #dash .card.full:has(> #homeGraph):hover h2,
+html body #dash .card.full:has(> #homeGraph):hover h3,
+html body #dash .card.full:has(> #homeGraph):hover h4,
+html body #dash .card.full:has(> #homeGraph):hover p,
+html body #dash .card.full:has(> #homeGraph):hover span,
+html body #dash .card.full:has(> #homeGraph):hover .muted,
+html body #dash .card.full:has(> #homeGraph):hover .tag,
+html body #dash .card.full:has(> #homeGraph):focus-within h1,
+html body #dash .card.full:has(> #homeGraph):focus-within h2,
+html body #dash .card.full:has(> #homeGraph):focus-within h3,
+html body #dash .card.full:has(> #homeGraph):focus-within p{
+  color:#f8f6ff!important;
+}
+html body #dash .card.full:has(> #homeGraph):hover::before,
+html body #dash .card.full:has(> #homeGraph):focus-within::before{
+  opacity:0!important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
