@@ -149,6 +149,27 @@ main{max-width:1600px;padding:28px 0}
 .orch-trace{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px}.orch-event{min-width:150px;max-width:230px;border-left:3px solid #81916f;background:#f8f9f5;border-radius:0 10px 10px 0;padding:11px}.orch-event b,.orch-event span,.orch-event small{display:block}.orch-event b{font-size:11px}.orch-event span{font-size:11px;margin-top:5px;color:#68725d}.orch-event small{font-size:10px;color:#777d6e;margin-top:5px}
 @media(max-width:850px){.orch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.orch-workstreams{grid-template-columns:repeat(2,minmax(0,1fr))}.orch-head{display:block}.orch-last-run{display:inline-block;margin-top:8px}}
 @media(max-width:560px){.orch-fr-list,.orch-workstreams{grid-template-columns:1fr}.orch-pipeline>i{display:none}.orch-step{min-width:145px}.orch-stats b{font-size:22px}}
+
+/* Odin modular visual polish: typography, layered cards, useful hover feedback */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--txt:#171b15;--muted:#687163;--cyan:#81936e;--green:#6f845c;--line:#dce1d4;--p:#fff}
+body{font-family:'DM Sans',Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.65;letter-spacing:.005em}
+h1,h2,h3,h4,.value,.overview-metric .value{font-family:'Manrope','DM Sans',sans-serif;letter-spacing:-.035em}
+header h1{font-size:21px;font-weight:800;letter-spacing:-.045em}
+header p,.muted{line-height:1.65}
+.card,.overview-metric{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease}
+.card{position:relative;overflow:hidden;border-radius:22px;background:linear-gradient(145deg,#fff 0%,#fcfdf9 100%);box-shadow:0 5px 18px rgba(34,44,25,.035)}
+.card:before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,#8fa17b,#d5dec9);opacity:0;transition:opacity .2s ease;pointer-events:none}
+.card:hover{transform:translateY(-3px);border-color:#bdc9b0;box-shadow:0 16px 36px rgba(45,58,34,.09);background:linear-gradient(145deg,#fff 0%,#f7faf2 100%)}.card:hover:before{opacity:1}
+.card h3{font-size:16px;font-weight:800;line-height:1.4}.card p,.card li{font-size:14px;line-height:1.7}
+.metric{background:linear-gradient(145deg,#fff 0%,#f5f8f0 100%);border-color:#dfe5d8}.metric .value,.value{font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.055em}
+.overview-metric{position:relative;border-radius:22px;padding:22px;background:linear-gradient(145deg,#fff,#f7f9f3);box-shadow:0 5px 18px rgba(34,44,25,.035)}
+.overview-metric:hover{transform:translateY(-4px);border-color:#aeba9f;box-shadow:0 16px 34px rgba(45,58,34,.1);background:linear-gradient(145deg,#fafff5,#edf3e6)}
+.overview-metric .label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#737d69}.overview-metric .value{font-size:40px;color:#20271b}.overview-metric .hint{font-size:12px;line-height:1.5;color:#737d69}
+button,select,input,textarea{font-family:inherit;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(42,52,32,.1)}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #b6c9a6;outline-offset:3px}
+.agent,.evidence,.action,.milestone{border-radius:14px;background:linear-gradient(145deg,#fff,#f6f8f2);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.agent:hover,.evidence:hover,.action:hover,.milestone:hover{transform:translateY(-2px);border-color:#bdc9b0;box-shadow:0 10px 22px rgba(45,58,34,.08)}
+.tag{font-family:'DM Sans',sans-serif;font-weight:700;letter-spacing:.015em}.page-grid{gap:18px}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
 </style></head><body>
 <header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
@@ -202,12 +223,7 @@ function setupOdinPages(){
  };
  cards.forEach(card=>views[group(card)].appendChild(card));
  const overview=views.overview;
- const links=document.createElement('div');links.className='quick-links';links.innerHTML=
-  '<button class="quick-link" data-go="contracts"><b>Contracts ↗</b><span>Explore agreements, extracted clauses, amendments and the relationship graph.</span></button>'+
-  '<button class="quick-link" data-go="timeline"><b>Time machine ↗</b><span>Review deadlines, dated milestones and payment-event candidates.</span></button>'+
-  '<button class="quick-link" data-go="agents"><b>Agent operations ↗</b><span>Inspect workstreams, shared state, handoffs and agent traces.</span></button>'+
-  '<button class="quick-link" data-go="review"><b>Risk &amp; review ↗</b><span>Inspect evidence, uncertainty, draft actions and human decisions.</span></button>';
- overview.parentElement.insertBefore(links,overview);
+ // Top navigation already provides these destinations; keep the overview focused on metrics and graph.
  const metrics=document.createElement('div');metrics.id='overviewMetrics';metrics.innerHTML=
   '<div class="overview-metric"><div class="label">Active contracts</div><div class="value" id="homeContracts">—</div><div class="hint">Loaded agreements</div></div>'+
   '<div class="overview-metric"><div class="label">Priority signals</div><div class="value" id="homeRisks">—</div><div class="hint">For human review</div></div>'+
@@ -219,7 +235,6 @@ function setupOdinPages(){
  const orch=document.createElement('div');orch.className='card full orchestrator-panel';orch.id='odinOrchestratorPanel';orch.innerHTML='<div class="orch-head"><div><div class="eyebrow">FR1 · ORCHESTRATION CONTROL TOWER</div><h3>Odin orchestrator <span class="tag" id="orchRunStatus">Awaiting analysis</span></h3><p class="muted">Live view of planning, agent delegation, workstream progress and bounded coordination for the current run.</p></div><div class="orch-last-run" id="orchRunMeta">No run loaded</div></div><div class="orch-pipeline" id="orchPipeline"><div class="orch-step"><span>01</span><b>Intake</b><small>Company + contracts</small></div><i>→</i><div class="orch-step"><span>02</span><b>Plan</b><small>Contract streams + portfolio</small></div><i>→</i><div class="orch-step"><span>03</span><b>Delegate</b><small>Agent tasks + status</small></div><i>→</i><div class="orch-step"><span>04</span><b>Coordinate</b><small>Clarify / verify / follow-up</small></div><i>→</i><div class="orch-step"><span>05</span><b>Synthesis</b><small>Decision-ready output</small></div></div><div class="orch-stats" id="orchStats"><div><span>Workstreams</span><b>—</b></div><div><span>Completed</span><b>—</b></div><div><span>Agents recorded</span><b>—</b></div><div><span>Follow-up iterations</span><b>—</b></div></div><h4>Functional requirement coverage</h4><div class="orch-fr-list" id="orchFRList"><p class="small">Run agents to populate requirement evidence.</p></div><h4>Workstream execution map</h4><div class="orch-workstreams" id="orchWorkstreams"><p class="small">No workstream data yet.</p></div><h4>Coordination trace</h4><div class="orch-trace" id="orchTrace"><p class="small">Agent handoffs and loop outcomes will appear here after a run.</p></div>';
  views.agents.prepend(orch);
  document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
- document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.go)));
  function showPage(key){document.querySelectorAll('.page-view').forEach(v=>v.classList.toggle('active',v.dataset.view===key));document.querySelectorAll('[data-page]').forEach(b=>{const on=b.dataset.page===key;b.classList.toggle('active',on);b.setAttribute('aria-current',on?'page':'false')});window.scrollTo({top:0,behavior:'smooth'});}
  window.odinShowPage=showPage;
 }
