@@ -50,6 +50,20 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertEqual(result["counts"]["rejected"], 3)
         self.assertFalse(result["source_authenticity_verified"])
 
+    def test_norns_normalizes_named_dates_and_preserves_source_quote(self):
+        from backend.agents.norns import build_contract_timeline
+        extraction = {"extracted_terms": [{
+            "category": "notice",
+            "citation": {"document_id": "A1", "line_number": 8,
+                         "quote": "The notice deadline is March 15, 2027.",
+                         "verified": True},
+        }]}
+        result = build_contract_timeline("A1", extraction, "2027-03-15")
+        self.assertEqual(result[0]["date"], "2027-03-15")
+        self.assertEqual(result[0]["raw_date"], "March 15, 2027")
+        self.assertEqual(result[0]["date_type"], "deadline_or_notice")
+        self.assertTrue(result[0]["evidence"]["verified"])
+
     def test_bounded_workflow_runs_clarification_and_keeps_gaps_visible(self):
         source = (
             "Section 1 — Incident Notice\n"
