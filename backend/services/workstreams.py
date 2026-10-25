@@ -243,7 +243,7 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
         deadlines = [
             milestone
             for doc_id in source_doc_ids
-            for milestone in _extract_dates(doc_id, contracts[doc_id], as_of_date)
+            for milestone in _extract_dates(doc_id, contracts[doc_id], as_of)
         ]
         risk_findings = [
             finding
