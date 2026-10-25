@@ -354,6 +354,9 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "human_review_required": True,
                 "legal_conflict_determined": False,
             }
+    for trace in cross_contract_review.get("traces", []):
+        loki_challenge = trace.get("loki_challenge", {}) or {}
+        agent_messages.extend(loki_challenge.get("clarification_requests", []) or [])
     agent_workflow["agent_calls_used"] = int(agent_workflow.get("agent_calls_used", 0)) + int(
         cross_contract_review.get("agent_calls_used", 0)
     )
@@ -577,6 +580,18 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
             "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
+            "loki_review": {
+                "agent": "Loki",
+                "status": "complete_with_review_items" if risks else "no_candidates",
+                "finding_count": len(risks),
+                "cross_contract_candidate_count": len(cross_contract_candidates),
+                "clarification_requests": [message for message in agent_messages
+                    if message.get("from") == "Loki" and message.get("to") == "Thor"],
+                "severity_counts": {level: sum(1 for finding in risks
+                    if str(finding.get("severity", "")).lower() == level)
+                    for level in ("critical", "high", "medium", "low")},
+                "notice": "Severity and likelihood are qualitative triage estimates, not calibrated probabilities or legal conclusions."
+            },
             "amendment_resolution": amendment_resolution,
             "cross_contract_review": cross_contract_review,
             "contract_reports": contract_reports, "company_risk_report": company_report,
