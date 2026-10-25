@@ -117,10 +117,13 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
     all_citations.extend(finding.get("evidence", []) or [])
     all_citations = _unique(all_citations, ("document_id", "clause_reference", "quote"))
 
+    run_status = str(run.get("status") or "complete_with_limitations")
+    if run_status not in {"partial_budget_exhausted", "partial_review_limit_reached"}:
+        run_status = "complete_with_limitations"
     company_report = {
         "title": "Quillhub portfolio risk report" if run.get("scope") else "Company portfolio risk report",
         "as_of_date": run.get("as_of_date"),
-        "status": "complete_with_limitations",
+        "status": run_status,
         "contract_count": len(reports),
         "contract_reports": len(reports),
         "cross_contract_relationships": cross_contract_edges,
@@ -152,5 +155,5 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         "schema_version": "1.0",
         "contract_reports": reports,
         "company_risk_report": company_report,
-        "status": "complete_with_limitations",
+        "status": run_status,
     }
