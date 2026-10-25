@@ -4,3 +4,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .DS_Store
+
+# Persistent local audit history (runtime data, not source code)
+data/*.sqlite3
+data/*.sqlite3-shm
+data/*.sqlite3-wal
