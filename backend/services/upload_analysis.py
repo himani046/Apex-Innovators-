@@ -39,11 +39,13 @@ def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
                 continue
             records.append({
                 "category": matches[0],
-                "value": "Source excerpt requiring review",
+                "value": quote,
                 "confidence": 0.65,
+                "confidence_basis": "heuristic_keyword_match_not_calibrated",
                 "citation": {
                     "document_id": document_id,
                     "clause_reference": current_heading,
+                    "line_number": line_no,
                     "quote": quote,
                     "verified": quote in text,
                     "verification_note": f"Exact source excerpt; line {line_no}. Classification is heuristic, not a legal conclusion.",
