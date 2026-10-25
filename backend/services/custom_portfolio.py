@@ -112,7 +112,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
         mapped_events = heimdall_result.get("mapped_events", [])
-                risks.extend(contract_risks)
+        risks.extend(contract_risks)
         agent_messages.extend(loki_result.get("clarification_requests", []))
         agent_messages.extend([
             {"from": "Thor", "to": "Norns", "type": "extracted_terms", "status": "complete",
@@ -146,18 +146,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                            "human_approval_required": True, "status": "draft_only_not_sent"}],
                   "notice": "Keyword-based source triage; not legal advice and not a complete semantic contract review."}
         contract_reports.append(report)
-        agent_messages.extend([
-            {"from": "Thor", "to": "Norns", "type": "extracted_terms", "status": "complete", "contract_id": cid,
-             "count": len(extraction.get("extracted_terms", []))},
-            {"from": "Norns", "to": "Loki", "type": "timeline_candidates", "status": "complete", "contract_id": cid,
-             "count": len(report["timeline"])},
-            {"from": "Loki", "to": "Heimdall", "type": "risk_challenge", "status": "candidate_requires_review",
-             "contract_id": cid, "count": len(contract_risks)},
-            {"from": "Heimdall", "to": "Tyr", "type": "evidence_verification", "status": "verified_with_limitations",
-             "contract_id": cid, "event_matches": len(mapped_events)},
-            {"from": "Tyr", "to": "Odin", "type": "qualified_recommendation", "status": "draft_only_not_sent",
-             "contract_id": cid},
-        ])
 
     for item in timeline:
         if item.get("date_type") == "deadline_or_notice":
