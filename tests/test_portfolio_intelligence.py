@@ -37,12 +37,12 @@ class CrossContractIntelligenceTests(unittest.TestCase):
     def test_context_diagnostics_never_claim_party_scope_or_precedence_resolved(self):
         contracts = {
             "MSA-1": (
-                "Supplier shall provide incident notice within 4 hours for hosted platform services. "
+                "Supplier shall provide incident notice within 4 hours for hosted platform services.\n"
                 "This Agreement incorporates the Master Services Agreement by reference."
             ),
             "SOW-2": (
-                "Supplier shall provide incident notice within 24 hours for hosted platform services. "
-                "This SOW is subject to MSA-1 and the Master Services Agreement."
+                "Supplier shall provide incident notice within 24 hours for hosted platform services.\n"
+                "This SOW references MSA-1 and the Master Services Agreement."
             ),
         }
         candidates = detect_cross_contract_candidates(contracts)
