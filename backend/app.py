@@ -391,6 +391,53 @@ def audit_run(run_id: str):
     return result
 
 
+@app.get("/api/audit/runs/{run_id}/observability", dependencies=[Depends(require_api_token)])
+def audit_run_observability(run_id: str):
+    """Return the NFR4 observability projection for a persisted run."""
+    result = audit_store.get_run(run_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Audit run not found")
+    payload = result.get("payload") or {}
+    shared = payload.get("shared_state") or {}
+    workstreams = payload.get("workstreams") or (payload.get("workstream_analysis") or {}).get("workstreams", [])
+    return {
+        "run_id": result.get("run_id", run_id),
+        "status": payload.get("status"),
+        "work_plan": {
+            "scope": payload.get("scope"),
+            "workstreams": [
+                {
+                    "id": stream.get("id"), "label": stream.get("label"),
+                    "contract_ids": stream.get("contract_ids", []),
+                    "assigned_agents": stream.get("assigned_agents", list((stream.get("agents") or {}).keys())),
+                    "status": stream.get("status"), "responsibility": stream.get("responsibility"),
+                } for stream in workstreams
+            ],
+        },
+        "per_contract": {
+            "extractions": payload.get("portfolio_extraction", {}),
+            "confidence_scores": [
+                {"contract_id": (term.get("citation") or {}).get("document_id"),
+                 "category": term.get("category"), "confidence": term.get("confidence"),
+                 "citation": term.get("citation")}
+                for term in (shared.get("extracted_clauses") or (payload.get("extraction") or {}).get("extracted_terms", []))
+                if isinstance(term, dict)
+            ],
+            "timeline_projections": (payload.get("portfolio_operations") or {}).get("norns_timeline", payload.get("timeline", {})),
+            "attack_proposals": (payload.get("portfolio_agent_workflow") or {}).get("attack_proposals", payload.get("risk_finding", {})),
+            "verifications": payload.get("verification"),
+            "rulings": payload.get("ruling"),
+            "rationale": (payload.get("ruling") or {}).get("rationale"),
+        },
+        "agent_transitions": payload.get("agent_messages") or shared.get("agent_messages", []),
+        "final_synthesis": payload.get("synthesis", {}),
+        "llm_usage": payload.get("llm_usage", {}),
+        "reproducibility": payload.get("reproducibility", {}),
+        "api_usage": payload.get("api_usage", {}),
+        "input_fingerprint": result.get("input_fingerprint"),
+        "created_at": result.get("created_at"),
+    }
+
 @app.post("/api/audit/runs/{run_id}/decision", dependencies=[Depends(require_api_token)])
 def record_human_decision(run_id: str, body: HumanDecisionRequest = Body(...)):
     """Record an explicit review decision. This endpoint never executes the action."""
