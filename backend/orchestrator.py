@@ -5,6 +5,7 @@ from backend.services.ingestion import load_pack
 from backend.services.citations import verify_all
 from backend.services.contract_graph import build_contract_graph, reconcile_contracts
 from backend.services.workstreams import build_workstreams
+from backend.services.portfolio_operations import build_portfolio_operations
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
@@ -29,6 +30,9 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     multi_contract_analysis = build_workstreams(
         contracts, contract_graph, contract_reconciliation, all_events, as_of
     )
+    portfolio_operations = build_portfolio_operations(
+        multi_contract_analysis, pack["event_drops"], as_of
+    )
     source = contracts.get("A1")
     if not source:
         raise RuntimeError("A1.txt missing from supplied pack")
@@ -44,6 +48,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "contract_reconciliation": contract_reconciliation,
         "workstream_analysis": multi_contract_analysis,
         "portfolio_summary": multi_contract_analysis["portfolio_summary"],
+        "portfolio_operations": portfolio_operations,
         "workstreams": [
             {
                 **item,
@@ -68,6 +73,22 @@ def run_demo(as_of="2027-03-15", request_claude=True):
                 "status": multi_contract_analysis["status"],
                 "workstreams": len(multi_contract_analysis["workstreams"]),
                 "contracts_in_scope": multi_contract_analysis["scope"],
+            },
+            {
+                "from": "Norns",
+                "to": "Odin",
+                "type": "portfolio_timeline_normalization",
+                "status": "complete_with_review_items",
+                "milestones": portfolio_operations["timeline"]["counts"]["total"],
+                "overdue": portfolio_operations["timeline"]["counts"]["overdue"],
+            },
+            {
+                "from": "Tyr",
+                "to": "Odin",
+                "type": "financial_ledger_reconciliation",
+                "status": portfolio_operations["financial_reconciliation"]["status"],
+                "transaction_candidates": portfolio_operations["financial_reconciliation"]["counts"]["transaction_candidates"],
+                "unlinked_candidates": portfolio_operations["financial_reconciliation"]["counts"]["unlinked_candidates"],
             },
             {
                 "from": "Odin",
@@ -137,6 +158,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "Cross-contract exclusivity and shared-provider signals are potential review items, not adjudicated conflicts.",
         "Dates are extracted only when explicitly stated; relative deadlines require trigger evidence and are not guessed.",
         "Financial amounts are quoted individually; aggregate exposure is not calculated without invoice, period, and trigger evidence.",
+        "Phase 3 normalizes explicit portfolio dates and identifies payment-event candidates; ledger candidates are not accounting entries until reconciled to contract, invoice, trigger, and payment/credit evidence.",
         "Norns, Heimdall, and Tyr use deterministic logic in this version.",
         "Draft actions require human approval and are never sent automatically.",
     ]
