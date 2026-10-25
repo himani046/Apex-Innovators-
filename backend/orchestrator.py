@@ -31,7 +31,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         contracts, contract_graph, contract_reconciliation, all_events, as_of
     )
     portfolio_operations = build_portfolio_operations(
-        multi_contract_analysis, pack["event_drops"], as_of
+        multi_contract_analysis, pack["event_drops"], as_of, pack["ledger"]
     )
     source = contracts.get("A1")
     if not source:
