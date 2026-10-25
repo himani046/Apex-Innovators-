@@ -77,11 +77,28 @@ The `POST /api/analyze-upload` endpoint currently provides document-level extrac
 
 Phase 3 adds an explicit-date portfolio timeline and an evidence-led payment-event reconciliation view.
 
-- Normalizes source-grounded calendar dates against the selected `as_of` date into overdue, due-today, and upcoming milestones.
-- Surfaces invoice, payment, remittance, refund, credit, and billing event candidates from loaded event drops.
+- Classifies source-grounded dates by context: explicit action deadlines, historical/effective/reference dates, contract-term milestones, relative notice terms, and unclassified dates. Only explicitly worded action deadlines can be marked overdue.
+- Reads the supplied `payments_ledger.csv` as well as invoice, payment, remittance, refund, credit, and billing signals from loaded event drops; future-dated rows are excluded for the selected simulated date.
 - Links a ledger candidate to a contract only when the event text explicitly names exactly one known contract/document ID; otherwise it remains unlinked for review.
 - Keeps contract-stated amounts separate from transaction candidates. It does not sum contract rates, caps, recurring fees, or candidate events into a portfolio exposure total.
 - Preserves event source, timestamp, text evidence, extracted amount strings, match status, and unresolved reconciliation questions.
 - The dashboard displays the normalized timeline and payment-ledger candidates alongside the existing six workstreams.
 
 **Limitations:** These are operational triage candidates, not accounting entries, confirmed liabilities, or legal conclusions. Reconciliation requires a contract-linked invoice/credit, applicable trigger and period, and payment/dispute status. Relative deadlines are not converted into dates without a supported trigger date. Human review remains required.
+
+
+## Phase 4 — Evidence-grounded decision queue
+
+Phase 4 adds a deterministic review queue on top of the normalized timeline and payment-ledger candidates.
+
+- Prioritizes explicitly overdue action deadlines, due-today/upcoming deadlines, ledger rows marked overdue, and transaction rows whose contract linkage remains unresolved.
+- Shows the priority, date, contract match, evidence source/strength, reason for review, and recommended next step.
+- Keeps paid, contract-linked ledger rows in reconciliation rather than cluttering the action queue.
+- Does not infer breach, damages, or aggregate exposure; every queue item requires human review.
+
+Run the test suite after pulling updates:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
