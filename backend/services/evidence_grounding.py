@@ -78,9 +78,9 @@ def build_evidence_grounded_finding(
         status = "unverified"
 
     recommended_action = (
-        (ruling or {}).get("action_draft", {}).get("body")
-        or finding.get("recommended_action")
+        finding.get("recommended_action")
         or verification.get("recommended_follow_up")
+        or (ruling or {}).get("action_draft", {}).get("subject")
         or "Request the missing source records and review the evidence before reaching a conclusion."
     )
     return {
