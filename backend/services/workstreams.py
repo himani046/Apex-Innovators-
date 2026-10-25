@@ -230,7 +230,7 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
             customer_terms.append(customer_match.group(2).strip().strip('"'))
         else:
             contractor_match = re.search(
-                r"and\s+(Pixelwright Design Studio LLC|[^\n]+?)\s+\(\"Contractor\"\)",
+                r"\band\s+(Pixelwright Design Studio LLC)\b",
                 source, re.I
             )
             if contractor_match:
