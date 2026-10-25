@@ -305,6 +305,64 @@ header #health{justify-self:end}
   color:#fff;
   background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%);
 }
+
+/* Hover contrast fix: apply white typography to the contents of the small
+   interactive cards, without recolouring their enclosing section panels. */
+.card .card:hover,
+.card .overview-metric:hover,
+.card .metric:hover,
+.card .agent:hover,
+.card .evidence:hover,
+.card .action:hover,
+.card .milestone:hover,
+.page-grid > .card:not(.full):hover,
+.graph-edge-row:hover,
+.fr9-subcard:hover,
+.debate-column:hover,
+.draft-action:hover {
+  color:#fff!important;
+}
+.card .card:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,summary,dt,dd,blockquote,code,time),
+.card .overview-metric:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.card .metric:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.card .agent:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.card .evidence:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,blockquote),
+.card .action:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.card .milestone:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,time),
+.page-grid > .card:not(.full):hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li,summary,dt,dd,blockquote,code,time),
+.graph-edge-row:hover :is(b,span,small,p),
+.fr9-subcard:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.debate-column:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li),
+.draft-action:hover :is(h1,h2,h3,h4,h5,h6,p,span,b,strong,em,small,label,li) {
+  color:#fff!important;
+}
+.card .card:hover .tag,
+.card .agent:hover .tag,
+.card .evidence:hover .tag,
+.card .action:hover .tag,
+.card .milestone:hover .tag,
+.page-grid > .card:not(.full):hover .tag {
+  color:#fff!important;
+  background:rgba(255,255,255,.16)!important;
+  border-color:rgba(255,255,255,.28)!important;
+}
+.card .card:hover a,
+.card .agent:hover a,
+.card .evidence:hover a,
+.card .action:hover a,
+.card .milestone:hover a,
+.page-grid > .card:not(.full):hover a {
+  color:#fff!important;
+}
+.card .card:hover svg,
+.card .agent:hover svg,
+.card .evidence:hover svg,
+.card .action:hover svg,
+.card .milestone:hover svg,
+.page-grid > .card:not(.full):hover svg {
+  filter:brightness(0) invert(1);
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
