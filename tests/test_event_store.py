@@ -37,7 +37,15 @@ class EventStoreTests(unittest.TestCase):
             store.ingest("feed", [{"event_id": "E1", "body": "Original event"}])
             result = store.ingest("feed", [{"event_id": "E1", "body": "Corrected event"}])
             self.assertEqual(result["counts"]["updated"], 1)
-            self.assertEqual(store.list_events()["events"][0]["body"], "Corrected event")
+            loaded = store.list_events()["events"][0]
+            self.assertEqual(loaded["body"], "Corrected event")
+            self.assertTrue(loaded["change_detected"])
+            self.assertEqual(loaded["revision_count"], 1)
+            history = store.list_revisions("feed", "E1")
+            self.assertEqual(history["revision_count"], 1)
+            self.assertEqual(history["revisions"][0]["previous_payload"]["body"], "Original event")
+            self.assertEqual(history["revisions"][0]["new_payload"]["body"], "Corrected event")
+            self.assertFalse(history["source_authenticity_verified"])
 
 
 if __name__ == "__main__":
