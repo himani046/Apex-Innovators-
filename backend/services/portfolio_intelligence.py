@@ -232,6 +232,7 @@ def normalize_event_records(events: list[dict[str, Any]] | None, as_of: str) -> 
                 continue
         accepted.append({**raw, "event_id": event_id, "body": body,
                          "timestamp": timestamp or None,
+                         "source_verified_claimed": raw.get("source_verified") is True,
                          "source_verified": False,
                          "ingestion_status": "accepted_unverified_source"})
     return {"events": accepted, "rejected": rejected,
