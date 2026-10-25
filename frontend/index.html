@@ -1245,6 +1245,22 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   border-color: rgba(194,177,255,.24) !important;
 }
 
+
+/* Time machine panel header: keep heading and explanatory copy legible on dark surface. */
+.page-view[data-view="timeline"] .card:has(#eventAuditTimeline) > h3,
+.page-view[data-view="timeline"] .card:has(#eventAuditTimeline) > p,
+.page-view[data-view="timeline"] .card:has(#eventAuditTimeline) > h3 *,
+.page-view[data-view="timeline"] .card:has(#eventAuditTimeline) > p * {
+  color: #f3efff !important;
+  -webkit-text-fill-color: #f3efff !important;
+}
+.page-view[data-view="timeline"] .card:has(#eventAuditTimeline) > h3 .tag {
+  color: #dcd2ff !important;
+  -webkit-text-fill-color: #dcd2ff !important;
+  background: rgba(155,126,229,.14) !important;
+  border-color: rgba(194,177,255,.24) !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
