@@ -2088,24 +2088,39 @@ async function ingestCustomEvents(){
 function renderFR2Obligations(d){
  const host=$('fr2ObligationList'),badge=$('fr2UrgentCount');if(!host)return;
  const reports=d.synthesis?.contract_reports||d.synthesis?.reports||d.contract_reports||d.reports||[];
- const base=new Date((d.as_of_date||$('date')?.value||new Date().toISOString().slice(0,10))+'T00:00:00Z'),items=[];
+ const base=new Date((d.as_of_date||$('date')?.value||new Date().toISOString().slice(0,10))+'T00:00:00Z'),items=[],ambiguities=[];
+ const scoreOf=v=>{if(typeof v!=='number'||!Number.isFinite(v)||v<0)return null;return Math.round((v<=1?v:v/100)*100);};
  reports.forEach(r=>{
+  const terms=r.key_terms||r.extracted_terms||[];
+  const findTerm=(text,quote,ref)=>{
+   const hay=(String(text||'')+' '+String(ref||'')+' '+String(quote||'')).toLowerCase();
+   return terms.find(k=>{
+    const c=k.citation||k.evidence||{}, q=String(c.quote||'').toLowerCase(), cat=String(k.category||'').toLowerCase(), val=String(k.value||'').toLowerCase();
+    return (quote&&q&&q===String(quote).toLowerCase())||(ref&&c.clause_reference&&String(c.clause_reference).toLowerCase()===String(ref).toLowerCase())||([cat,val].some(v=>v&&hay.includes(v))&&!!q);
+   });
+  };
   (r.timeline||[]).forEach(t=>{
    const date=t.date||t.deadline||t.due_date||t.renewal_date,title=t.title||t.event||t.description||t.type||'Contract obligation';
-   if(!date||!/payment|invoice|penalt|renew|termination|notice|deliverable|deadline|due/i.test([title,t.type,t.description].join(' ')))return;
+   if(!date||!/payment|invoice|penalt|renew|termination|notice|deliverable|deadline|due|fee|obligation|expires/i.test([title,t.type,t.description].join(' ')))return;
    const parsed=new Date(String(date).slice(0,10)+'T00:00:00Z');if(Number.isNaN(parsed.getTime()))return;
-   const days=Math.ceil((parsed-base)/86400000),raw=typeof t.confidence_score==='number'?t.confidence_score:typeof t.confidence==='number'?t.confidence:null;
-   const confidence=raw===null?null:Math.round((raw<=1?raw:raw/100)*100),overdue=days<0;
-   const payment=/payment|invoice|penalt|interest/i.test(title+' '+(t.type||''));
-   const action=overdue?(payment?'Verify payment status and invoice; ask Finance/Legal to confirm any applicable late fee.':'Escalate to the contract owner and confirm available cure/notice options.'): /renew|termination|notice/i.test(title)?'Check notice window and get approval before it closes.':payment?'Match invoice and due date to the ledger; schedule payment if valid.':'Assign an owner and confirm the required action.';
-   items.push({contract:r.contract_id||r.document_id||'Contract',title,date:String(date).slice(0,10),days,action,quote:t.evidence?.quote||t.quote||'',ref:t.evidence?.clause_reference||t.clause_reference||t.clause||'Clause reference unavailable',confidence,level:overdue||days<=14?'urgent':days<=30?'soon':'safe'});
+   const days=Math.ceil((parsed-base)/86400000),quote=t.evidence?.quote||t.quote||'',ref=t.evidence?.clause_reference||t.clause_reference||t.clause||'',term=findTerm(title,quote,ref);
+   const termCitation=term?.citation||term?.evidence||{}, evidenceQuote=quote||termCitation.quote||'', clause=ref||termCitation.clause_reference||'Clause reference unavailable';
+   const confidence=scoreOf(t.confidence_score??t.confidence??term?.confidence),overdue=days<0;
+   const payment=/payment|invoice|penalt|interest|fee/i.test(title+' '+(t.type||'')+' '+(t.description||''));
+   const action=overdue?(payment?'Check invoice and ledger immediately; pay undisputed amounts if contractually due. Ask Finance/Legal to verify any late fee or interest trigger before accepting extra charges.':'Escalate to the contract owner; verify notice/cure periods and available options before acting.'): /renew|termination|notice/i.test(title)?'Confirm the notice window and required delivery method; get approval before the deadline.':payment?'Match the invoice, amount and due date to the contract and ledger; schedule payment if valid.':'Assign an owner and confirm completion evidence before the deadline.';
+   items.push({contract:r.contract_id||r.document_id||'Contract',title,date:String(date).slice(0,10),days,action,quote:evidenceQuote,ref:clause,confidence,level:overdue||days<=14?'urgent':days<=30?'soon':'safe'});
   });
-  (r.risks||[]).filter(x=>/payment|penalt|late fee|interest|overdue/i.test([x.title,x.claim].join(' '))).forEach(x=>items.push({contract:r.contract_id||'Contract',title:x.title||'Payment / penalty review',date:'Date unconfirmed',days:999,action:'Check invoice and ledger; confirm the contractual trigger and amount with Finance/Legal.',quote:x.evidence?.quote||'',ref:x.evidence?.clause_reference||'Clause reference unavailable',confidence:typeof x.confidence_score==='number'?Math.round(x.confidence_score*100):null,level:'soon'}));
+  (r.risks||[]).filter(x=>/payment|penalt|late fee|interest|overdue/i.test([x.title,x.claim].join(' '))).forEach(x=>{
+   const quote=x.evidence?.quote||x.citation?.quote||'',ref=x.evidence?.clause_reference||x.citation?.clause_reference||'',term=findTerm(x.title||x.claim,quote,ref),c=term?.citation||{};
+   items.push({contract:r.contract_id||'Contract',title:x.title||'Payment / penalty review',date:'Date unconfirmed',days:999,action:'Check invoice and payment ledger; confirm the clause trigger, grace period and amount with Finance/Legal. Do not assume a penalty is payable from an overdue flag alone.',quote:quote||c.quote||'',ref:ref||c.clause_reference||'Clause reference unavailable',confidence:scoreOf(x.confidence_score??x.confidence??term?.confidence),level:'soon'});
+  });
+  (r.unresolved_questions||r.ambiguities||[]).forEach(q=>ambiguities.push({contract:r.contract_id||'Contract',text:typeof q==='string'?q:(q.description||q.question||JSON.stringify(q))}));
  });
  const unique=[...new Map(items.map(x=>[[x.contract,x.title,x.date].join('|'),x])).values()].sort((a,b)=>a.days-b.days).slice(0,12);
  badge.textContent=unique.length?unique.filter(x=>x.level==='urgent').length+' urgent':reports.length?'No dated obligations':'Waiting for analysis';
- if(!unique.length){host.innerHTML='<p class="small">'+(reports.length?'No matching obligations with usable dates were returned.':'Run agents to extract obligations.')+'</p>';return;}
- host.innerHTML=unique.map((x,i)=>'<article class="fr2-obligation"><i class="fr2-dot '+x.level+'"></i><div class="fr2-main"><b>'+esc(x.contract)+' · '+esc(x.title)+'</b><span>'+esc(x.action)+'</span></div><div class="fr2-meta"><b>'+(x.days===999?'Date unconfirmed':x.days<0?Math.abs(x.days)+' days overdue':x.days===0?'Due today':x.days+' days')+'</b><br>'+esc(x.date)+'</div><div class="fr2-meta"><b>Confidence</b><br>'+(x.confidence===null?'Not available':x.confidence+'%')+'</div><button class="fr2-action" type="button" data-obligation="'+i+'">Evidence &amp; action</button><div class="fr2-detail" hidden><b>Action:</b> '+esc(x.action)+' · <b>Clause:</b> '+esc(x.ref)+(x.quote?'<blockquote>'+esc(x.quote)+'</blockquote>':' · Source quote unavailable')+'</div></article>').join('');
+ const cards=unique.map((x,i)=>'<article class="fr2-obligation"><i class="fr2-dot '+x.level+'"></i><div class="fr2-main"><b>'+esc(x.contract)+' · '+esc(x.title)+'</b><span>'+esc(x.action)+'</span></div><div class="fr2-meta"><b>'+(x.days===999?'Date unconfirmed':x.days<0?Math.abs(x.days)+' days overdue':x.days===0?'Due today':x.days+' days')+'</b><br>'+esc(x.date)+'</div><div class="fr2-meta"><b>Thor score</b><br>'+(x.confidence===null?'Not scored':x.confidence+'%')+'</div><button class="fr2-action" type="button" data-obligation="'+i+'">Evidence &amp; action</button><div class="fr2-detail" hidden><b>Recommended action:</b> '+esc(x.action)+'<br><b>Clause:</b> '+esc(x.ref)+(x.quote?'<blockquote>'+esc(x.quote)+'</blockquote>':'<p>Supporting quote unavailable; verify the source clause before acting.</p>')+'<p class="small">Confidence is shown only when supplied by Thor or a matching extracted term. It is an extraction score, not a calibrated probability or legal conclusion.</p></div></article>').join('');
+ const flags=[...new Map(ambiguities.map(a=>[a.contract+'|'+a.text,a])).values()].slice(0,5);
+ host.innerHTML=(cards||'<p class="small">'+(reports.length?'No matching obligations with usable dates were returned.':'Run agents to extract obligations.')+'</p>')+(flags.length?'<div class="fr2-ambiguities"><b>Needs review</b>'+flags.map(a=>'<p><b>'+esc(a.contract)+':</b> '+esc(a.text)+'</p>').join('')+'</div>':'');
  host.querySelectorAll('[data-obligation]').forEach(b=>b.onclick=()=>{const detail=b.parentElement.querySelector('.fr2-detail');detail.hidden=!detail.hidden;b.textContent=detail.hidden?'Evidence & action':'Hide details';});
 }
 function renderOdinSynthesis(d){
