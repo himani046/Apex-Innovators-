@@ -39,5 +39,26 @@ class SynthesisTests(unittest.TestCase):
         self.assertIn("confidence_basis", result["contract_reports"][0])
 
 
+    def test_preserves_quality_gate_partial_status_and_provenance_metadata(self):
+        run = {
+            "status": "partial_quality_review_required",
+            "as_of_date": "2027-03-15",
+            "portfolio_extraction": {"contracts": {}},
+            "workstream_analysis": {"workstreams": [], "portfolio_summary": {}},
+            "portfolio_operations": {"timeline": {"milestones": []}, "financial_reconciliation": {}},
+            "decision_queue": {"issues": []},
+            "contract_graph": {"nodes": [], "edges": []},
+            "contract_reconciliation": {"resolved_changes": [], "review_items": []},
+            "evidence_grounded_finding": {},
+            "collaboration": {"unresolved_questions": []},
+            "analysis_quality": {"status": "partial_review_required", "unverified_or_uncited_terms": 1},
+            "agent_architecture": {"pattern": "bounded state-machine workflow"},
+        }
+        result = build_synthesis(run)
+        self.assertEqual(result["status"], "partial_quality_review_required")
+        self.assertEqual(result["analysis_quality"]["unverified_or_uncited_terms"], 1)
+        self.assertEqual(result["agent_architecture"]["pattern"], "bounded state-machine workflow")
+
+
 if __name__ == "__main__":
     unittest.main()
