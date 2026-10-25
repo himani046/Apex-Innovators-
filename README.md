@@ -180,3 +180,16 @@ Copy `.env.example` to `.env` for local use. For a protected review workflow, se
 ### Important limits still open
 
 The bearer token is a **shared access secret**, not individual reviewer authentication, roles, SSO, or per-reviewer attribution verified by an identity provider. Audit history is SQLite-backed but not yet cryptographically tamper-evident or WORM storage. Production deployment still needs durable-volume verification, TLS/reverse-proxy configuration, rate limiting, operational secret rotation, and a full security review. Do not expose this prototype to public or sensitive contract data until those controls are addressed.
+
+## Phase 9 — Light-themed tabbed contract workspace
+
+The dashboard has been redesigned around a light, sage-and-neutral visual system inspired by the supplied reference. Navigation is tab-based rather than a long vertically stacked dashboard.
+
+- **Overview:** portfolio health cards, contract count, review queue, deadline preview, and a compact relationship graph.
+- **Contracts:** contract cards open a detail modal with linked relationships, extracted terms and citations, deadlines, and associated review findings.
+- **Relations:** interactive SVG graph. Select a contract node to open its profile or a relationship edge to inspect the link and potential downstream impact. Relationship effects remain review candidates unless supported by the contract evidence.
+- **Time machine:** monthly calendar with dated milestones and a selected-day view, plus the next deadlines list.
+- **Agents:** workstream/agent status, evidence findings, agent message trace and unresolved questions.
+- **Settings and authority reminders:** save a contact email per contract, select a reminder cadence (30/14/7/1, 14/7/3/1, or 7/3/1 days), and prepare a mailto draft for a selected deadline. Contact settings are browser-local.
+
+**Important limitation:** reminder cadence is currently configuration and draft preparation only. The prototype does not run a background scheduler or automatically email authorities. Before automated delivery is enabled, add a server-side scheduler, verified authority/contract recipient mapping, provider credentials stored as secrets, notice-rule validation, duplicate-send protection, delivery/bounce logs, audit events, and a human approval gate. Do not email an authority based only on a keyword-extracted date or an unverified recipient.
