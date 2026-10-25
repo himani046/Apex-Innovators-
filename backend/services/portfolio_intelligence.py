@@ -190,6 +190,121 @@ def normalize_event_records(events: list[dict[str, Any]] | None, as_of: str) -> 
             "source_authenticity_verified": False}
 
 
+def reconcile_payment_events(
+    events: list[dict[str, Any]] | None,
+    contracts: dict[str, str],
+    as_of: str,
+) -> dict[str, Any]:
+    """Create conservative invoice/payment linkage candidates without inventing exposure."""
+    normalized = normalize_event_records(events, as_of)
+    money_re = re.compile(r"\b(?:USD|US\$|\$)\s*([\d,]+(?:\.\d{1,2})?)\b", re.I)
+    invoice_re = re.compile(r"\b(?:invoice|inv)\s*(?:id|no\.?|number|#)\s*[:#-]?\s*([A-Z0-9][A-Z0-9-]{1,40})\b", re.I)
+    candidates: list[dict[str, Any]] = []
+    for event in normalized["events"]:
+        body = str(event.get("body", ""))
+        raw_amount = event.get("amount")
+        amount = None
+        if isinstance(raw_amount, (int, float)) and not isinstance(raw_amount, bool):
+            amount = float(raw_amount)
+        else:
+            match = money_re.search(body)
+            if match:
+                try:
+                    amount = float(match.group(1).replace(",", ""))
+                except ValueError:
+                    amount = None
+        currency = str(event.get("currency") or "").upper() or (
+            "USD" if re.search(r"\b(?:USD|US\$|\$)", body, re.I) else None
+        )
+        invoice_id = str(event.get("invoice_id") or "").strip() or None
+        if not invoice_id:
+            match = invoice_re.search(body)
+            if match:
+                invoice_id = match.group(1)
+        cid = str(event.get("contract_id") or "").strip()
+        if cid not in contracts:
+            hits = [known for known in contracts if re.search(r"(?<![A-Za-z0-9])" + re.escape(known) + r"(?![A-Za-z0-9])", body, re.I)]
+            cid = hits[0] if len(hits) == 1 else ""
+        raw_kind = str(event.get("event_type") or event.get("type") or event.get("category") or "").casefold()
+        if not raw_kind:
+            if re.search(r"\b(credit|refund|credited|refunded)\b", body, re.I):
+                raw_kind = "credit"
+            elif re.search(r"\b(invoice|billed|billing|due|overdue)\b", body, re.I):
+                raw_kind = "invoice"
+            elif re.search(r"\b(payment|paid|remittance|settled)\b", body, re.I):
+                raw_kind = "payment"
+            else:
+                raw_kind = "unknown"
+        payment_state = str(event.get("payment_status") or "").casefold()
+        if not payment_state:
+            if re.search(r"\b(overdue|unpaid|past due|outstanding)\b", body, re.I):
+                payment_state = "possibly_unpaid"
+            elif re.search(r"\b(paid|settled|remitted)\b", body, re.I):
+                payment_state = "possibly_paid"
+            elif re.search(r"\b(credit|refund)\b", body, re.I):
+                payment_state = "possible_credit_or_refund"
+            else:
+                payment_state = "unknown"
+        if raw_kind == "unknown" and amount is None and not invoice_id:
+            continue
+        candidates.append({
+            "event_id": event.get("event_id"),
+            "contract_id": cid or None,
+            "invoice_id": invoice_id,
+            "event_kind": raw_kind,
+            "payment_state_candidate": payment_state,
+            "amount_candidate": amount,
+            "currency_candidate": currency,
+            "event_date": event.get("timestamp"),
+            "due_date_candidate": event.get("due_date"),
+            "evidence": {"document_id": event.get("event_id"), "quote": body, "verified": False},
+            "source_authenticity_verified": False,
+            "status": "candidate_requires_invoice_payment_trigger_reconciliation",
+            "human_review_required": True,
+        })
+
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    unlinked = []
+    for item in candidates:
+        if item.get("contract_id") and item.get("invoice_id"):
+            grouped.setdefault((item["contract_id"], item["invoice_id"]), []).append(item)
+        else:
+            unlinked.append(item)
+    groups = []
+    for (cid, invoice_id), rows in sorted(grouped.items()):
+        kinds = {str(row.get("event_kind", "")).casefold() for row in rows}
+        amounts = {row.get("amount_candidate") for row in rows if row.get("amount_candidate") is not None}
+        currencies = {row.get("currency_candidate") for row in rows if row.get("currency_candidate")}
+        structurally_matched = len(rows) >= 2 and len(kinds.intersection({"invoice", "payment", "credit"})) >= 2
+        amount_consistent = len(amounts) <= 1 and len(currencies) <= 1
+        groups.append({
+            "contract_id": cid, "invoice_id": invoice_id, "event_ids": [row["event_id"] for row in rows],
+            "event_kinds": sorted(kinds), "amount_candidates": sorted(amounts),
+            "currency_candidates": sorted(currencies),
+            "structurally_matched": structurally_matched,
+            "amounts_consistent": amount_consistent,
+            "status": (
+                "structural_match_requires_source_verification" if structurally_matched and amount_consistent
+                else "amount_or_event_type_mismatch_requires_review" if structurally_matched
+                else "unmatched_invoice_payment_candidate"
+            ),
+            "verified_financial_exposure": None,
+            "reason": "A structural match is not proof of authenticity, contractual trigger, payment settlement, or outstanding liability.",
+            "human_review_required": True,
+        })
+    return {
+        "status": "not_provided" if not normalized["events"] and not candidates else "needs_source_reconciliation",
+        "as_of_date": as_of,
+        "event_ingestion": normalized["counts"],
+        "payment_candidates": candidates,
+        "invoice_groups": groups,
+        "unlinked_candidates": unlinked,
+        "counts": {"payment_candidates": len(candidates), "invoice_groups": len(groups), "unlinked_candidates": len(unlinked)},
+        "verified_financial_exposure": None,
+        "note": "No financial exposure is aggregated from unverified events. Reconcile original invoice, due date, contractual trigger, payment/credit record, and source authenticity first.",
+    }
+
+
 def run_bounded_review_cycles(
     contracts: dict[str, str],
     extractions: dict[str, dict[str, Any]],
