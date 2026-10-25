@@ -33,8 +33,8 @@ def detect_cross_contract_candidates(contracts):
                 if a[0] == b[0]: continue
                 numeric_diff = bool(a[3] and b[3] and a[3] != b[3])
                 modality_diff = bool((a[4] & NEG and b[4] & POS) or (b[4] & NEG and a[4] & POS) or
-                                     ("exclusive" in a[4] and "non-exclusive" in b[4]) or
-                                     ("non-exclusive" in a[4] and "exclusive" in b[4]))
+                                     ("exclusive" in a[2].lower() and "non-exclusive" in b[2].lower()) or
+                                     ("non-exclusive" in a[2].lower() and "exclusive" in b[2].lower()))
                 if not (numeric_diff or modality_diff): continue
                 found.append({
                     "id": f"cross:{topic}:{a[0]}:{a[1]}:{b[0]}:{b[1]}",
