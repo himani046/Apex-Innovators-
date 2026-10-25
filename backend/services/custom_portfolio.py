@@ -251,9 +251,13 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         key: value for key, value in cross_contract_review.items()
         if key not in {"traces", "agent_messages", "event_ingestion"}
     }
-    if cross_contract_review.get("status") == "partial_budget_exhausted":
+    if str(cross_contract_review.get("status", "")).startswith("partial_"):
         agent_workflow["budget_exhausted"] = True
-        agent_workflow["stop_reason"] = "cross_contract_review_budget_exhausted"
+        agent_workflow["stop_reason"] = (
+            "cross_contract_review_budget_exhausted"
+            if cross_contract_review.get("status") == "partial_budget_exhausted"
+            else "cross_contract_candidate_limit_reached"
+        )
     for candidate in cross_contract_candidates:
         ids = candidate.get("contract_ids", [])
         if len(ids) != 2:
