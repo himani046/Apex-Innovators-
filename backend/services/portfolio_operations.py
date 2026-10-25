@@ -11,8 +11,8 @@ import re
 from datetime import date
 from typing import Any
 
-MONEY_RE = re.compile(r"(?i)(?:USD\\s*)?\\$\\s?[\\d,]+(?:\\.\\d{2})?|\\b(?:\\d[\\d,]*\\.\\d{2})\\s*(?:U\\.S\\.\\s*)?Dollars?\\b")
-TRANSACTION_RE = re.compile(r"\\b(invoice|invoiced|payment|paid|remittance|refund|reimburse|service credit|credit memo|billing|past due|overdue|ledger|fee)\\b", re.I)
+MONEY_RE = re.compile(r"(?i)(?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?|\b(?:\d[\d,]*\.\d{2})\s*(?:U\.S\.\s*)?Dollars?\b")
+TRANSACTION_RE = re.compile(r"\b(invoice|invoiced|payment|paid|remittance|refund|reimburse|service credit|credit memo|billing|past due|overdue|ledger|fee)\b", re.I)
 CONTRACT_IDS = ("A1", "A2", "A3", "B1", "B2", "C1", "D1", "STD")
 CONTRACT_REF_MAP = {
     "QH-STRATO-2026-001": "A1",
@@ -29,13 +29,13 @@ def _amounts(text: str) -> list[str]:
 def _classify_date(title: str) -> tuple[str, str]:
     """Return (date_type, explanation) using only local source wording."""
     text = title.casefold()
-    if re.search(r"\\b(effective date|dated\\s+|signature date|incident start|incident end|submission date)\\b|date\\s*:", text):
+    if re.search(r"\b(effective date|dated\s+|signature date|incident start|incident end|submission date)\b|date\s*:", text):
         return "historical_reference", "Source date is contextual or historical; it is not an action deadline by itself."
-    if re.search(r"\\b(due date|deadline|no later than|must be received by|submit by|pay by|notify by|renewal instructions by)\\b", text):
+    if re.search(r"\b(due date|deadline|no later than|must be received by|submit by|pay by|notify by|renewal instructions by)\b", text):
         return "action_deadline", "Source explicitly describes a due date or action deadline."
-    if re.search(r"\\b(expir(?:y|ation)|term ends?|ending|through\\s+[a-z]+\\s+\\d{1,2})\\b", text):
+    if re.search(r"\b(expir(?:y|ation)|term ends?|ending|through\s+[a-z]+\s+\d{1,2})\b", text):
         return "contract_milestone", "Contract term or expiry milestone; verify applicable notice/trigger requirements separately."
-    if re.search(r"\\b(non-renewal notice period|notice period|within\\s+\\d+)\\b", text):
+    if re.search(r"\b(non-renewal notice period|notice period|within\s+\d+)\b", text):
         return "relative_or_notice_term", "Notice window is stated, but its trigger/deadline cannot be inferred from this date alone."
     return "source_date_unclassified", "Source contains an explicit date but does not establish that it is an actionable deadline."
 
@@ -147,7 +147,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             if timestamp[:10] and timestamp[:10] > as_of:
                 continue
             fields = ("subject", "summary", "body", "from", "to", "channel")
-            text = "\\n".join(str(event.get(key, "")) for key in fields).strip()
+            text = "\n".join(str(event.get(key, "")) for key in fields).strip()
             if not TRANSACTION_RE.search(text):
                 continue
             contract_id, match_status = _contract_link(text)
@@ -175,6 +175,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
         "historical_references": sum(item["date_type"] == "historical_reference" for item in deadlines),
         "contract_milestones": sum(item["date_type"] == "contract_milestone" for item in deadlines),
         "unclassified_dates": sum(item["date_type"] == "source_date_unclassified" for item in deadlines),
+        "relative_or_notice_terms": sum(item["date_type"] == "relative_or_notice_term" for item in deadlines),
     }
     matched = sum(item["contract_id"] is not None for item in ledger)
     return {
