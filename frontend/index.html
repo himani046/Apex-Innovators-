@@ -1122,6 +1122,45 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   color: #62695d !important;
 }
 
+
+/* Contracts page: disable card hover recoloring that makes text disappear. */
+.page-view[data-view="contracts"] .card:hover,
+.page-view[data-view="contracts"] .card:focus-within,
+.page-view[data-view="contracts"] .agent:hover,
+.page-view[data-view="contracts"] .evidence:hover,
+.page-view[data-view="contracts"] .action:hover,
+.page-view[data-view="contracts"] .milestone:hover,
+.page-view[data-view="contracts"] .overview-metric:hover {
+  color: #151813 !important;
+  background: #fff !important;
+  border-color: var(--line, #d7d9cf) !important;
+  box-shadow: 0 10px 30px #2026160b !important;
+  transform: none !important;
+  filter: none !important;
+}
+.page-view[data-view="contracts"] .card:hover :is(h1,h2,h3,h4,p,li,small,label,b,strong,span,div,summary,blockquote,.value,.muted,.label,.hint,.meta),
+.page-view[data-view="contracts"] .agent:hover :is(*),
+.page-view[data-view="contracts"] .evidence:hover :is(*),
+.page-view[data-view="contracts"] .action:hover :is(*),
+.page-view[data-view="contracts"] .milestone:hover :is(*) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+.page-view[data-view="contracts"] .card:hover svg,
+.page-view[data-view="contracts"] .overview-metric:hover svg {
+  filter: none !important;
+  opacity: 1 !important;
+}
+.page-view[data-view="contracts"] .card:hover:before,
+.page-view[data-view="contracts"] .card:focus-within:before {
+  opacity: 0 !important;
+}
+.page-view[data-view="contracts"] .contract-explorer-card details[open] .evidence:hover {
+  background: #fff !important;
+  border-color: #dce2d5 !important;
+  transform: none !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
