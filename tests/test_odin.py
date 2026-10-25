@@ -54,7 +54,8 @@ class OdinTests(unittest.TestCase):
 
     def test_vertical_slice_runs_and_has_verified_citations(self):
         result = run_demo("2027-03-15", request_claude=False)
-        self.assertEqual(result["status"], "complete_with_limitations")
+        self.assertEqual(result["status"], "partial_quality_review_required")
+        self.assertEqual(result["analysis_quality"]["status"], "partial_review_required")
         self.assertGreater(result["extraction"]["citation_validation"]["verified"], 0)
         self.assertTrue(all(c["verified"] for c in result["risk_finding"]["citations"]))
         self.assertTrue(result["ruling"]["action_draft"]["human_approval_required"])
