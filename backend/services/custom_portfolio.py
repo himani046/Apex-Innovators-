@@ -404,8 +404,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "contract_ids": ids, "category": "cross_contract_inconsistency_candidate",
             "title": "Review potential cross-contract " + str(candidate.get("topic", "term")) + " difference",
             "severity": candidate.get("severity", "medium"), "priority": "medium",
-            "status": candidate.get("status"), "reason": candidate.get("explanation"),
-            "evidence": evidence, "recommended_next_step": "Compare parties, scope, amendments, precedence, and incorporated terms.",
+            "status": candidate.get("status"), "reason": str(candidate.get("explanation") or "") + " Amendment/precedence triage: " + str(candidate.get("precedence_context_status", "not assessed")) + ".",
+            "evidence": evidence, "recommended_next_step": "Review the linked amendment and full precedence wording, confirm execution/effective version and scope, and obtain missing incorporated documents before deciding whether terms conflict.",
         })
     graph["node_count"] = len(graph.get("nodes", []))
     graph["edge_count"] = len(graph.get("edges", []))
@@ -522,7 +522,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
                       "references": [c for report in contract_reports for c in report["citations"]] + [e for item in cross_contract_candidates for e in item.get("evidence", [])],
-                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]] + [q for item in cross_contract_candidates for q in item.get("unresolved_questions", [])],
+                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]] + [q for item in cross_contract_candidates for q in item.get("unresolved_questions", [])] + [item.get("reason", "Missing referenced source document.") for item in amendment_resolution.get("missing_document_requests", [])],
                       "limitations": ["Keyword-based extraction is triage, not complete semantic interpretation.",
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
