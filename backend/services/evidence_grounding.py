@@ -80,7 +80,7 @@ def build_evidence_grounded_finding(
     recommended_action = (
         finding.get("recommended_action")
         or verification.get("recommended_follow_up")
-        or (ruling or {}).get("action_draft", {}).get("subject")
+        or ((ruling or {}).get("action_draft") or {}).get("subject")
         or "Request the missing source records and review the evidence before reaching a conclusion."
     )
     return {
