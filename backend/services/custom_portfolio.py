@@ -199,6 +199,37 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "evidence": item.get("evidence"),
                 "recommended_next_step": "Validate the date and triggering event with the contract owner."
             })
+    workstreams = []
+    for report in contract_reports:
+        gaps = report.get("unresolved_questions", []) or []
+        workstreams.append({
+            "id": "contract-" + report["contract_id"],
+            "label": "Contract " + report["contract_id"],
+            "primary_contract_id": report["contract_id"],
+            "contract_ids": [report["contract_id"]],
+            "responsibility": "Extract source terms, classify date candidates, review risks, verify evidence, and draft review actions.",
+            "assigned_agents": ["Thor", "Norns", "Loki", "Heimdall", "Tyr"],
+            "status": report["status"],
+            "progress": {"completed_stages": 5, "total_stages": 5, "percentage": 100},
+            "extracted_obligations": report.get("obligations", []),
+            "timeline_candidates": report.get("timeline", []),
+            "risk_findings": report.get("risks", []),
+            "open_questions": gaps,
+            "completion_note": "Source-triage stages ran; unresolved questions and human review remain visible. This is not a legal-completeness guarantee."
+        })
+    workstreams.append({
+        "id": "portfolio-cross-contract",
+        "label": "Cross-contract relationship review",
+        "primary_contract_id": None,
+        "contract_ids": sorted(contracts),
+        "responsibility": "Inspect explicit document references and possible shared-risk signals across the supplied set.",
+        "assigned_agents": ["Odin", "Thor", "Loki", "Heimdall", "Tyr"],
+        "status": "complete_with_review_items" if graph.get("edges") else "complete_no_evidenced_relationships",
+        "progress": {"completed_stages": 1, "total_stages": 1, "percentage": 100},
+        "relationship_count": len(graph.get("edges", [])),
+        "open_questions": ["Review cross-contract effects and precedence where a sourced relationship exists." ] if graph.get("edges") else [],
+        "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
+    })
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
                                   str(item.get("contract_id", "")), str(item.get("id", ""))))
     contract_reports.sort(key=lambda item: item["contract_id"])
@@ -218,6 +249,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                       "Every proposed action requires human review."]}
     shared_state = {"schema_version": "1.0", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
+                    "workstreams": workstreams,
                     "extracted_clauses": [term for item in extractions.values() for term in item.get("extracted_terms", [])],
                     "timeline_events": timeline, "financial_calculations": [], "risk_claims": risks,
                     "evidence_references": [c for report in contract_reports for c in report["citations"]],
@@ -233,7 +265,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
-            "contract_graph": graph, "timeline": {"as_of_date": as_of, "milestones": timeline},
+            "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
             "agent_debate": {"messages": agent_messages, "note": "Messages describe deterministic handoffs; this path does not claim a live LLM debate."},
             "contract_reports": contract_reports, "company_risk_report": company_report,
