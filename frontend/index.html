@@ -199,15 +199,15 @@ function setupOdinPages(){
 }
 function updateOverviewAndGraph(){
  const textOf=id=>$(id)?.innerText||'';
- const contractText=textOf('explorerCount').match(/\\d+/);if($('homeContracts'))$('homeContracts').textContent=contractText?contractText[0]:'—';
- const riskText=textOf('heatmapStatus').match(/\\d+/);if($('homeRisks'))$('homeRisks').textContent=riskText?riskText[0]:(($('riskHeatmap')?.children.length)||0);
+ const contractText=textOf('explorerCount').match(/\d+/);if($('homeContracts'))$('homeContracts').textContent=contractText?contractText[0]:'—';
+ const riskText=textOf('heatmapStatus').match(/\d+/);if($('homeRisks'))$('homeRisks').textContent=riskText?riskText[0]:(($('riskHeatmap')?.children.length)||0);
  const deadlines=(($('opsMilestones')?.querySelectorAll('.agent,.milestone,li')||[]).length);if($('homeDeadlines'))$('homeDeadlines').textContent=deadlines||(($('timeline')?.children.length)||0)||'—';
  const reviews=(($('decisionQueueItems')?.children.length)||0)+(($('reviewItems')?.children.length)||0);if($('homeReview'))$('homeReview').textContent=reviews||'0';
  const host=$('homeGraph');if(!host)return;
  const edgeCards=[...($('graphEdges')?.querySelectorAll(':scope > .agent')||[])];
  const edges=edgeCards.map(card=>{
    const title=card.querySelector('b')?.textContent||'';
-   const m=title.match(/^(.+?)\\s*→\\s*(.+)$/);
+   const m=title.match(/^(.+?)\s*→\s*(.+)$/);
    return m?{source:m[1].trim(),target:m[2].trim(),label:(card.querySelector('p')?.textContent||'Relationship evidence').trim()}:null;
  }).filter(Boolean);
  if(!edges.length){host.innerHTML='<p style="padding:20px;color:#777d6e">No sourced contract links are available yet. Run analysis and inspect the relationship evidence below. The graph will not invent connections.</p>';return}
@@ -710,6 +710,8 @@ async function runOdin() {
     $('approvalResult').textContent = 'Approval/rejection is recorded only; no consequential action is executed.';
     await refreshAuditHistory(currentAuditRunId);
     if (currentAuditRunId) await inspectAuditRun(currentAuditRunId);
+    // Refresh the overview KPIs and evidence-backed relationship graph after all analysis cards render.
+    updateOverviewAndGraph();
     $('loading').classList.add('hidden');
     $('dash').classList.remove('hidden');
     $('error').classList.add('hidden');
