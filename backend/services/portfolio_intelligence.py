@@ -908,9 +908,18 @@ def review_cross_contract_candidates(
             "legal_conflict_determined": False, "human_review_required": True,
         })
 
+    if len(candidates) > 100 and stop_reason == "all_candidates_reviewed":
+        stop_reason = "candidate_limit_reached"
     return {
         "mode": "bounded_cross_contract_review",
-        "status": "partial_budget_exhausted" if stop_reason == "agent_call_budget_exhausted" else "complete_with_review_items" if traces else "no_candidates",
+        "status": (
+            "partial_budget_exhausted" if stop_reason == "agent_call_budget_exhausted"
+            else "partial_candidate_limit_reached" if stop_reason == "candidate_limit_reached"
+            else "complete_with_review_items" if traces else "no_candidates"
+        ),
+        "candidate_count": len(candidates),
+        "candidate_review_limit": 100,
+        "candidates_not_reviewed": max(0, len(candidates) - len(traces)),
         "agent_calls_used": calls_used,
         "agent_call_budget": max(0, int(max_agent_calls)),
         "stop_reason": stop_reason,
