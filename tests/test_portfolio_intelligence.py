@@ -106,6 +106,18 @@ class CrossContractIntelligenceTests(unittest.TestCase):
                             for message in result["agent_messages"]))
         self.assertFalse(result["legal_outcome_resolved"])
 
+    def test_llm_opt_in_falls_back_cleanly_when_provider_is_not_configured(self):
+        from unittest.mock import patch
+        source = "Provider shall provide written notice within 4 hours after incident awareness."
+        with patch("backend.config.USE_CLAUDE", False):
+            result = run_bounded_review_cycles(
+                {"A1": source}, {"A1": extract_document_terms(source, "A1")}, [],
+                "2027-03-15", max_iterations=0, max_agent_calls=20, use_llm=True,
+            )
+        self.assertFalse(result["llm_enabled"])
+        self.assertEqual(result["llm_provider_status"], "not_configured")
+        self.assertEqual(result["mode"], "bounded_deterministic_multi_agent_workflow")
+
     def test_budget_exhaustion_is_explicit(self):
         source = "Supplier shall provide written notice within 4 hours after incident awareness."
         result = run_bounded_review_cycles(
