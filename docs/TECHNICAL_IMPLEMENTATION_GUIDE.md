@@ -131,8 +131,8 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - FR4.1: The A1 scenario has a specific adversarial notice-timing review and optional Claude path.
 - FR4.2: Relationship/reconciliation logic detects document references, a specific amendment pattern, and potential cross-contract exclusivity overlap for review.
 - FR4.3: The A1 risk finding includes attack path, severity, likelihood, citations, and evidence gaps. Custom intake emits heuristic risk candidates with severity and explicitly unassessed likelihood.
-- FR4.4: A1 evidence gaps can trigger targeted Thor re-extraction. The custom path does not run a full iterative clarification loop.
-- Status: partial; generalized adversarial review across every arbitrary contract remains unfinished.
+- FR4.4: Bounded per-contract review can request targeted Thor re-extraction. Cross-contract candidates now also pass through a bounded Loki challenge → Heimdall citation/event verification → Tyr human-review ruling trace. This is evidence-first triage, not semantic legal adjudication.
+- Status: bounded review handoffs are implemented; deeper semantic analysis of arbitrary contracts, precedence resolution, and legally equivalent scope remain unfinished.
 
 ### FR5 — Heimdall Event Monitoring
 - FR5.1: The fixed pack loads JSONL event drops and retains parse errors. Custom intake accepts supplied events; `POST /api/events/ingest` stores source-labeled event records in SQLite and `GET /api/events?as_of=YYYY-MM-DD` filters future-dated events for a simulated date.
@@ -148,9 +148,10 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 
 ### FR7 — Agent Workflow
 - FR7.1: Fixed-pack and custom portfolio runs execute bounded per-contract Thor → Norns → Loki → Heimdall → Tyr cycles with structured handoffs, targeted source re-extraction, persistent evidence gaps, and explicit stop reasons.
-- FR7.2: Iterations and agent calls are budgeted. A budget-exhausted workstream is not marked complete; completed analysis does not mean a legal outcome is resolved.
-- FR7.3: Claude review is opt-in. When configured, Thor/Loki/Heimdall/Tyr can contribute suggestions; all model-proposed source quotations are checked against canonical contract/event text, and Tyr actions remain draft-only. Without a configured key, the workflow falls back to deterministic agents.
-- Status: bounded collaboration and optional hybrid LLM path implemented; live-provider smoke tests, deeper semantic disagreement resolution, and full browser/API acceptance remain outstanding.
+- FR7.2: Cross-contract candidates have a separate bounded Loki → Heimdall → Tyr review trace with exact source-quote checks, event candidates, draft-only actions, and explicit unresolved context checks for parties, scope, precedence, and incorporated terms.
+- FR7.3: Iterations and agent calls are budgeted. Budget exhaustion or candidate-limit exhaustion is surfaced as partial completion; analysis completion does not mean a legal outcome is resolved.
+- FR7.4: Claude review is opt-in. When configured, Thor/Loki/Heimdall/Tyr can contribute suggestions; model-proposed source quotations are checked against canonical contract/event text, and Tyr actions remain draft-only. Without a configured key, the workflow falls back to deterministic agents.
+- Status: bounded per-contract and cross-contract handoffs plus optional hybrid LLM path implemented; live-provider smoke tests, deeper semantic disagreement resolution, and full browser/API acceptance remain outstanding.
 
 ### FR8 — Synthesis
 - FR8.1: backend/services/synthesis.py assembles a report per contract with terms, obligations, timeline, risks, recommended actions, citations, citation validation, confidence where available, and unresolved questions.
@@ -236,10 +237,10 @@ GitHub Actions run 40195717406 completed successfully for commit 4ff4886d9280529
 
 ## 11. Highest-priority remaining work
 
-1. Add trusted external event adapters and independent source-provenance/authenticity verification.
-2. Improve semantic contract comparison for party/scope equivalence, amendment precedence, and incorporated terms; current cross-contract differences remain candidates.
+1. Add trusted external event adapters and independent source-provenance/authenticity verification; current ingestion validates record shape and timestamps but cannot authenticate the sender.
+2. Improve semantic contract comparison for party/scope equivalence, amendment precedence, and incorporated terms; new context diagnostics are signals only and conflicts remain human-review candidates.
 3. Reconcile invoice, due date, contractual trigger, payment/credit evidence, and source authenticity before calculating exposure.
-4. Run a live-provider smoke test when a valid Claude key is available; validate failure/timeout behavior against a real provider.
-5. Add browser-driven end-to-end tests for upload, analysis, graph, reports, stored event feed, and human decision flow.
+4. Run a live-provider smoke test when a valid Claude key is available; validate provider timeout, retry, malformed-output, and failure behavior against a real provider.
+5. Add browser-driven end-to-end tests for upload, analysis, graph, reports, stored event feed, cross-contract review, and human decision flow.
 6. Improve extraction beyond keyword heuristics and replace the pseudo-3D graph with WebGL only if strict 3D is required.
 7. Harden identity, tamper-evident audit storage, TLS, rate limiting, deployment volumes, and secret rotation before handling sensitive contracts.
