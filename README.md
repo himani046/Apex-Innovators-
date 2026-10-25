@@ -43,12 +43,19 @@ The supplied `.txt` files are canonical citation anchors. A citation must includ
 ## Development roadmap
 
 1. Complete Thor extraction and quote validation across every contract, including incorporated STD terms.
-2. Add Norns' full obligation/payment ledger reconciliation and checkpoint recalculation.
-3. Add Loki/Heimdall cross-contract claims and event mapping across both drops.
-4. Expand Tyr dispute workflow and approval transitions across all contract workstreams.
-5. Persist run state and event ingestion IDs, then implement an exposure heatmap and richer time-slider updates.
-6. Reconcile invoices, payment ledger, event drops, and contract-specific trigger dates before calculating realized exposure.
-7. Expand tests for malformed inputs, failed API calls, citation mismatch, date calculations, and budget exhaustion.
+2. Complete Norns obligation/payment reconciliation and checkpoint recalculation with source-backed trigger dates.
+3. Expand Loki/Heimdall semantic conflict review and event-to-clause mapping across every workstream.
+4. Extend Tyr dispute and human-approval transitions to all contract workstreams; consequential actions remain draft-only.
+5. Reconcile invoices, ledger entries, event records, and contractual trigger dates before calculating realized exposure.
+6. Add a full browser/API acceptance suite and real-provider smoke tests; unit-test success alone is not end-to-end proof.
+7. Expand malformed-input, failed-provider, citation-mismatch, date-calculation, and budget-exhaustion tests.
+
+### Recent completion increment
+
+- Targeted re-extraction can now be attached to an existing audit run by supplying `run_id` to `POST /api/reextract`.
+- The updated shared-state snapshot and re-extraction history are written back to the saved run, and a `targeted_reextraction` event records the actor, contract, clause reference, result count, and status.
+- Calls without `run_id` remain backward-compatible, but explicitly report that the returned state is not durable. Missing run IDs return `404`; no human decision or consequential action is executed by re-extraction.
+- Regression tests cover durable state updates and missing-run behavior.
 
 ## Project layout
 

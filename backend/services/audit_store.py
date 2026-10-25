@@ -139,6 +139,37 @@ class AuditStore:
                 )
         return {"run_id": run_id, "created_at": created_at, "input_fingerprint": fingerprint}
 
+    def update_run_payload(self, run_id: str, payload: dict, actor: str = "system",
+                          event_type: str = "run_state_updated", details: dict | None = None) -> dict:
+        """Persist a state update to an existing run and append an audit event.
+
+        The existing run ID and original input fingerprint remain stable. This is
+        intended for targeted re-extraction and other bounded workflow updates;
+        it does not approve or execute any recommended action.
+        """
+        if not isinstance(payload, dict):
+            raise ValueError("payload must be a dictionary")
+        actor = str(actor or "system").strip()[:120] or "system"
+        event_type = str(event_type or "run_state_updated").strip()[:120] or "run_state_updated"
+        now = _now()
+        snapshot = dict(payload)
+        snapshot["run_id"] = str(run_id)
+        with self._connection() as db:
+            row = db.execute(
+                "SELECT input_fingerprint FROM audit_runs WHERE run_id=?", (str(run_id),)
+            ).fetchone()
+            if not row:
+                raise KeyError("run not found")
+            db.execute(
+                "UPDATE audit_runs SET status=?, as_of_date=?, payload_json=? WHERE run_id=?",
+                (snapshot.get("status"), snapshot.get("as_of_date"), _json(snapshot), str(run_id)),
+            )
+            db.execute(
+                "INSERT INTO audit_events(run_id,occurred_at,event_type,actor,details_json) VALUES(?,?,?,?,?)",
+                (str(run_id), now, event_type, actor, _json(details or {})),
+            )
+        return {"run_id": str(run_id), "updated_at": now, "input_fingerprint": row["input_fingerprint"]}
+
     def _record_finding(self, db, run_id, finding, occurred_at):
         finding_id = str(finding.get("finding_id") or "RISK-UNKNOWN")
         current = db.execute("SELECT current_json FROM audit_findings WHERE finding_id=?", (finding_id,)).fetchone()
