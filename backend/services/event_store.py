@@ -62,7 +62,7 @@ class EventStore:
         rejected: list[dict[str, Any]] = []
         event_results: list[dict[str, Any]] = []
         received_at = datetime.now(timezone.utc).isoformat()
-        with self._connection() as db
+        with self._connection() as db:
             for index, raw in enumerate(events):
                 if not isinstance(raw, dict):
                     rejected.append({"index": index, "reason": "record_not_object"})
@@ -135,7 +135,7 @@ class EventStore:
         if limit < 1 or limit > 5000:
             raise ValueError("limit must be between 1 and 5000")
         clock = date.fromisoformat(as_of) if as_of else None
-        with self._connection() as db
+        with self._connection() as db:
             rows = db.execute(
                 "SELECT source,event_id,occurred_at,received_at,payload_json FROM ingested_events ORDER BY COALESCE(occurred_at,''),source,event_id LIMIT ?",
                 (limit,),
