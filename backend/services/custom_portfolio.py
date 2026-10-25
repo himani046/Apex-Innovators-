@@ -124,6 +124,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
     for cid, source in contracts.items():
         extraction = extractions[cid]
+        stage_results = {}
         if not budget_allows_contracts:
             shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
             continue
@@ -136,26 +137,31 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             budget_exhausted = True
             shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
             continue
-        shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
-        shared_agent_state.record_agent("Thor", "complete_with_review_items", consumes=["contract_source"], produces=["extracted_clauses", "evidence_references"])
+        stage_results["Thor"] = "complete_with_review_items"
+        shared_agent_state.message("Thor", "Norns", "extraction_result", stage_results["Thor"], contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
+        shared_agent_state.record_agent("Thor", stage_results["Thor"], consumes=["contract_source"], produces=["extracted_clauses", "evidence_references"])
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
         timeline.extend(contract_timeline)
         # The call slots above reserve a complete deterministic stage sequence; the
         # remaining stage messages below record actual functions executed.
-        shared_agent_state.message("Norns", "Loki", "timeline_candidates", "complete", contract_id=cid, milestones=len(contract_timeline))
-        shared_agent_state.record_agent("Norns", "complete_with_review_items", consumes=["extracted_clauses", "as_of_date"], produces=["timeline_events"])
+        stage_results["Norns"] = "complete_with_review_items"
+        shared_agent_state.message("Norns", "Loki", "timeline_candidates", stage_results["Norns"], contract_id=cid, milestones=len(contract_timeline))
+        shared_agent_state.record_agent("Norns", stage_results["Norns"], consumes=["extracted_clauses", "as_of_date"], produces=["timeline_events"])
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
-        shared_agent_state.message("Loki", "Heimdall", "risk_challenge", "submitted", contract_id=cid, findings=len(contract_risks))
-        shared_agent_state.record_agent("Loki", "complete_with_review_items", consumes=["extracted_clauses", "timeline_events"], produces=["risk_claims", "unresolved_questions"])
+        stage_results["Loki"] = "complete_with_review_items"
+        shared_agent_state.message("Loki", "Heimdall", "risk_challenge", stage_results["Loki"], contract_id=cid, findings=len(contract_risks))
+        shared_agent_state.record_agent("Loki", stage_results["Loki"], consumes=["extracted_clauses", "timeline_events"], produces=["risk_claims", "unresolved_questions"])
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         verification_records.append({"contract_id": cid, **heimdall_result})
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
-        shared_agent_state.message("Heimdall", "Tyr", "verification_result", heimdall_result.get("status", "unknown"), contract_id=cid, findings=len(heimdall_result.get("findings", [])))
-        shared_agent_state.record_agent("Heimdall", heimdall_result.get("status", "unknown"), consumes=["risk_claims", "event_records", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
-        shared_agent_state.message("Tyr", "Odin", "rulings", tyr_result.get("status", "unknown"), contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
-        shared_agent_state.record_agent("Tyr", tyr_result.get("status", "unknown"), consumes=["risk_claims", "verification_outcomes"], produces=["recommended_actions"])
+        stage_results["Heimdall"] = heimdall_result.get("status", "unknown")
+        shared_agent_state.message("Heimdall", "Tyr", "verification_result", stage_results["Heimdall"], contract_id=cid, findings=len(heimdall_result.get("findings", [])))
+        shared_agent_state.record_agent("Heimdall", stage_results["Heimdall"], consumes=["risk_claims", "event_records", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
+        stage_results["Tyr"] = tyr_result.get("status", "unknown")
+        shared_agent_state.message("Tyr", "Odin", "rulings", stage_results["Tyr"], contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
+        shared_agent_state.record_agent("Tyr", stage_results["Tyr"], consumes=["risk_claims", "verification_outcomes"], produces=["recommended_actions"])
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
                               "heimdall_verification": heimdall_result, "tyr_rulings": tyr_result.get("rulings", [])})
         mapped_events = heimdall_result.get("mapped_events", [])
@@ -214,7 +220,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         shared_agent_state.record_agent("Loki", "complete_with_review_items", consumes=["extracted_clauses", "timeline_events"], produces=["risk_claims", "unresolved_questions"])
         shared_agent_state.record_agent("Heimdall", "complete_with_review_items", consumes=["risk_claims", "event_records", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
         shared_agent_state.record_agent("Tyr", "complete_with_review_items", consumes=["risk_claims", "verification_outcomes"], produces=["recommended_actions"])
-        report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
+        report = {"contract_id": cid, "agent_status": dict(stage_results), "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
                   "mapped_events": mapped_events, "citations": citations,
