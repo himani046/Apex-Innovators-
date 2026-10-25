@@ -33,7 +33,7 @@ def _date_status(raw: str, as_of: date) -> tuple[str, str]:
     return ("past" if parsed < as_of else "upcoming"), "Explicit source date compared with simulated date; legal trigger is not inferred."
 
 
-def _rich_graph(contracts: dict[str, str], extractions: dict[str, dict], base_graph: dict) -> dict:
+def build_rich_contract_graph(contracts: dict[str, str], extractions: dict[str, dict], base_graph: dict) -> dict:
     nodes = []
     for item in base_graph.get("nodes", []):
         cid = item.get("document_id", "")
@@ -70,6 +70,10 @@ def _rich_graph(contracts: dict[str, str], extractions: dict[str, dict], base_gr
     return {**base_graph, "nodes": nodes, "edges": edges, "node_count": len(nodes), "edge_count": len(edges),
             "mode": "evidence_grounded_contract_clause_party_graph",
             "notice": "Nodes and edges are source-backed candidates. A graph relationship is not a legal conclusion."}
+
+
+# Backwards-compatible private alias for any older internal callers.
+_rich_graph = build_rich_contract_graph
 
 
 def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str, str]],
