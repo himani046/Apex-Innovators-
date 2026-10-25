@@ -18,6 +18,8 @@ from backend.services.upload_analysis import extract_document_terms
 from backend.services.custom_portfolio import analyze_custom_portfolio
 from backend.services.agentic_state import SharedAgentState
 from backend.services.event_store import EventStore
+from backend.config import MAX_LLM_TOKENS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS
+from backend.services.llm_runtime import llm_run_context, usage_snapshot
 
 event_store = EventStore()
 
@@ -148,6 +150,13 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
             "input_fingerprint": audit["input_fingerprint"],
         }
         result["run_id"] = audit["run_id"]
+        result.setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        if isinstance(result.get("shared_state"), dict):
+            result["shared_state"].setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        audit_store.update_run_payload(
+            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+            details={"input_fingerprint": audit["input_fingerprint"]},
+        )
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="as_of must be an ISO date, e.g. 2027-03-15") from exc
@@ -348,14 +357,15 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             body_text = str(event.get("body") or event.get("text") or event.get("description") or "")
             key = ("content", timestamp, body_text) if timestamp and body_text else (source_id, event_id or body_text)
             combined_events[key] = event
-        result = analyze_custom_portfolio(
-            company_context=body.company_context,
-            contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
-            events=list(combined_events.values()),
-            as_of=body.as_of.isoformat(),
-            use_llm=body.use_claude,
-            payment_ledger=body.payment_ledger,
-        )
+        with llm_run_context(MAX_LLM_TOKENS) as llm_usage:
+            result = analyze_custom_portfolio(
+                company_context=body.company_context,
+                contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
+                events=list(combined_events.values()),
+                as_of=body.as_of.isoformat(),
+                use_llm=body.use_claude,
+                payment_ledger=body.payment_ledger,
+            )
         result["event_store_context"] = {
             "stored_events_loaded": len(stored_events),
             "request_events_received": len(body.event_records),
@@ -369,6 +379,18 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             "input_fingerprint": audit["input_fingerprint"],
         }
         result["run_id"] = audit["run_id"]
+        result["llm_usage"] = usage_snapshot(llm_usage)
+        result.setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        result["reproducibility"]["configuration"] = {
+            "max_portfolio_agent_calls": MAX_PORTFOLIO_AGENT_CALLS,
+            "max_agent_iterations": MAX_AGENT_ITERATIONS,
+            "max_llm_tokens": MAX_LLM_TOKENS,
+            "llm_requested": bool(body.use_claude and USE_CLAUDE),
+        }
+        audit_store.update_run_payload(
+            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+            details={"input_fingerprint": audit["input_fingerprint"]},
+        )
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid simulated date or portfolio input") from exc
@@ -390,6 +412,69 @@ def audit_run(run_id: str):
         raise HTTPException(status_code=404, detail="Audit run not found")
     return result
 
+
+@app.get("/api/audit/runs/{run_id}/observability", dependencies=[Depends(require_api_token)])
+def audit_run_observability(run_id: str):
+    """Return the NFR4 observability projection for a persisted run."""
+    result = audit_store.get_run(run_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Audit run not found")
+    payload = result.get("payload") or {}
+    shared = payload.get("shared_state") or {}
+    workstreams = payload.get("workstreams") or (payload.get("workstream_analysis") or {}).get("workstreams", [])
+    portfolio_workflow = payload.get("portfolio_agent_workflow") or {}
+    return {
+        "run_id": result.get("run_id", run_id),
+        "status": payload.get("status"),
+        "work_plan": {
+            "scope": payload.get("scope"),
+            "workstreams": [
+                {
+                    "id": stream.get("id"), "label": stream.get("label"),
+                    "contract_ids": stream.get("contract_ids", []),
+                    "assigned_agents": stream.get("assigned_agents", list((stream.get("agents") or {}).keys())),
+                    "status": stream.get("status"), "responsibility": stream.get("responsibility"),
+                } for stream in workstreams
+            ],
+        },
+        "per_contract": {
+            "extractions": payload.get("portfolio_extraction", {}),
+            "confidence_scores": [
+                {"contract_id": (term.get("citation") or {}).get("document_id"),
+                 "category": term.get("category"), "confidence": term.get("confidence"),
+                 "citation": term.get("citation")}
+                for term in (shared.get("extracted_clauses") or (payload.get("extraction") or {}).get("extracted_terms", []))
+                if isinstance(term, dict)
+            ],
+            "timeline_projections": {
+                "portfolio": (payload.get("portfolio_operations") or {}).get("norns_timeline", payload.get("timeline", {})),
+                "per_contract": portfolio_workflow.get("timeline_candidates", []),
+            },
+            "attack_proposals": {
+                "portfolio": portfolio_workflow.get("risk_findings", []),
+                "legacy_a1": payload.get("risk_finding", {}),
+            },
+            "verifications": {
+                "portfolio": portfolio_workflow.get("verification_outcomes", []),
+                "legacy_a1": payload.get("verification"),
+            },
+            "rulings": {
+                "portfolio": portfolio_workflow.get("rulings", []),
+                "legacy_a1": payload.get("ruling"),
+            },
+            "rationale": {
+                "portfolio": [item.get("rationale") for item in portfolio_workflow.get("rulings", []) if isinstance(item, dict)],
+                "legacy_a1": (payload.get("ruling") or {}).get("rationale"),
+            },
+        },
+        "agent_transitions": payload.get("agent_messages") or shared.get("agent_messages", []),
+        "final_synthesis": payload.get("synthesis", {}),
+        "llm_usage": payload.get("llm_usage", {}),
+        "reproducibility": payload.get("reproducibility", {}),
+        "api_usage": payload.get("api_usage", {}),
+        "input_fingerprint": result.get("input_fingerprint"),
+        "created_at": result.get("created_at"),
+    }
 
 @app.post("/api/audit/runs/{run_id}/decision", dependencies=[Depends(require_api_token)])
 def record_human_decision(run_id: str, body: HumanDecisionRequest = Body(...)):
