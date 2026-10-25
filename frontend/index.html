@@ -1721,6 +1721,64 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
   color: #f8f6ff !important;
   -webkit-text-fill-color: #f8f6ff !important;
 }
+
+/* FINAL FIX — disable card hover recoloring across every Odin page.
+   Previous hover rules set white text while some cards stay light, making copy disappear. */
+#dash .card:hover,
+#dash .card:focus-within,
+#dash .overview-metric:hover,
+#dash .metric:hover,
+#dash .agent:hover,
+#dash .evidence:hover,
+#dash .action:hover,
+#dash .milestone:hover,
+#dash .orch-fr:hover,
+#dash .orch-ws:hover,
+#dash .fr9-subcard:hover,
+#dash .debate-column:hover,
+#dash .draft-action:hover,
+#dash .graph-edge-row:hover,
+#dash .quick-link:hover {
+  color: inherit !important;
+  background-color: inherit !important;
+  border-color: inherit !important;
+  box-shadow: inherit !important;
+  transform: none !important;
+  filter: none !important;
+}
+#dash .card:hover *,
+#dash .card:focus-within *,
+#dash .overview-metric:hover *,
+#dash .metric:hover *,
+#dash .agent:hover *,
+#dash .evidence:hover *,
+#dash .action:hover *,
+#dash .milestone:hover *,
+#dash .orch-fr:hover *,
+#dash .orch-ws:hover *,
+#dash .fr9-subcard:hover *,
+#dash .debate-column:hover *,
+#dash .draft-action:hover *,
+#dash .graph-edge-row:hover *,
+#dash .quick-link:hover * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+#dash .card:hover:before,
+#dash .card:focus-within:before {
+  opacity: 0 !important;
+}
+#dash .card:hover svg,
+#dash .overview-metric:hover svg,
+#dash .metric:hover svg,
+#dash .agent:hover svg,
+#dash .evidence:hover svg {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
