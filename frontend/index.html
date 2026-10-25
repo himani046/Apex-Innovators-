@@ -1779,6 +1779,22 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
   opacity: 1 !important;
 }
 
+
+/* Agents page: make the orchestration flow labels readable in black. */
+#flow .step,
+#flow .step:hover,
+#flow .step:focus,
+#flow .step:focus-visible {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  background: #fff !important;
+  text-shadow: none !important;
+}
+#flow .step * {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
