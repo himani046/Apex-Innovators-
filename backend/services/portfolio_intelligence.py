@@ -909,6 +909,7 @@ def review_cross_contract_candidates(
             continue
 
         evidence = candidate.get("evidence", []) or []
+        amendment_context = candidate.get("amendment_resolution", {}) or {}
         verified_evidence = []
         for item in evidence:
             cid = str(item.get("document_id", ""))
@@ -932,6 +933,7 @@ def review_cross_contract_candidates(
             "alternative_explanations": [
                 "The clauses may govern different parties, services, territories, transactions, or periods.",
                 "An amendment, order form, precedence clause, exception, or incorporated term may control.",
+                "Amendment lineage status: " + str(amendment_context.get("status", "not assessed")) + ".",
             ],
             "attack_path": [
                 "Check whether the compared clauses have the same parties and scope.",
@@ -980,7 +982,10 @@ def review_cross_contract_candidates(
             "challenges": [
                 "Quoted clauses are source-grounded but do not establish identical scope or a legal contradiction."
             ],
-            "evidence_gaps": list(candidate.get("unresolved_questions", []) or []),
+            "evidence_gaps": list(dict.fromkeys(list(candidate.get("unresolved_questions", []) or []) + list(amendment_context.get("questions_to_resolve", []) or []))),
+            "amendment_context": amendment_context,
+            "precedence_clauses_reviewed": len(amendment_context.get("precedence_clauses", []) or []),
+            "lineage_edges_reviewed": len(amendment_context.get("lineage_edges", []) or []),
             "legal_conflict_determined": False,
         }
         messages.append({
@@ -998,8 +1003,9 @@ def review_cross_contract_candidates(
             "candidate_id": candidate_id,
             "decision": decision,
             "rationale": (
-                "Both contract quotations matched the supplied source. Party identity, scope, amendments, "
-                "precedence, and incorporated terms remain unresolved; no legal conflict is determined."
+                "Both contract quotations matched the supplied source. Amendment context status: "
+                + str(amendment_context.get("status", "not assessed"))
+                + ". Party identity, scope, execution, effective dates, precedence, and incorporated terms still require human confirmation; no legal conflict is determined."
                 if citations_verified else
                 "One or more source quotations could not be verified. Do not rely on this candidate until the source is corrected."
             ),
@@ -1013,6 +1019,7 @@ def review_cross_contract_candidates(
                     "This draft is not a legal conclusion and has not been sent."
                 ),
                 "citations": verified_evidence,
+                "amendment_resolution": amendment_context,
                 "status": "draft_only_not_sent",
                 "human_approval_required": True,
             },
