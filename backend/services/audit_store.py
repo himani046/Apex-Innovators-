@@ -75,7 +75,6 @@ class AuditStore:
                 note TEXT NOT NULL,
                 decided_at TEXT NOT NULL,
                 FOREIGN KEY(run_id) REFERENCES audit_runs(run_id),
-                UNIQUE(run_id, action_id)
             );
             """)
 
