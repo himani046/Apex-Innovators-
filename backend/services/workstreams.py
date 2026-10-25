@@ -199,11 +199,21 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
         if root == "B2" and "B1" in all_docs and "B1" not in related_ids:
             related.append({"document_id": "B1", "relationship": "supplements_agreement"})
         customer_terms = []
-        for pattern in (r"between\s+(.+?)\s+\(\"Provider\"\)\s+and\s+(.+?)\s+\(\"Customer\"\)",
-                        r"between\s+(.+?)\s+and\s+(.+?)\s+\(\"Contractor\"\)"):
-            match = re.search(pattern, source, re.I | re.S)
-            if match:
-                customer_terms.extend([part.strip().strip('"') for part in match.groups()])
+        customer_match = re.search(
+            r"between\s+(.+?)\s+\(\"Provider\"\)\s+and\s+(.+?)\s+\(\"Customer\"\)",
+            source, re.I | re.S
+        )
+        if customer_match:
+            # Only use the counterparty name, not the shared provider name, so a
+            # generic Quillhub event is not copied into every contract workstream.
+            customer_terms.append(customer_match.group(2).strip().strip('"'))
+        else:
+            contractor_match = re.search(
+                r"and\s+(Pixelwright Design Studio LLC|[^\n]+?)\s+\(\"Contractor\"\)",
+                source, re.I
+            )
+            if contractor_match:
+                customer_terms.append(contractor_match.group(1).strip().strip('"'))
         # Match event references only when the event body explicitly names a party,
         # contract ID, or document ID. No generic A1 event is copied to other deals.
         ids = [root] + [item["document_id"] for item in related]
