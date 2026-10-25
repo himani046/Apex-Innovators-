@@ -39,7 +39,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
                 continue
             status = "overdue" if parsed < as_of_date else "due_today" if parsed == as_of_date else "upcoming"
             deadlines.append({
-                "contract_id": root,
+                "contract_id": (item.get("evidence") or {}).get("document_id") or root,
                 "date": parsed.isoformat(),
                 "status": status,
                 "title": item.get("title", ""),
