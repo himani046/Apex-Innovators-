@@ -35,7 +35,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
 
     use = request_claude and USE_CLAUDE
     state = {
-        "run_id": "odin-a1-" + as_of,
+        "run_id": "odin-portfolio-" + as_of,
         "as_of_date": as_of,
         "scope": "Multi-contract workstreams for A1, B1, B2, C1, D1 plus portfolio-wide relationship and shared-risk review",
         "status": "running",
