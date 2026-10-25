@@ -89,10 +89,10 @@ async function runOdin() {
     const wa = d.workstream_analysis || {};
     const workstreams = wa.workstreams || [];
 
-    // Phase 6 portfolio overview, explorer, heatmap, and event/audit p6Timeline.
+    // Phase 6 portfolio overview, explorer, heatmap, and event/audit timeline.
     const contractIds = Object.keys(docs);
     const p6Ops = d.portfolio_operations || {};
-    const p6OpsTimeline = p6Ops.p6Timeline || {};
+    const p6OpsTimeline = p6Ops.timeline || {};
     const p6OpsCounts = p6OpsTimeline.counts || {};
     const p6Finance = p6Ops.financial_reconciliation || {};
     const p6FinanceCounts = p6Finance.counts || {};
@@ -101,14 +101,13 @@ async function runOdin() {
     const p6Graph = d.contract_graph || {};
     const p6Reconciliation = d.contract_reconciliation || {};
     const p6Grounded = d.evidence_grounded_finding || {};
-    const p6Loop = (d.collaboration || {}).p6Loop || {};
-    const p6Timeline = d.p6Timeline || {};
+    const p6Loop = (d.collaboration || {}).loop || {};
+    const p6Timeline = d.timeline || {};
     const milestones = p6OpsTimeline.milestones || p6Timeline.milestones || [];
     const allRisks = workstreams.flatMap(w => (w.risk_findings || []).map(risk => ({
       ...risk, _workstream: w, _contract: (risk.contract_id || (w.contract_ids || [])[0] || 'Unresolved')
     })));
-    const highRisks = allRisks.filter(item => String(item.severity || item.priority || '').toLowerCase() === 'high' ||
-      String(item.priority || '').toLowerCase() === 'critical');
+    const highRisks = allRisks.filter(item => ['high','critical'].includes(String(item.severity || item.priority || '').toLowerCase()));
     const unresolvedConflictCount = (p6Graph.edges || []).filter(edge =>
       /conflict|overlap|review/i.test(String(edge.status || '') + ' ' + String(edge.relation || ''))).length
       + (p6Reconciliation.review_items || []).length;
@@ -117,10 +116,10 @@ async function runOdin() {
     $('portfolioOverview').innerHTML = [
       ['Contracts scanned', contractIds.length, 'Source documents present in the portfolio extraction'],
       ['Contracts analyzed', new Set(workstreams.flatMap(w => w.contract_ids || [])).size, 'Distinct contract IDs represented in workstreams'],
-      ['High-priority signals', highRisks.length + (p6QueueCounts.high || 0), 'Workstream signals plus decision-p6Queue high-priority items; may overlap'],
-      ['Upcoming / action dates', dueSoon.length || (p6OpsCounts.upcoming || 0) + (p6OpsCounts.due_today || 0), 'Explicit dates classified by the p6Timeline engine'],
+      ['High-priority signals', new Set([...highRisks.map(item => item.finding_id || item.id || item.claim || item.title || JSON.stringify(item)), ...(p6Queue.items || []).filter(item => ['high','critical'].includes(String(item.severity || item.priority || '').toLowerCase())).map(item => item.finding_id || item.id || item.claim || item.title || JSON.stringify(item))]).size, 'Deduplicated by finding identifier or claim where available'],
+      ['Upcoming / action dates', (p6OpsCounts.upcoming || 0) + (p6OpsCounts.due_today || 0) + (p6OpsCounts.overdue || 0), 'Actionable upcoming, due-today, and overdue dates from the timeline engine'],
       ['Potential exposure', 'Not calculated', 'No unsupported portfolio-wide financial total is inferred'],
-      ['Unresolved review items', unresolvedConflictCount, 'Relationship/p6Reconciliation items needing review']
+      ['Unresolved review items', unresolvedConflictCount, 'Relationship/reconciliation items needing review']
     ].map(([label,value,note]) => '<div class="agent"><b>' + esc(label) + '</b><div class="value">' + esc(value) +
       '</div><p>' + esc(note) + '</p></div>').join('');
 
@@ -179,7 +178,7 @@ async function runOdin() {
 
     const auditItems = [
       ...milestones.map(item => ({date:item.date || '', title:item.title || 'Portfolio milestone',
-        status:item.status || item.date_type || 'p6Timeline', detail:(item.contract_id || '') + ' · ' + (item.classification_note || item.evidence?.quote || '')})),
+        status:item.status || item.date_type || 'timeline', detail:(item.contract_id || '') + ' · ' + (item.classification_note || item.evidence?.quote || '')})),
       ...(d.agent_messages || []).map((message,index) => ({date:'Run · ' + (message.iteration ?? index + 1),
         title:(message.from || 'Agent') + ' · ' + (message.type || 'handoff'),
         status:message.status || 'recorded', detail:message.summary || message.message || message.to || 'Agent handoff recorded'})),
