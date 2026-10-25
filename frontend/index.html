@@ -925,6 +925,49 @@ main>.odin-hero .hero-globe-media{
   main>.odin-hero{min-height:0!important;padding:38px 22px!important}
 }
 
+
+/* Disable hover recolouring on dashboard panels and portfolio metric boxes.
+   Preserve their dark theme, typography, border and position on hover. */
+.card:hover,
+.card.full:hover,
+.card .card:hover,
+.card.full .metric:hover,
+.card.full .overview-metric:hover,
+.card.full .agent:hover,
+.page-grid > .card:not(.full):hover,
+#portfolioOverview .agent:hover,
+#portfolioOverview .metric:hover,
+#portfolioOverview .overview-metric:hover{
+  background:linear-gradient(145deg,rgba(20,19,32,.98) 0%,rgba(13,13,23,.98) 100%)!important;
+  color:#f8f6ff!important;
+  border-color:rgba(190,165,255,.16)!important;
+  box-shadow:0 8px 26px rgba(0,0,0,.18)!important;
+  transform:none!important;
+  filter:none!important;
+}
+.card:hover *,
+.card.full .metric:hover *,
+.card.full .overview-metric:hover *,
+.card.full .agent:hover *,
+#portfolioOverview .agent:hover *,
+#portfolioOverview .metric:hover *,
+#portfolioOverview .overview-metric:hover *{
+  color:inherit;
+}
+.card:hover h1,.card:hover h2,.card:hover h3,.card:hover h4,
+.card:hover p,.card:hover .muted,.card:hover .small,
+.card.full .metric:hover h1,.card.full .metric:hover h2,
+.card.full .metric:hover h3,.card.full .metric:hover h4,
+.card.full .metric:hover p,.card.full .metric:hover .muted,
+.card.full .overview-metric:hover h1,.card.full .overview-metric:hover h2,
+.card.full .overview-metric:hover h3,.card.full .overview-metric:hover h4,
+.card.full .overview-metric:hover p,.card.full .overview-metric:hover .muted,
+#portfolioOverview .agent:hover *,
+#portfolioOverview .metric:hover *,
+#portfolioOverview .overview-metric:hover *{
+  color:#f8f6ff!important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
