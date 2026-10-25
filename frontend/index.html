@@ -1423,6 +1423,22 @@ async function runOdin() {
     button.disabled = false;
   }
 }
+async function initOdinApp(){
+  const health=$('health');
+  try{
+    const data=await get('/api/health');
+    if(health)health.textContent=(data.status==='ok'?'Backend connected':'Backend status: '+(data.status||'unknown'));
+    if(health)health.title='Project: '+(data.project||'Odin')+' · Security: '+(data.security_mode||'not reported');
+  }catch(error){
+    if(health){health.textContent='Backend unavailable';health.title=error.message;}
+    $('loading').textContent='Odin could not connect to the backend. Check that the API server is running, then refresh. Details: '+error.message;
+    $('error').textContent='Connection failed. Verify the backend terminal and open /api/health to check API availability.';
+    $('error').classList.remove('hidden');
+    return;
+  }
+  await runOdin();
+}
+
 if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}
-setupOdinPages();initFR9TimeSlider();init();$('customAnalyzeButton')?.addEventListener('click',runCustomPortfolio);$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
+setupOdinPages();initFR9TimeSlider();initOdinApp();$('customAnalyzeButton')?.addEventListener('click',runCustomPortfolio);$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
 </script></body></html>
