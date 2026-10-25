@@ -4,6 +4,7 @@ from backend.services.portfolio_intelligence import (
     detect_cross_contract_candidates,
     normalize_event_records,
     run_bounded_review_cycles,
+    reconcile_payment_events,
 )
 from backend.services.upload_analysis import extract_document_terms
 
@@ -49,6 +50,23 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertEqual([event["event_id"] for event in result["events"]], ["E1"])
         self.assertEqual(result["counts"]["rejected"], 3)
         self.assertFalse(result["source_authenticity_verified"])
+
+    def test_payment_records_link_by_explicit_invoice_but_never_claim_exposure(self):
+        contracts = {"A1": "Customer pays invoices within 30 days."}
+        events = [
+            {"event_id": "INV-42", "contract_id": "A1", "invoice_id": "INV-42",
+             "event_type": "invoice", "amount": 1200, "currency": "USD",
+             "timestamp": "2027-03-01", "body": "Invoice INV-42 issued for USD 1,200."},
+            {"event_id": "PAY-42", "contract_id": "A1", "invoice_id": "INV-42",
+             "event_type": "payment", "amount": 1200, "currency": "USD",
+             "timestamp": "2027-03-05", "body": "Payment INV-42 recorded for USD 1,200."},
+        ]
+        result = reconcile_payment_events(events, contracts, "2027-03-15")
+        self.assertEqual(result["counts"]["invoice_groups"], 1)
+        self.assertTrue(result["invoice_groups"][0]["structurally_matched"])
+        self.assertIsNone(result["verified_financial_exposure"])
+        self.assertFalse(result["invoice_groups"][0]["human_review_required"] is False)
+        self.assertFalse(result["invoice_groups"][0]["status"] == "verified")
 
     def test_norns_normalizes_named_dates_and_preserves_source_quote(self):
         from backend.agents.norns import build_contract_timeline
