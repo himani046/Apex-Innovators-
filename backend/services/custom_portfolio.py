@@ -6,6 +6,7 @@ conservative: keyword-based candidate extraction is labeled as triage, not legal
 from __future__ import annotations
 
 import re
+import hashlib
 from datetime import date
 from typing import Any
 
@@ -75,6 +76,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                              events: list[dict[str, Any]] | None, as_of: str) -> dict[str, Any]:
     clock = date.fromisoformat(as_of)
     contracts = {item["id"].strip(): item["text"] for item in contract_items}
+    source_fingerprint = hashlib.sha256((company_context + "\\n" + "\\n".join(cid + "\\n" + text for cid, text in sorted(contracts.items()))).encode("utf-8")).hexdigest()
     extractions = {cid: extract_document_terms(text, cid) for cid, text in contracts.items()}
     for cid, extraction in extractions.items():
         for term in extraction.get("extracted_terms", []):
@@ -214,6 +216,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "execution": {"mode": "bounded_single_pass", "max_iterations": 0, "iterations_used": 0,
                                   "note": "This custom-input path performs one deterministic pass; iterative LLM debate is not run for arbitrary inputs."}}
     return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
+            "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "timeline": {"as_of_date": as_of, "milestones": timeline},
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
