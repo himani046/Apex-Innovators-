@@ -48,7 +48,7 @@ class SharedAgentState:
             "portfolio_summary", "portfolio_operations", "decision_queue",
             "portfolio_extraction", "contract_reconciliation", "timeline",
             "extraction", "risk_finding", "verification", "ruling", "event_summary",
-            "limitations", "agent_modes", "contract_graph", "workstreams",
+            "limitations", "agent_modes", "contract_graph", "workstreams", "evidence_grounded_finding",
         }:
             raise KeyError(f"Unknown shared-state section: {section}")
         self.data[section] = deepcopy(value)
