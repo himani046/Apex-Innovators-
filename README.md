@@ -40,6 +40,10 @@ Open http://127.0.0.1:8000. API checks:
 
 The supplied `.txt` files are canonical citation anchors. A citation must include document ID, clause reference, and an exact quote. Unverified quotes must not be treated as evidence. The supplied data is fictional. Draft actions are never sent automatically.
 
+## Implementation handoff
+
+Before starting a Claude-enabled implementation session, use [`docs/CLAUDE_IMPLEMENTATION_HANDOFF.md`](docs/CLAUDE_IMPLEMENTATION_HANDOFF.md). It records the current code-path audit, FR/NFR status, prioritized work, token-budget rules, and local prerequisites. Repository preparation does not run tests or invoke the Claude API; configure secrets only in the local `.env` file.
+
 ## Development roadmap
 
 1. Complete Thor extraction and quote validation across every contract, including incorporated STD terms.
