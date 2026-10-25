@@ -1,66 +1,581 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Odin — Contract health</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Odin — Contract War Room</title>
 <style>
-:root{--bg:#e9eae4;--paper:#fff;--ink:#151813;--muted:#777d6e;--line:#d7d9cf;--sage:#8a9877;--pale:#f3f4ec;--dark:#10130f;--yellow:#f4df8a;--blue:#87a8b1;--red:#b9504b;--green:#50765c;--shadow:0 14px 36px #2026160b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:11px 17px;background:transparent;color:var(--ink);transition:.2s}button:hover{transform:translateY(-1px);border-color:#8b927f}button.primary{background:var(--dark);color:white;border-color:var(--dark)}button:disabled{opacity:.5;cursor:wait}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;gap:24px;border-bottom:1px solid #d5d7cd;position:sticky;top:0;background:#e9eae4ed;backdrop-filter:blur(18px);z-index:10}.brand{font-size:25px;font-weight:800;letter-spacing:-1.5px;display:flex;align-items:center;gap:11px}.brandmark{width:39px;height:39px;border-radius:50%;background:var(--dark);color:white;display:grid;place-items:center;font-weight:800}.brand em{font-style:normal;color:var(--sage)}nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}.tab{padding:12px 22px;border-radius:99px;color:#62695d}.tab.active{background:var(--dark);color:white;border-color:var(--dark)}.workspace{display:flex;align-items:center;gap:12px;color:#5c6357;font-size:12px}.avatar{background:#c8cfbd;border:2px solid white;border-radius:50%;width:37px;height:37px;display:grid;place-items:center;font-weight:700}.wrap{max-width:1700px;margin:auto;padding:34px 3vw 56px}.page{display:none;animation:fade .25s ease}.page.active{display:block}@keyframes fade{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}.intro{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:28px}.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:10px;color:#777f68;font-weight:800}.intro h1{font-size:clamp(32px,4vw,48px);letter-spacing:-2.6px;line-height:1.08;margin:12px 0 8px;font-weight:650}.sub{color:var(--muted);margin:0}.controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.banner{border:1px solid #d8ddcf;background:#f1f3e9;border-radius:20px;padding:17px 22px;color:#687b58;display:flex;gap:14px;align-items:center;margin-bottom:27px}.banner strong{color:#526347}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}.card{background:var(--paper);border-radius:25px;padding:22px;min-width:0;box-shadow:var(--shadow);border:1px solid #ffffffa8}.span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}.cardhead{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.card h2,.card h3{font-size:15px;margin:0;font-weight:650;letter-spacing:-.2px}.metric{min-height:151px;position:relative;overflow:hidden}.metric .label{font-size:12px;color:#707666}.metric .num{font-size:40px;letter-spacing:-2px;font-weight:650;margin:20px 0 4px;line-height:1.1}.metric .foot{font-size:11px;color:#8b907f}.metric.featured{background:linear-gradient(125deg,#7d8177,#8ca8b1 80%);color:white}.metric.featured .label,.metric.featured .foot{color:#f3f5ef}.metric.featured:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#fff2;right:-50px;bottom:-100px}.pill{font-size:10px;padding:5px 9px;border-radius:99px;background:#f1f2eb;color:#68705e;white-space:nowrap}.pill.red{background:#fbe8e5;color:#a6423d}.pill.amber{background:#fff3d5;color:#876521}.pill.green{background:#e6f2e7;color:#3d6b49}.list{display:grid;gap:9px}.row{border:1px solid #e6e7e0;border-radius:15px;padding:13px 15px;display:flex;gap:12px;align-items:center;justify-content:space-between;min-width:0}.row.clickable{cursor:pointer}.row.clickable:hover{border-color:#a8b099;background:#fafbf7}.rowmain{min-width:0}.rowtitle{font-weight:650;overflow-wrap:anywhere}.rowmeta{font-size:11px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}.tiny{font-size:11px;color:var(--muted)}.chart{width:100%;min-height:290px;display:block}.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.contract-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.contract{border-radius:19px;background:#fafbf8;border:1px solid #e2e4db;padding:18px;cursor:pointer;transition:.2s}.contract:hover{transform:translateY(-2px);border-color:#9ca58d}.contract h3{margin:12px 0 5px;font-size:17px}.contract .id{font-size:10px;letter-spacing:.12em;color:#7d856f;font-weight:800}.contract .meta{font-size:12px;color:var(--muted)}.contract-foot{display:flex;justify-content:space-between;align-items:center;margin-top:20px}.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.weekday{text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#858a7a;padding:7px}.day{background:#fafbf7;border:1px solid #e6e7df;border-radius:13px;min-height:88px;padding:8px;cursor:pointer;text-align:left}.day.mutedday{opacity:.38}.day.today{border:2px solid #7f8c6c}.day.selected{background:#edf1e5;border-color:#8e9b7c}.daynum{font-weight:700}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c38e35;margin:4px 2px 0 0}.dot.red{background:#ba5750}.field{width:100%;border:1px solid var(--line);background:#fbfcf8;border-radius:12px;padding:11px 13px;color:var(--ink);outline:none}.field:focus{border-color:#849274;box-shadow:0 0 0 3px #8a98771c}label{display:block;font-size:12px;font-weight:650;margin:13px 0 6px}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.divider{height:1px;background:#e8e9e2;margin:20px 0}.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed #d6d9ce;border-radius:15px}.status{font-size:11px;color:var(--muted)}#toast{position:fixed;bottom:22px;right:22px;background:#171a15;color:#fff;padding:13px 18px;border-radius:14px;z-index:40;display:none;max-width:360px}.modalback{position:fixed;inset:0;background:#161a15a1;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:30}.modalback.open{display:flex}.modal{background:#fbfcf8;border-radius:25px;width:min(680px,100%);max-height:85vh;overflow:auto;padding:27px;box-shadow:0 30px 90px #0003}.modal h2{font-size:27px;letter-spacing:-1px;margin:10px 0}.close{float:right;font-size:22px;border:0;padding:2px 9px}.bar{height:7px;background:#edf0e8;border-radius:99px;overflow:hidden;margin:10px 0}.bar span{height:100%;display:block;background:#879579;border-radius:99px}.hidden{display:none!important}.footer{text-align:center;color:#8a8e80;font-size:11px;padding:32px 0 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;background:#f1f2ec;border-radius:12px;padding:13px}@media(max-width:1000px){.topbar{height:auto;min-height:76px;flex-wrap:wrap;padding:15px 4vw}.topbar nav{order:3;width:100%;justify-content:flex-start;overflow:auto}.span3,.span4{grid-column:span 6}.span5,.span7,.span8{grid-column:span 12}.contract-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.intro{align-items:flex-start;flex-direction:column}}@media(max-width:600px){.wrap{padding:23px 4vw}.span3,.span4,.span6{grid-column:span 12}.contract-grid{grid-template-columns:1fr}.metric .num{font-size:34px}.calendar{gap:3px}.day{min-height:62px;padding:4px;border-radius:8px}.dayevents{display:none}.workspace .workspace-label{display:none}.formgrid{grid-template-columns:1fr}.card{padding:17px;border-radius:20px}.controls{width:100%}.controls button{flex:1}.tab{padding:10px 15px}}
+:root{--bg:#e9eae4;--p:#ffffff;--line:#d7d9cf;--txt:#151813;--muted:#777d6e;--cyan:#81916f;--gold:#c89a45;--green:#50765c}
+/* Phase 5 review readability refinements */
+:root{--muted:#777d6e;--soft:#50564a;--red:#b9504b}
+.card h4{font-size:14px;margin:22px 0 10px;color:#151813}
+.card .muted{font-size:14px;line-height:1.65}
+.agentlist .agent p,.agentlist .small,.evidence .meta,.agent .meta{font-size:13px;line-height:1.65}
+.evidence{padding:16px;margin-top:10px}
+.evidence> b{font-size:14px}
+.evidence blockquote{font-size:14px;line-height:1.75;padding:10px 0 10px 14px;margin:12px 0;color:#151813;overflow-wrap:anywhere}
+#groundingSummary{grid-template-columns:repeat(3,minmax(0,1fr))}
+#groundingSummary .agent{min-height:92px}
+#groundingSummary .agent p{font-size:14px;color:var(--soft);overflow-wrap:anywhere}
+#groundingEvidence{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+#groundingEvidence .evidence{margin:0;min-width:0}
+#groundingEvidence .meta{overflow-wrap:anywhere}
+#groundingGaps{grid-template-columns:repeat(2,minmax(0,1fr))}
+#groundingGaps .agent{border-left:3px solid var(--gold);padding:14px}
+#groundingGaps .agent p{font-size:14px;color:#62695d;margin:0;overflow-wrap:anywhere}
+#groundingConflicts{grid-template-columns:repeat(2,minmax(0,1fr))}
+#followupStatus{background:#fff3d5;color:#876521}
+#loopStopReason{font-size:16px;font-weight:800;text-transform:capitalize;color:#876521}
+#loopBudget{font-size:13px}
+#loopRemainingGaps p{font-size:14px;line-height:1.65;border-bottom:1px solid var(--line);padding:5px 0;overflow-wrap:anywhere}
+#loopNextAction{font-size:14px;line-height:1.7;color:#151813}
+#loopApproval{font-size:13px;font-weight:700;line-height:1.65}
+.action h3{font-size:16px}
+#body{font-size:15px;line-height:1.8;overflow-wrap:anywhere}
+#actioncite{font-size:13px;line-height:1.7}
+details summary{cursor:pointer;color:var(--cyan);font-size:13px;font-weight:700;padding:6px 0}
+details[open] summary{margin-bottom:8px}
+@media(max-width:850px){#groundingSummary{grid-template-columns:repeat(2,minmax(0,1fr))}#groundingEvidence{grid-template-columns:1fr}#groundingGaps,#groundingConflicts{grid-template-columns:1fr}}
+@media(max-width:560px){#groundingSummary{grid-template-columns:1fr}}
+
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top left,#f3f4ec,#e9eae4 55%);color:var(--txt);font:14px/1.5 system-ui,sans-serif}header{padding:20px 4vw;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:#e9eae4ed;z-index:3}h1{font-size:16px;letter-spacing:.1em;margin:0}header p,.muted{color:var(--muted)}header p{margin:3px 0;font-size:12px}main{max-width:1300px;margin:auto;padding:30px 4vw}.intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}.eyebrow{color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;font-size:11px;font-weight:800}h2{font-size:clamp(28px,4vw,44px);line-height:1.08;margin:8px 0}p{line-height:1.6}.intro p{max-width:650px;color:var(--muted)}select,button{background:var(--p);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px}button{background:var(--cyan);color:#ffffff;border:0;font-weight:800;cursor:pointer}button:disabled{opacity:.5}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:linear-gradient(145deg,#ffffff,#fbfcf8);border:1px solid var(--line);border-radius:15px;padding:18px;min-width:0}.metric{grid-column:span 3}.wide{grid-column:span 8}.side{grid-column:span 4}.half{grid-column:span 6}.full{grid-column:span 12}.label{color:var(--muted);font-size:12px}.value{font-size:27px;font-weight:800;margin:7px 0}.card h3{font-size:14px;margin:0 0 14px;display:flex;justify-content:space-between;gap:12px}.agentlist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.agent,.evidence,.action,.milestone{background:#f3f4ec;border:1px solid var(--line);border-radius:10px;padding:12px}.agent p,.small{font-size:11px;color:var(--muted)}.flow{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.step{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#f3f4ec;font-size:11px}.risk{font-size:18px}.evidence{margin-top:10px}.meta{font-size:11px;color:var(--muted)}blockquote{border-left:2px solid var(--cyan);padding-left:10px;margin:9px 0;white-space:pre-wrap;font-size:12px}.milestones{display:grid;gap:9px}.milestone{display:grid;grid-template-columns:100px 1fr auto;align-items:center;gap:8px;font-size:12px}.date{color:var(--cyan);font-weight:800}.tag{font-size:10px;border-radius:6px;background:#edf0e8;padding:4px 7px;color:#62695d}.good{color:var(--green)}.decision{border-left:3px solid var(--gold);padding-left:12px}.notice{background:#fff3d5;border:1px solid #e8d9b5;border-radius:9px;padding:12px;font-size:12px;color:#876521}.auditrow{display:grid;grid-template-columns:90px 1fr auto;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.hidden{display:none}.err{padding:12px;background:#fbe8e5;border-radius:8px}.footer{text-align:center;color:#8a8e80;font-size:11px;margin:25px}@media(max-width:850px){.metric{grid-column:span 6}.wide,.side,.half{grid-column:span 12}.intro{display:block}.controls{margin-top:12px}}#portfolioOverview{grid-template-columns:repeat(3,minmax(0,1fr))}
+#contractExplorer,#riskHeatmap{grid-template-columns:repeat(3,minmax(0,1fr))}
+.contract-explorer-card{display:flex;flex-direction:column;align-items:stretch}
+.contract-explorer-card details{margin:8px 0}
+.contract-explorer-card .jump-contract{margin-top:auto;align-self:flex-start}
+#eventAuditTimeline .milestone{grid-template-columns:130px minmax(0,1fr) auto}
+#eventAuditTimeline .milestone b{overflow-wrap:anywhere}
+.heat-high,.heat-critical{background:#fbe8e5;color:#a6423d}
+.heat-medium{background:#fff3d5;color:#876521}
+.heat-low{background:#e6f2e7;color:#3d6b49}
+@media(max-width:1000px){#portfolioOverview,#contractExplorer,#riskHeatmap{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){#portfolioOverview,#contractExplorer,#riskHeatmap{grid-template-columns:1fr}#eventAuditTimeline .milestone{grid-template-columns:1fr}.contract-explorer-card .jump-contract{margin-top:8px}}
+@media(max-width:560px){.agentlist{grid-template-columns:1fr}.milestone{grid-template-columns:85px 1fr}.milestone .tag{grid-column:2}.auditrow{grid-template-columns:70px 1fr}}
+
+/* Light theme skin only — original dashboard markup, data flow, and interactions are preserved. */
+body{background:radial-gradient(ellipse at top left,#f3f4ec,#e9eae4 58%);color:var(--txt)}header{background:#e9eae4ed;backdrop-filter:blur(14px)}.card,.agent,.evidence,.action,.milestone{box-shadow:0 10px 30px #2026160b;border-radius:18px}.card{border-color:var(--line)}button,select,input,textarea{color:var(--txt)}button{background:#fff;border:1px solid var(--line);border-radius:999px}button:hover{border-color:#81916f}button#run,button.primary{background:#151813;color:#fff}.tag{border-radius:999px}.evidence blockquote,blockquote{color:var(--txt)}.notice{background:#fff3d5;border-color:#e8d9b5;color:#876521}.err{background:#fbe8e5;color:#a6423d}.flow .step{background:#fff}.contract-explorer-card,.agentlist .agent{background:#fff}
 </style></head><body>
-<header class="topbar"><div class="brand"><span class="brandmark">O</span> odin<span style="color:#8c9879">.</span></div><nav aria-label="Main navigation"><button class="tab active" data-tab="overview">Overview</button><button class="tab" data-tab="contracts">Contracts</button><button class="tab" data-tab="relations">Relations</button><button class="tab" data-tab="calendar">Time machine</button><button class="tab" data-tab="agents">Agents</button><button class="tab" data-tab="settings">Settings</button></nav><div class="workspace"><span class="avatar">ML</span><div class="workspace-label"><b>Quillhub Inc.</b><br><span class="tiny">Contract workspace</span></div></div></header>
-<main class="wrap">
-<section class="page active" id="page-overview"><div class="intro"><div><div class="eyebrow">Your intelligence workspace</div><h1>Contract health</h1><p class="sub">A little foresight. A lot more control.</p></div><div class="controls"><select class="field" id="asof" style="width:auto"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select><button id="refresh">↻ Refresh</button><button class="primary" id="run">▷ Run analysis</button></div></div>
-<div class="banner"><span style="font-size:22px">ϟ</span><div><strong>Source-grounded workspace.</strong> Explore relationships, deadlines, evidence and human-reviewed actions. No email is sent without an explicit, configured send workflow.</div></div>
-<div id="error" class="empty hidden"></div><div class="grid">
-<div class="span5"><div style="padding:12px 0 22px"><div class="eyebrow">Portfolio exposure · INR</div><div id="exposure" style="font-size:58px;letter-spacing:-4px;font-weight:650;margin:10px 0">—</div><div class="tiny">Modeled exposure only; unknown amounts remain uncalculated.</div><div style="display:flex;gap:10px;margin-top:25px"><div class="card" style="flex:1;padding:17px"><div class="tiny">Gross exposure</div><div class="num" id="gross" style="font-size:26px;margin:14px 0 0">—</div></div><div class="card" style="flex:1;padding:17px"><div class="tiny">Renewal commitments</div><div class="num" id="renewal" style="font-size:23px;margin:14px 0 0">—</div></div></div></div></div>
-<div class="card metric featured span3"><div class="label">Potential recovery</div><div class="num" id="recovery">₹0</div><div class="foot">Conditional credits · inspect evidence</div></div><div class="card metric span4"><div class="label">Active contracts</div><div class="num" id="contractCount">—</div><div class="foot">Connected source agreements</div></div>
-<div class="card metric span3"><div class="label">Open findings</div><div class="num" id="findingCount">—</div><div class="foot">Challenges, verification, rulings</div></div><div class="card metric span3"><div class="label">Priority alerts</div><div class="num" id="priorityCount">—</div><div class="foot">Overdue, imminent, or high severity</div></div><div class="card metric span3"><div class="label">Actions to review</div><div class="num" id="actionCount">—</div><div class="foot">Human approval and evidence attached</div></div><div class="card metric span3"><div class="label">Compiled financial rules</div><div class="num" id="financialCount">—</div><div class="foot">Monetary clauses still unquantified</div></div>
-<div class="card span7"><div class="cardhead"><h2>Contract relationship map</h2><button data-goto="relations">Explore map ↗</button></div><svg id="miniGraph" class="chart" viewBox="0 0 600 300" role="img" aria-label="Contract relationship graph"></svg><div class="legend"><span><i style="background:#81916f"></i>Amendment / dependency</span><span><i style="background:#8caab2"></i>Related agreement</span><span><i style="background:#d1a14a"></i>Review required</span></div></div><div class="card span5"><div class="cardhead"><h2>Deadlines to watch</h2><button data-goto="calendar">Open calendar ↗</button></div><div class="list" id="nextDeadlines"></div></div>
-<div class="card span6"><div class="cardhead"><h2>Contracts at a glance</h2><button data-goto="contracts">View all ↗</button></div><div id="topContracts" class="list"></div></div><div class="card span6"><div class="cardhead"><h2>Decision queue</h2><span class="pill amber">Human review</span></div><div id="decisionQueue" class="list"></div></div>
-</div></section>
-<section class="page" id="page-contracts"><div class="intro"><div><div class="eyebrow">Source documents</div><h1>Contract library</h1><p class="sub">Select any agreement to inspect its important terms, relationships, evidence and deadlines.</p></div><div class="controls"><label class="primary" for="upload" style="margin:0;padding:12px 17px;border-radius:99px;cursor:pointer">＋ Add contract</label><input type="file" id="upload" accept=".pdf,.txt" class="hidden"></div></div><div class="banner">PDF and TXT uploads use the current evidence-grounded extraction route. Uploads are not yet reconciled into the portfolio graph automatically.</div><div id="contractCards" class="contract-grid"></div></section>
-<section class="page" id="page-relations"><div class="intro"><div><div class="eyebrow">Cross-contract intelligence</div><h1>Relationship map</h1><p class="sub">Explore how amendments, addenda and dependencies connect. Click a node for contract details; select an edge to inspect its relationship and potential downstream impact.</p></div><div class="controls"><span class="pill">Evidence before conclusions</span></div></div><div class="grid"><div class="card span8"><div class="cardhead"><h2>Contract dependency graph</h2><span class="pill" id="graphCount">Loading</span></div><svg id="fullGraph" class="chart" viewBox="0 0 900 560" style="min-height:520px"></svg><div class="legend"><span><i style="background:#81916f"></i>Amendment / dependency</span><span><i style="background:#8caab2"></i>Supplement / related agreement</span><span><i style="background:#d1a14a"></i>Possible impact · verify</span></div></div><div class="card span4"><div class="cardhead"><h2>Selected relationship</h2><span class="pill" id="edgeStatus">Choose an edge</span></div><div id="edgeDetails" class="empty">Click a connecting line in the graph to inspect the relationship and potential effect on the other contract.</div><div class="divider"></div><h3 style="margin-bottom:12px">All connected contracts</h3><div id="relationshipList" class="list"></div></div></div></section>
-<section class="page" id="page-calendar"><div class="intro"><div><div class="eyebrow">Norns · Time machine</div><h1>Deadline calendar</h1><p class="sub">See today's deadlines, what's coming up, and the contract clause behind each date.</p></div><div class="controls"><button id="prevMonth">← Month</button><b id="monthLabel">—</b><button id="nextMonth">Month →</button></div></div><div class="grid"><div class="card span8"><div id="calendarGrid" class="calendar"></div><div class="legend" style="margin-top:15px"><span><i style="background:#ba5750"></i>Overdue</span><span><i style="background:#d1a14a"></i>Upcoming</span><span><i style="background:#81916f"></i>Today</span></div></div><div class="card span4"><div class="cardhead"><h2 id="selectedDateLabel">Selected date</h2><span class="pill" id="selectedDateCount">0 events</span></div><div id="selectedDateEvents" class="list"></div></div><div class="card span12"><div class="cardhead"><h2>Next 30 days</h2><span class="pill" id="upcomingCount">0 deadlines</span></div><div id="upcomingList" class="list"></div></div></div></section>
-<section class="page" id="page-agents"><div class="intro"><div><div class="eyebrow">Observable state machine</div><h1>Agent operations</h1><p class="sub">Follow each specialist, evidence handoff and bounded follow-up outcome.</p></div><button class="primary" id="runAgents">▷ Run agents</button></div><div class="grid"><div class="card span12"><div class="cardhead"><h2>Agent status</h2><span class="pill" id="agentStatus">Awaiting run</span></div><div id="agentCards" class="contract-grid"></div></div><div class="card span6"><h2>Evidence-backed finding</h2><div id="findings" class="list" style="margin-top:14px"></div></div><div class="card span6"><h2>Agent message trace</h2><div id="agentTrace" class="list" style="margin-top:14px"></div></div><div class="card span12"><h2>Shared state and unresolved questions</h2><div id="unresolved" class="list" style="margin-top:14px"></div></div></div></section>
-<section class="page" id="page-settings"><div class="intro"><div><div class="eyebrow">Workflow configuration</div><h1>Reminders & authority contacts</h1><p class="sub">Configure who should receive a deadline notice and how far ahead to prepare reminders.</p></div></div><div class="grid"><div class="card span6"><h2>Authority / counterparty contact</h2><p class="tiny">These contacts are saved in this browser only. Confirm authority and address before use.</p><label for="contactName">Contact / authority name</label><input id="contactName" class="field" placeholder="e.g. Contract notice authority"><label for="contactEmail">Official email address</label><input id="contactEmail" type="email" class="field" placeholder="name@organization.example"><label for="contactContract">Contract ID</label><select id="contactContract" class="field"></select><label for="cadence">Reminder schedule</label><select id="cadence" class="field"><option value="30,14,7,1">30, 14, 7 and 1 day before deadline</option><option value="14,7,3,1">14, 7, 3 and 1 day before deadline</option><option value="7,3,1">7, 3 and 1 day before deadline</option></select><div class="actions"><button class="primary" id="saveContact">Save contact & schedule</button></div></div><div class="card span6"><h2>Scheduled notice preview</h2><p class="tiny">This prototype creates an auditable email draft / mailto handoff. It does not silently send messages. Automated delivery requires verified authority mappings, SMTP/provider credentials, a scheduler and delivery logs.</p><div id="contactList" class="list"></div><div class="divider"></div><h3>Generate a reminder</h3><label for="reminderEvent">Deadline</label><select id="reminderEvent" class="field"></select><div class="actions"><button class="primary" id="makeReminder">Prepare email draft ↗</button></div><div id="reminderPreview" class="hidden" style="margin-top:15px"></div></div><div class="card span12"><h2>API access</h2><p class="tiny">When server authentication is enabled, enter the bearer token for audit history, decisions and uploads. Kept in this browser tab session only.</p><input id="apiToken" type="password" class="field" autocomplete="off" placeholder="ODIN_API_TOKEN"><div class="actions"><button id="saveToken">Save token for this tab</button><button id="clearToken">Clear token</button></div></div></div></section>
-<div class="footer">ODIN · Contract intelligence prototype · Source-grounded triage, not legal advice · Human review required</div>
-</main><div id="toast" role="status"></div><div class="modalback" id="modalback" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><button class="close" id="closeModal" aria-label="Close">×</button><div class="eyebrow" id="modalEyebrow">Contract details</div><h2 id="modalTitle">Contract</h2><p id="modalSubtitle" class="sub"></p><div id="modalBody"></div></div></div>
+<header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><span class="tag" id="health">Connecting…</span></header>
+<main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
+<div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
+<div id="dash" class="grid hidden">
+<div class="card full"><h3>Phase 6 · Portfolio command center <span class="tag" id="portfolioStatus">Awaiting run</span></h3><p class="muted">Portfolio metrics are computed from the current run's loaded contracts, workstreams, timeline, findings, and reconciliation candidates. Unknown exposure remains explicitly uncalculated.</p><div class="agentlist" id="portfolioOverview"></div></div>
+<div class="card full"><h3>Contract explorer <span class="tag" id="explorerCount">Loading</span></h3><p class="muted">Select a contract to jump to its workstream, extracted terms, relationship evidence, and amendment review. Counts reflect available source data, not a legal completeness guarantee.</p><div class="agentlist" id="contractExplorer"></div></div>
+<div class="card full"><h3>Portfolio risk heatmap <span class="tag" id="heatmapStatus">Awaiting run</span></h3><p class="muted">Risk signals are triage candidates. Severity is shown only when provided by the source analysis; unverified evidence and open questions remain visible.</p><div id="riskHeatmap" class="agentlist"></div></div>
+<div class="card full"><h3>Event and audit timeline <span class="tag" id="auditTimelineCount">Awaiting run</span></h3><p class="muted">Combines dated portfolio milestones with agent messages and the current finding/verification outcome. It is a run-level audit view, not a persistent cross-run history.</p><div id="eventAuditTimeline" class="milestones"></div></div>
+<div class="card metric"><div class="label">Workstreams</div><div class="value" id="workstreamMetric">—</div><div class="label">Five contract streams + portfolio review</div></div><div class="card metric"><div class="label">Citations verified</div><div class="value" id="citeMetric">—</div><div class="label">Exact quote validation</div></div><div class="card metric"><div class="label">Risk posture</div><div class="value" style="color:var(--gold)" id="riskMetric">—</div><div class="label">Not a breach verdict</div></div><div class="card metric"><div class="label">Draft actions</div><div class="value">01</div><div class="label">Human approval required</div></div>
+<div class="card full"><h3>Agent operations <span class="tag">Observable state machine</span></h3><div class="agentlist" id="agents"></div><div class="flow" id="flow"></div></div>
+<div class="card full"><h3>Odin · multi-contract workstreams <span class="tag" id="workstreamCount">Loading</span></h3><p class="muted">Each contract is analyzed against its own source text. Portfolio-level signals are potential conflicts for human review, not legal conclusions.</p><div id="workstreamCards" class="agentlist"></div></div><div class="card full"><h3>Thor · extracted terms <span class="tag">Canonical source citations</span></h3><div id="terms" class="agentlist"></div></div><div class="card wide"><h3>Evidence-backed risk <span class="tag" id="riskBadge">Review</span></h3><div class="risk" id="riskTitle"></div><p id="claim"></p><div class="eyebrow">Loki's attack path</div><ol id="attack"></ol><div class="eyebrow">Heimdall verification</div><p id="verify"></p><div id="citation"></div></div>
+<div class="card side"><h3>Tyr's ruling</h3><div class="decision"><div class="eyebrow">Decision</div><h3 id="decision"></h3><p id="rationale"></p></div><div class="notice">Evidence triage prototype, not legal advice. No action is sent automatically.</div></div>
+<div class="card half"><h3>Norns · timeline <span class="tag" id="asof"></span></h3><div id="timeline" class="milestones"></div></div><div class="card full"><h3>Phase 3 · Portfolio operations <span class="tag" id="operationsStatus">Awaiting run</span></h3><p class="muted">Explicit dates are normalized against the selected simulated date. Payment signals remain candidates until linked to contract, invoice, trigger, and payment/credit evidence.</p><div class="agentlist"><div class="agent"><b>Normalized timeline</b><div class="value" id="opsTimelineCount">—</div><p id="opsTimelineSummary" class="small">Milestone status summary</p></div><div class="agent"><b>Financial reconciliation</b><div class="value" id="opsLedgerCount">—</div><p id="opsLedgerSummary" class="small">Payment-event candidates</p></div><div class="agent"><b>Portfolio total</b><div class="value">Not calculated</div><p class="small">No aggregate exposure is inferred from contract-stated amounts.</p></div></div><h3 style="margin-top:18px">Timeline milestones</h3><div id="opsMilestones" class="milestones"></div><h3 style="margin-top:18px">Payment ledger candidates</h3><div id="opsLedger" class="agentlist"></div><p id="opsNotice" class="small"></p></div><div class="card full"><h3>Phase 4 · Evidence-grounded decision queue <span class="tag" id="decisionQueueStatus">Awaiting run</span></h3><p class="muted">Deterministic prioritization of explicit deadlines and financial reconciliation gaps. Every item requires human review.</p><div class="flow" id="decisionQueueCounts"></div><div id="decisionQueueItems" class="agentlist"></div><p id="decisionQueueNotice" class="small"></p></div><div class="card full"><h3>Phase 4 · Agentic collaboration <span class="tag" id="collabStatus">Awaiting run</span></h3><p class="muted">Shared structured state, agent handoffs, bounded follow-up iterations, and execution-budget status.</p><div class="flow" id="collabMetrics"></div><div class="agentlist" id="collabAgents"></div><h4>Unresolved questions</h4><div id="collabQuestions" class="agentlist"></div><h4>Shared-state sections</h4><p class="small" id="sharedStateSections"></p></div><div class="card full"><h3>Phase 5 · Evidence-grounded risk finding <span class="tag" id="groundingStatus">Awaiting run</span></h3><p class="muted">Each material claim is separated into sourced facts, interpretation, verified quotations, and missing proof.</p><div class="agentlist" id="groundingSummary"></div><h4>Supporting evidence · exact source quotations</h4><div class="agentlist" id="groundingEvidence"></div><h4>Missing evidence and uncertainty</h4><div class="agentlist" id="groundingGaps"></div><h4>Conflicting evidence</h4><div id="groundingConflicts" class="agentlist"></div></div><div class="card full"><h3>Follow-up decision <span class="tag" id="followupStatus">Awaiting run</span></h3><div class="agentlist"><div class="agent"><b>Stop reason</b><p id="loopStopReason">—</p><p class="small" id="loopBudget"></p></div><div class="agent"><b>Remaining evidence gaps</b><div id="loopRemainingGaps"></div></div><div class="agent"><b>Next action · approval gate</b><p id="loopNextAction"></p><details id="loopActionDetails"><summary>View full request</summary><p id="loopActionFull"></p></details><div class="notice" id="loopApproval">Awaiting human approval. Draft only; nothing has been sent.</div></div></div></div><div class="card half"><h3>Action center <span class="tag">Draft only</span></h3><div class="action"><h3 id="subject"></h3><div class="meta" id="actionType"></div><p id="body"></p><div id="actioncite"></div></div></div>
+<div class="card half"><h3>Agent message trace</h3><div id="audit"></div></div>
+<div class="card full"><h3>Phase 7 · Persistent audit explorer <span class="tag" id="auditHistoryCount">Loading saved runs</span></h3>
+<p class="muted">Run snapshots and audit events persist in SQLite across server restarts. Review history records decisions; it never dispatches a consequential action.</p><label for="apiToken">API access token (required when server auth is enabled)</label><input id="apiToken" type="password" placeholder="Paste ODIN_API_TOKEN; kept for this tab only" autocomplete="off"><p class="small">Token is stored in this browser tab session only and sent only to Odin API requests.</p>
+<div class="agentlist" id="auditHistory"></div>
+<div class="action" style="margin-top:14px"><h4>Human decision · current run</h4>
+<p class="small" id="approvalRunLabel">Run a portfolio analysis to record a review decision.</p>
+<label for="reviewerName">Reviewer</label><input id="reviewerName" placeholder="Reviewer name / team" autocomplete="name">
+<label for="reviewNote">Review note (optional)</label><textarea id="reviewNote" rows="2" placeholder="Reason for approval or rejection"></textarea>
+<div class="actions"><button id="approveAction" type="button">Record approval</button><button id="rejectAction" type="button" class="secondary">Record rejection</button></div>
+<p class="small" id="approvalResult">Approval/rejection is recorded only; no email, contract change, or other action is executed.</p></div>
+<div class="agentlist" id="auditSelectedEvents"></div></div><div class="card half"><h3>Data integrity</h3><div id="integrity" class="small"></div></div>
+<div class="card full"><h3>Thor · portfolio scan <span class="tag" id="portfolioCount">Loading documents</span></h3><p class="muted">Evidence-linked candidate lines across every loaded contract. These are triage signals, not final legal conclusions.</p><div id="portfolioTerms" class="agentlist"></div></div><div class="card full"><h3>Odin · contract relationship graph <span class="tag" id="graphCount">Loading relationships</span></h3><p class="muted">Evidence-backed document links and precedence clauses. A graph edge is a sourced relationship signal, not a standalone legal conclusion.</p><div id="graphEdges" class="agentlist"></div></div><div class="card full"><h3>Amendment reconciliation <span class="tag" id="reconcileCount">Review required</span></h3><p class="muted">Explicit changes are separated from amendment sections that still require clause-level review.</p><div id="resolvedChanges" class="agentlist"></div><div id="reviewItems" class="agentlist" style="margin-top:10px"></div></div><div class="card full"><h3>Scope note</h3><p class="muted">Phase 2 adds independent A1, B1, B2, C1, and D1 workstreams plus a portfolio-wide review. Dates and financial amounts are source-grounded; financial totals are not inferred without invoice and trigger evidence. Potential conflicts and candidate obligations require human review. Malformed JSONL records are reported rather than silently dropped.</p></div></div><div class="footer">ODIN · all challenge data is fictional</div></main>
 <script>
-const $=id=>document.getElementById(id);let data=null,selectedDate='2027-03-15',calendarMonth=new Date('2027-03-01T12:00:00'),selectedEdge=null,deadlineEvents=[],contacts=JSON.parse(localStorage.getItem('odinContacts')||'[]'),lastRunId=null;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const arr=v=>Array.isArray(v)?v:[];const obj=v=>v&&typeof v==='object'?v:{};const money=v=>v==null?'Not calculated':typeof v==='number'?new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v):String(v);
-function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3500)}
-function apiHeaders(){const token=sessionStorage.getItem('odinApiToken');return token?{'Authorization':'Bearer '+token}:{}}
-function showTab(name){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+name));if(name==='relations')drawGraph('fullGraph');if(name==='calendar')renderCalendar();if(name==='settings')renderContacts();window.scrollTo({top:0,behavior:'smooth'})}
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.goto)));
-function contracts(){return obj(data).contracts||obj(data).contract_graph?.nodes||[]}
-function contractMap(){const raw=obj(data).contracts;const ids=new Set();if(Array.isArray(raw))raw.forEach(c=>ids.add(String(c.id||c.document_id||'')));else if(raw&&typeof raw==='object')Object.keys(raw).forEach(k=>ids.add(k));arr(obj(data).workstreams).forEach(w=>arr(w.contract_ids).forEach(k=>ids.add(String(k))));arr(obj(data).contract_graph?.nodes).forEach(n=>ids.add(String(n.id||n.document_id||'')));return [...ids].filter(Boolean).map(id=>{let c=Array.isArray(raw)?raw.find(x=>String(x.id||x.document_id)===id):obj(raw)[id];if(typeof c==='string')return{id,text:c};return{id,...obj(c)}})}
-function graphObj(){return obj(data?.contract_graph||data?.relationship_graph||data?.graph||{})}
-function graphEdges(){let e=arr(graphObj().edges||data?.contract_relationships||data?.relationships);return e.map((x,i)=>({id:String(x.id||i),source:String(x.source||x.from||x.source_id||''),target:String(x.target||x.to||x.target_id||''),relation:String(x.relation||x.relationship||x.type||'related_to'),impact:String(x.impact||x.potential_impact||x.description||''),evidence:x.evidence||x.citation||null,raw:x})).filter(e=>e.source&&e.target)}
-function workstreams(){return arr(data?.workstreams||data?.portfolio?.workstreams)}
-function findings(){let f=arr(data?.findings||data?.risk_findings||data?.portfolio?.findings);workstreams().forEach(w=>f.push(...arr(w.risk_findings).map(x=>({...x,contract_id:x.contract_id||w.primary_contract_id||arr(w.contract_ids)[0]}))));const seen=new Set();return f.filter(x=>{let k=x.finding_id||x.id||x.title;if(seen.has(k))return false;seen.add(k);return true})}
-function termsFor(id){let terms=[];workstreams().filter(w=>arr(w.contract_ids).includes(id)||w.primary_contract_id===id).forEach(w=>terms.push(...arr(w.extracted_obligations||w.extracted_terms)));const top=arr(data?.extracted_terms||data?.terms);terms.push(...top.filter(t=>String(t.document_id||t.contract_id||t.citation?.document_id||'')===id));return terms}
-function events(){let all=[];const seen=new Set();const add=(date,title,contract,evidence,status,kind='deadline')=>{if(!date)return;const key=[date,title,contract].join('|');if(seen.has(key))return;seen.add(key);all.push({date:String(date).slice(0,10),title:String(title||kind),contract:String(contract||'Portfolio'),evidence:evidence||null,status:status||'',kind})};workstreams().forEach(w=>arr(w.deadlines||w.timeline).forEach(e=>add(e.date||e.normalized_date,e.title||e.description||e.event,w.primary_contract_id||arr(w.contract_ids)[0],e.evidence||e.citation,e.status)));const ops=obj(data?.operations||data?.portfolio_operations);arr(ops.timeline||ops.milestones||data?.timeline).forEach(e=>add(e.date||e.normalized_date,e.title||e.description||e.event,e.contract_id||e.document_id,e.evidence||e.citation,e.status));arr(data?.timeline).forEach(e=>add(e.date||e.normalized_date,e.title||e.description,e.contract_id||e.document_id,e.evidence||e.citation,e.status));return all.sort((a,b)=>a.date.localeCompare(b.date))}
-function getMetrics(){let p=obj(data?.portfolio_summary||data?.portfolio||data?.portfolio_metrics);let c=contractMap();let f=findings();let ws=workstreams();let high=f.filter(x=>/high|critical|urgent|p1/i.test(String(x.severity||x.priority||'')));let open=f.filter(x=>!/(closed|resolved|dismissed)/i.test(String(x.status||'')));let actions=arr(data?.decision_queue?.items||data?.decision_queue||data?.recommended_actions);return {p,c,f,ws,high,open,actions}}
-function render(){if(!data)return;const m=getMetrics();const ev=events();deadlineEvents=ev;$('error').classList.add('hidden');$('contractCount').textContent=m.c.length||'—';$('findingCount').textContent=m.open.length;$('priorityCount').textContent=m.high.length;$('actionCount').textContent=m.actions.length||arr(data?.recommended_actions).length;$('financialCount').textContent=m.ws.reduce((n,w)=>n+arr(w.extracted_obligations).filter(t=>/\$|USD|payment|fee|credit/i.test(JSON.stringify(t))).length,0)||'—';$('exposure').textContent=money(m.p.modeled_net_exposure??m.p.net_exposure??null);$('gross').textContent=money(m.p.gross_exposure??null);$('renewal').textContent=money(m.p.renewal_commitments??null);$('recovery').textContent=money(m.p.potential_recovery??0);$('graphCount').textContent=graphEdges().length+' relationships';$('agentStatus').textContent=data.status||'Analysis loaded';renderContractCards();renderGraph('miniGraph');renderDeadlines();renderDecisionQueue();renderAgents();renderCalendar();fillContractSelect();renderContacts();renderReminderSelect();renderRelations()}
-function renderContractCards(){const c=contractMap();$('contractCards').innerHTML=c.length?c.map(x=>{let ws=workstreams().find(w=>arr(w.contract_ids).includes(x.id)||w.primary_contract_id===x.id);let count=arr(ws?.deadlines).length;return '<article class="contract" data-contract="'+esc(x.id)+'"><div class="id">'+esc(x.id)+'</div><h3>'+esc(x.title||x.name||x.counterparty||('Contract '+x.id))+'</h3><div class="meta">'+esc(x.counterparty||x.party||ws?.label||'Source agreement')+'</div><div class="contract-foot"><span class="pill">'+count+' dated events</span><span>↗</span></div></article>'}).join(''):'<div class="empty">No contracts found in current run.</div>';document.querySelectorAll('[data-contract]').forEach(el=>el.addEventListener('click',()=>openContract(el.dataset.contract)));$('topContracts').innerHTML=c.slice(0,5).map(x=>'<div class="row clickable" data-contract="'+esc(x.id)+'"><div class="rowmain"><div class="rowtitle">'+esc(x.title||x.name||('Contract '+x.id))+'</div><div class="rowmeta">'+esc(x.id)+' · '+arr(graphEdges().filter(e=>e.source===x.id||e.target===x.id)).length+' connections</div></div><span>↗</span></div>').join('')||'<div class="empty">Run analysis to load contracts.</div>';document.querySelectorAll('#topContracts [data-contract]').forEach(el=>el.addEventListener('click',()=>openContract(el.dataset.contract)))}
-function renderGraph(id){const svg=$(id);if(!svg)return;const c=contractMap(),edges=graphEdges();const width=id==='miniGraph'?600:900,height=id==='miniGraph'?300:560;svg.setAttribute('viewBox','0 0 '+width+' '+height);if(!c.length){svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" fill="#858a7a">Run analysis to build the relationship graph</text>';return}const cx=width/2,cy=height/2,rx=width*.34,ry=height*.33;const nodes=c.map((n,i)=>({...n,x:cx+rx*Math.cos(2*Math.PI*i/c.length-Math.PI/2),y:cy+ry*Math.sin(2*Math.PI*i/c.length-Math.PI/2)}));const pos=Object.fromEntries(nodes.map(n=>[n.id,n]));let out='';edges.forEach(e=>{const a=pos[e.source],b=pos[e.target];if(!a||!b)return;const color=/amend|depend|incorporat/i.test(e.relation)?'#81916f':/review|candidate|possible/i.test(e.relation)?'#d1a14a':'#8caab2';out+='<g class="edge" data-edge="'+esc(e.id)+'" style="cursor:pointer"><line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+color+'" stroke-width="2.5" stroke-opacity=".85"/><rect x="'+((a.x+b.x)/2-43)+'" y="'+((a.y+b.y)/2-11)+'" width="86" height="22" rx="8" fill="#f9faf5" stroke="#e1e4da"/><text x="'+((a.x+b.x)/2)+'" y="'+((a.y+b.y)/2+4)+'" text-anchor="middle" font-size="'+(id==='miniGraph'?9:11)+'" fill="#6d7562">'+esc(e.relation.replaceAll('_',' ').slice(0,17))+'</text></g>'});nodes.forEach(n=>{const r=id==='miniGraph'?24:34;out+='<g data-contract="'+esc(n.id)+'" style="cursor:pointer"><circle cx="'+n.x+'" cy="'+n.y+'" r="'+r+'" fill="'+(n.id==='A1'?'#151813':'#fff')+'" stroke="'+(n.id==='A1'?'#151813':'#d8ddd0')+'" stroke-width="2"/><text x="'+n.x+'" y="'+(n.y+5)+'" text-anchor="middle" font-size="'+(id==='miniGraph'?12:15)+'" font-weight="700" fill="'+(n.id==='A1'?'#fff':'#25291f')+'">'+esc(n.id)+'</text><text x="'+n.x+'" y="'+(n.y+r+15)+'" text-anchor="middle" font-size="'+(id==='miniGraph'?10:12)+'" fill="#6f7666">'+esc(String(n.title||n.name||'Contract').slice(0,17))+'</text></g>'});svg.innerHTML=out;svg.querySelectorAll('[data-contract]').forEach(n=>n.addEventListener('click',()=>openContract(n.dataset.contract)));svg.querySelectorAll('[data-edge]').forEach(n=>n.addEventListener('click',()=>selectEdge(n.dataset.edge)))}
-function drawGraph(id){renderGraph(id)}
-function selectEdge(id){const e=graphEdges().find(x=>x.id===id);if(!e)return;selectedEdge=e;$('edgeStatus').textContent=e.relation.replaceAll('_',' ');$('edgeDetails').className='';$('edgeDetails').innerHTML='<div class="eyebrow">'+esc(e.source)+' → '+esc(e.target)+'</div><h3 style="font-size:20px;margin:10px 0">'+esc(e.relation.replaceAll('_',' '))+'</h3><p>'+esc(e.impact||'This link indicates a relationship candidate. Review the operative clause and amendment precedence before concluding legal effect.')+'</p><div class="pill amber">Potential downstream impact · verify</div>'+(e.evidence?'<blockquote>'+esc(e.evidence.quote||e.evidence)+'</blockquote>':'')+'<div class="actions"><button onclick="openContract(\''+esc(e.source)+'\')">Open '+esc(e.source)+'</button><button onclick="openContract(\''+esc(e.target)+'\')">Open '+esc(e.target)+'</button></div>';renderRelations()}
-function renderRelations(){const es=graphEdges();$('relationshipList').innerHTML=es.map(e=>'<div class="row clickable" data-edge="'+esc(e.id)+'"><div class="rowmain"><div class="rowtitle">'+esc(e.source)+' ↔ '+esc(e.target)+'</div><div class="rowmeta">'+esc(e.relation.replaceAll('_',' '))+'</div></div><span>↗</span></div>').join('')||'<div class="empty">No explicit relationship edges were returned. Do not infer relationships without source evidence.</div>';document.querySelectorAll('#relationshipList [data-edge]').forEach(n=>n.addEventListener('click',()=>selectEdge(n.dataset.edge)))}
-function openContract(id){const c=contractMap().find(x=>x.id===id)||{id};const ws=workstreams().find(w=>arr(w.contract_ids).includes(id)||w.primary_contract_id===id);const rel=graphEdges().filter(e=>e.source===id||e.target===id);const ev=events().filter(e=>e.contract===id);const fs=findings().filter(f=>String(f.contract_id||f.document_id||f.evidence?.document_id||'')===id);const ts=termsFor(id);$('modalEyebrow').textContent='Contract profile · '+id;$('modalTitle').textContent=c.title||c.name||c.counterparty||('Contract '+id);$('modalSubtitle').textContent=c.counterparty||ws?.label||'Source-grounded contract summary';$('modalBody').innerHTML='<div class="grid"><div class="card span6" style="padding:15px"><div class="tiny">Relationship links</div><div style="font-size:25px;font-weight:700">'+rel.length+'</div></div><div class="card span6" style="padding:15px"><div class="tiny">Dated events</div><div style="font-size:25px;font-weight:700">'+ev.length+'</div></div><div class="span12"><h3>Relationships</h3><div class="list" style="margin-top:9px">'+(rel.map(e=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(e.source)+' → '+esc(e.target)+'</div><div class="rowmeta">'+esc(e.relation.replaceAll('_',' '))+'</div></div><span class="pill amber">Verify impact</span></div>').join('')||'<div class="empty">No explicit graph relationships found.</div>')+'</div></div><div class="span12"><h3>Important extracted terms</h3><div class="list" style="margin-top:9px">'+(ts.slice(0,6).map(t=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(t.title||t.term||t.category||'Extracted clause')+'</div><div class="rowmeta">'+esc(t.citation?.clause_reference||t.clause_reference||t.category||'Source reference')+'</div>'+(t.citation?.quote||t.quote?'<blockquote>'+esc(t.citation?.quote||t.quote)+'</blockquote>':'')+'</div><span class="pill '+(t.citation?.verified?'green':'amber')+'">'+(t.citation?.verified?'Quote verified':'Review')+'</span></div>').join('')||'<div class="empty">No extracted terms attached to this workstream.</div>')+'</div></div><div class="span12"><h3>Upcoming deadlines</h3><div class="list" style="margin-top:9px">'+(ev.map(e=>eventRow(e)).join('')||'<div class="empty">No explicit dates found for this contract.</div>')+'</div></div><div class="span12"><h3>Risk findings</h3><div class="list" style="margin-top:9px">'+(fs.slice(0,5).map(f=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(f.title||f.claim||'Review finding')+'</div><div class="rowmeta">'+esc(f.status||'candidate for review')+' · '+esc(f.severity||'severity unassessed')+'</div></div></div>').join('')||'<div class="empty">No contract-specific finding was linked by the current run.</div>')+'</div></div><div class="span12"><p class="tiny">This profile is a navigation summary, not a legal conclusion. A relationship or keyword match does not prove an obligation was breached.</p></div></div>';$('modalback').classList.add('open')}
-function eventRow(e){return '<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(e.title)+'</div><div class="rowmeta">'+esc(e.contract)+' · '+esc(e.evidence?.clause_reference||'Date found in source')+'</div></div><span class="pill '+(e.date<selectedDate?'red':'amber')+'">'+esc(e.date)+'</span></div>'}
-function renderDeadlines(){const ev=events().filter(e=>e.date>=($('asof').value||selectedDate)).slice(0,5);$('nextDeadlines').innerHTML=ev.map(eventRow).join('')||'<div class="empty">No upcoming explicit dates found.</div>'}
-function renderDecisionQueue(){const m=getMetrics();const list=m.actions.slice(0,6);$('decisionQueue').innerHTML=list.map((x,i)=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(x.title||x.action||x.description||x.claim||'Review evidence gap')+'</div><div class="rowmeta">'+esc(x.status||x.priority||'Human review required')+'</div></div><span class="pill amber">Review</span></div>').join('')||m.open.slice(0,5).map(f=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(f.title||f.claim||'Open finding')+'</div><div class="rowmeta">'+esc(f.status||'Open')+'</div></div><span class="pill amber">Review</span></div>').join('')||'<div class="empty">No review items returned.</div>'}
-function renderDeadlinesForDate(d){const es=events().filter(e=>e.date===d);$('selectedDateLabel').textContent=d;$('selectedDateCount').textContent=es.length+' events';$('selectedDateEvents').innerHTML=es.map(eventRow).join('')||'<div class="empty">No explicit deadline recorded for this day.</div>';renderReminderSelect()}
-function renderCalendar(){if(!$('calendarGrid'))return;const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth();$('monthLabel').textContent=calendarMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'});const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),today=$('asof')?.value||selectedDate;let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="weekday">'+x+'</div>').join('');const ev=events();for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const dayEv=ev.filter(e=>e.date===iso);html+='<button class="day '+(d.getMonth()!==m?'mutedday ':'')+(iso===today?'today ':'')+(iso===selectedDate?'selected':'')+'" data-date="'+iso+'"><span class="daynum">'+d.getDate()+'</span><div class="dayevents">'+dayEv.slice(0,3).map(e=>'<i class="dot '+(iso<today?'red':'')+'"></i>').join('')+'</div></button>'}$('calendarGrid').innerHTML=html;$('calendarGrid').querySelectorAll('[data-date]').forEach(b=>b.addEventListener('click',()=>{selectedDate=b.dataset.date;renderCalendar();renderDeadlinesForDate(selectedDate)}));renderDeadlinesForDate(selectedDate);const upcoming=ev.filter(e=>e.date>=today).slice(0,30);$('upcomingCount').textContent=upcoming.length+' deadlines';$('upcomingList').innerHTML=upcoming.map(eventRow).join('')||'<div class="empty">No upcoming explicit dates.</div>'}
-function renderAgents(){const ag=obj(data?.agents||data?.agent_status||data?.collaboration?.agents);let entries=Object.entries(ag);if(!entries.length)entries=workstreams().slice(0,6).map(w=>[w.label||w.id,w.status||'complete_with_review_items']);$('agentCards').innerHTML=entries.map(([name,value])=>'<div class="contract"><div class="id">SPECIALIST AGENT</div><h3>'+esc(name)+'</h3><p class="meta">'+esc(typeof value==='string'?value:JSON.stringify(value))+'</p><div class="contract-foot"><span class="pill green">Observable</span></div></div>').join('')||'<div class="empty">Run analysis to populate agent status.</div>';const msgs=arr(data?.agent_messages||data?.messages||data?.audit?.events);$('agentTrace').innerHTML=msgs.slice(-12).reverse().map(m=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(m.agent||m.source||m.type||'Agent')+'</div><div class="rowmeta">'+esc(m.message||m.summary||m.content||JSON.stringify(m).slice(0,180))+'</div></div></div>').join('')||'<div class="empty">No messages exposed by this response.</div>';const qs=arr(data?.unresolved_questions||data?.shared_state?.evidence_gaps||data?.collaboration?.unresolved_questions);$('unresolved').innerHTML=qs.map(q=>'<div class="row"><div class="rowmain">'+esc(typeof q==='string'?q:q.question||q.description||JSON.stringify(q))+'</div><span class="pill amber">Unresolved</span></div>').join('')||'<div class="empty">No unresolved questions returned at top level. Review workstream-level questions and evidence gaps.</div>';const fs=findings();$('findings').innerHTML=fs.slice(0,12).map(f=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(f.title||f.claim||'Risk candidate')+'</div><div class="rowmeta">'+esc(f.contract_id||f.document_id||f.evidence?.document_id||'Portfolio')+' · '+esc(f.severity||'unassessed')+'</div></div><span class="pill amber">'+esc(f.status||'Review')+'</span></div>').join('')||'<div class="empty">No findings available.</div>'}
-function fillContractSelect(){const cs=contractMap();$('contactContract').innerHTML=cs.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.id+' — '+(c.title||c.name||'Contract'))+'</option>').join('')}
-function renderContacts(){if(!$('contactList'))return;$('contactList').innerHTML=contacts.map((c,i)=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(c.name||c.contract)+'</div><div class="rowmeta">'+esc(c.email)+' · '+esc(c.contract)+' · '+esc(c.days.join(', '))+' days before</div></div><button data-remove-contact="'+i+'">Remove</button></div>').join('')||'<div class="empty">No contacts configured yet.</div>';document.querySelectorAll('[data-remove-contact]').forEach(b=>b.addEventListener('click',()=>{contacts.splice(Number(b.dataset.removeContact),1);localStorage.setItem('odinContacts',JSON.stringify(contacts));renderContacts()}))}
-function renderReminderSelect(){if(!$('reminderEvent'))return;const ev=events();$('reminderEvent').innerHTML=ev.map((e,i)=>'<option value="'+i+'">'+esc(e.date+' · '+e.contract+' · '+e.title)+'</option>').join('')}
-async function runAnalysis(){const btn=$('run');btn.disabled=true;btn.textContent='Analyzing…';try{const res=await fetch('/api/run?as_of='+encodeURIComponent($('asof').value)+'&use_claude=true');if(!res.ok)throw new Error('Analysis request failed ('+res.status+')');data=await res.json();lastRunId=data.run_id||data.audit?.run_id||null;selectedDate=$('asof').value;calendarMonth=new Date(selectedDate.slice(0,7)+'-01T12:00:00');render();toast('Analysis loaded · '+(data.status||'ready'))}catch(e){$('error').textContent=e.message+' — confirm the Odin backend is running.';$('error').classList.remove('hidden');toast(e.message)}finally{btn.disabled=false;btn.textContent='▷ Run analysis'}}
-$('run').addEventListener('click',runAnalysis);$('refresh').addEventListener('click',runAnalysis);$('runAgents').addEventListener('click',runAnalysis);$('asof').addEventListener('change',()=>{selectedDate=$('asof').value;calendarMonth=new Date(selectedDate.slice(0,7)+'-01T12:00:00');if(data)render()});$('prevMonth').addEventListener('click',()=>{calendarMonth.setMonth(calendarMonth.getMonth()-1);renderCalendar()});$('nextMonth').addEventListener('click',()=>{calendarMonth.setMonth(calendarMonth.getMonth()+1);renderCalendar()});$('closeModal').addEventListener('click',()=>$('modalback').classList.remove('open'));$('modalback').addEventListener('click',e=>{if(e.target===$('modalback'))$('modalback').classList.remove('open')});
-$('saveContact').addEventListener('click',()=>{const name=$('contactName').value.trim(),email=$('contactEmail').value.trim(),contract=$('contactContract').value,days=$('cadence').value.split(',').map(Number);if(!email||!email.includes('@'))return toast('Enter a valid official email address.');if(!contract)return toast('Run analysis and select a contract first.');contacts.push({name,email,contract,days});localStorage.setItem('odinContacts',JSON.stringify(contacts));renderContacts();toast('Contact and reminder cadence saved in this browser.')});
-$('makeReminder').addEventListener('click',()=>{const e=events()[Number($('reminderEvent').value)];if(!e)return toast('No deadline selected.');const c=contacts.find(x=>x.contract===e.contract);if(!c)return toast('Add a verified contact for '+e.contract+' in Settings first.');const subject='Contract deadline reminder — '+e.contract+' — '+e.date;const body='Dear '+(c.name||'Contract Authority')+',%0D%0A%0D%0AThis is a reminder regarding the following contract deadline.%0D%0AContract: '+e.contract+'%0D%0ADeadline: '+e.date+'%0D%0ADetail: '+encodeURIComponent(e.title)+'%0D%0A%0D%0APlease confirm receipt and any required next steps. This message is a draft for human review; please verify the contract clause and notice requirements before sending.%0D%0A%0D%0ARegards';$('reminderPreview').classList.remove('hidden');$('reminderPreview').innerHTML='<div class="pill amber">Draft only · not sent</div><h3 style="margin-top:12px">'+esc(subject)+'</h3><p class="tiny">To: '+esc(c.email)+' · Cadence: '+esc(c.days.join(', '))+' days before the deadline. This UI does not schedule background jobs or dispatch automatically.</p><div class="actions"><a href="mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(subject)+'&body='+body.replaceAll('%0D%0A','%0D%0A')+'" style="text-decoration:none"><button class="primary">Open email draft ↗</button></a><button id="copyDraft">Copy draft details</button></div>';$('copyDraft').addEventListener('click',async()=>{await navigator.clipboard.writeText('To: '+c.email+'\nSubject: '+subject+'\nDeadline: '+e.date+'\nContract: '+e.contract+'\n'+e.title);toast('Draft details copied.')})});
-$('saveToken').addEventListener('click',()=>{sessionStorage.setItem('odinApiToken',$('apiToken').value.trim());toast('API token saved for this tab.')});$('clearToken').addEventListener('click',()=>{sessionStorage.removeItem('odinApiToken');$('apiToken').value='';toast('API token cleared.')});
-$('upload').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/analyze-upload?use_claude=true',{method:'POST',headers:apiHeaders(),body:fd});const j=await r.json();if(!r.ok)throw new Error(j.detail||'Upload failed');openUploadResult(j);toast('Upload analyzed. It is not yet merged into the portfolio graph.')}catch(err){toast(err.message)}finally{e.target.value=''}});
-function openUploadResult(j){$('modalEyebrow').textContent='Uploaded document · '+(j.document_id||'');$('modalTitle').textContent=j.document?.filename||j.document_id||'Upload results';$('modalSubtitle').textContent=j.notice||'Extraction complete with limitations';const terms=arr(j.extraction?.extracted_terms);$('modalBody').innerHTML='<div class="pill amber">'+esc(j.status||'complete_with_limitations')+'</div><p>'+esc(j.notice||'')+'</p><div class="list" style="margin-top:12px">'+terms.slice(0,15).map(t=>'<div class="row"><div class="rowmain"><div class="rowtitle">'+esc(t.title||t.term||t.category||'Extracted term')+'</div><div class="rowmeta">'+esc(t.citation?.clause_reference||'Source clause')+'</div><blockquote>'+esc(t.citation?.quote||'')+'</blockquote></div><span class="pill '+(t.citation?.verified?'green':'amber')+'">'+(t.citation?.verified?'Verified':'Review')+'</span></div>').join('')+'</div>';$('modalback').classList.add('open')}
-(async()=>{try{const r=await fetch('/api/health');const h=await r.json();if(h.status==='ok')toast('Odin connected · ready to analyze')}catch(e){$('error').textContent='Backend not connected yet. Start the FastAPI server, then click Run analysis.';$('error').classList.remove('hidden')}runAnalysis()})();
+const $=x=>document.getElementById(x);function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function apiHeaders(extra={}){const token=$('apiToken')?.value?.trim();return {...extra,...(token?{Authorization:'Bearer '+token}:{})}}\nasync function get(u){let r=await fetch(u,{headers:apiHeaders()}),d=await r.json();if(!r.ok)throw Error(d.detail||r.status);return d}
+async function init(){try{let h=await get('/api/health');$('health').textContent=h.claude_configured?'Claude configured':'Demo mode · key optional';await runOdin()}catch(e){$('loading').textContent='Backend error: '+e.message}}
+
+async function uploadContract(){const input=document.getElementById('contractFile'),btn=document.getElementById('uploadBtn'),box=document.getElementById('uploadResult');if(!input.files||!input.files.length){alert('Choose a PDF or TXT contract first.');return}btn.disabled=true;btn.textContent='Extracting…';try{const form=new FormData();form.append('file',input.files[0]);const response=await fetch('/api/analyze-upload?use_claude=true',{method:'POST',headers:apiHeaders(),body:form});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Upload failed');const terms=data.extraction.extracted_terms||[],v=data.extraction.citation_validation||{};box.innerHTML='<div class="evidence"><b>'+esc(data.document.filename)+'</b> · '+esc(data.document.format)+' · '+data.document.characters+' characters · citations '+(v.verified||0)+'/'+(v.total||0)+'<p>SHA-256: <code>'+esc(data.document.sha256)+'</code></p>'+terms.map(t=>'<div class="evidence"><b>'+esc(t.category||'Term')+'</b> · '+(t.citation&&t.citation.verified?'VERIFIED':'REVIEW')+'<p>'+esc(t.value||'')+'</p><blockquote>'+esc(t.citation&&t.citation.quote||'')+'</blockquote></div>').join('')+'<div class="notice">'+esc(data.notice)+'</div></div>';box.classList.remove('hidden')}catch(e){alert(e.message)}finally{btn.disabled=false;btn.textContent='Analyze uploaded file'}}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+
+let currentAuditRunId = null;
+
+async function refreshAuditHistory(selectedRunId) {
+  const box = $('auditHistory');
+  try {
+    const data = await get('/api/audit/runs?limit=20');
+    const runs = data.runs || [];
+    $('auditHistoryCount').textContent = runs.length + ' saved runs';
+    box.innerHTML = runs.map(run =>
+      '<div class="agent"><b>' + esc(run.run_id) + '</b><p>' + esc(run.created_at) +
+      ' · as of ' + esc(run.as_of_date || 'unknown') + ' · ' + esc(run.status || 'unknown') +
+      '</p><p class="small">Input fingerprint: ' + esc((run.input_fingerprint || '').slice(0,16)) +
+      '…</p><button type="button" data-audit-run="' + esc(run.run_id) + '">Inspect history</button></div>'
+    ).join('') || '<p class="small">No saved runs yet. Run Odin to create the first audit snapshot.</p>';
+    box.querySelectorAll('[data-audit-run]').forEach(button => button.addEventListener('click', () => inspectAuditRun(button.dataset.auditRun)));
+    if (selectedRunId) $('approvalRunLabel').textContent = 'Current run: ' + selectedRunId;
+  } catch (error) {
+    $('auditHistoryCount').textContent = 'Audit unavailable';
+    box.innerHTML = '<p class="small">Could not load persistent audit history: ' + esc(error.message) + '</p>';
+  }
+}
+
+async function inspectAuditRun(runId) {
+  try {
+    const record = await get('/api/audit/runs/' + encodeURIComponent(runId));
+    const events = record.events || [];
+    $('auditSelectedEvents').innerHTML = '<h4>Audit events · ' + esc(runId) + '</h4>' +
+      (events.map(event => '<div class="agent"><b>' + esc(event.event_type.replaceAll('_',' ')) +
+      '</b><p>' + esc(event.occurred_at) + ' · ' + esc(event.actor) + '</p><details><summary>View event details</summary><pre>' +
+      esc(JSON.stringify(event.details, null, 2)) + '</pre></details></div>').join('') ||
+      '<p class="small">No audit events were recorded for this run.</p>') +
+      '<h4>Human decisions</h4>' + ((record.decisions || []).map(decision =>
+      '<div class="agent"><b>' + esc(decision.decision.toUpperCase()) + '</b><p>' +
+      esc(decision.reviewer) + ' · ' + esc(decision.decided_at) + '</p><p>' + esc(decision.note || 'No note supplied') +
+      '</p><p class="small">Action executed: no</p></div>').join('') ||
+      '<p class="small">No human decision has been recorded for this run.</p>');
+  } catch (error) {
+    $('auditSelectedEvents').innerHTML = '<p class="small">Unable to load audit details: ' + esc(error.message) + '</p>';
+  }
+}
+
+async function submitAuditDecision(decision) {
+  if (!currentAuditRunId) { $('approvalResult').textContent = 'Run Odin first so the decision can be attached to a saved run.'; return; }
+  const reviewer = $('reviewerName').value.trim();
+  if (!reviewer) { $('approvalResult').textContent = 'Enter a reviewer name or team before recording a decision.'; return; }
+  const buttons = [$('approveAction'), $('rejectAction')];
+  buttons.forEach(button => button.disabled = true);
+  try {
+    const response = await fetch('/api/audit/runs/' + encodeURIComponent(currentAuditRunId) + '/decision', {
+      method: 'POST', headers: apiHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({action_id:'recommended-action', decision, reviewer, note:$('reviewNote').value.trim()})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'Decision could not be recorded');
+    $('approvalResult').textContent = decision.toUpperCase() + ' recorded for ' + result.reviewer +
+      ' at ' + result.decided_at + '. No consequential action was executed.';
+    await inspectAuditRun(currentAuditRunId);
+    await refreshAuditHistory(currentAuditRunId);
+  } catch (error) {
+    $('approvalResult').textContent = 'Decision not recorded: ' + error.message;
+  } finally {
+    buttons.forEach(button => button.disabled = false);
+  }
+}
+
+async function runOdin() {
+  const button = $('run');
+  button.disabled = true;
+  $('loading').classList.remove('hidden');
+  $('dash').classList.add('hidden');
+  $('loading').textContent = 'Odin → Thor → Norns → Loki → Heimdall → Tyr';
+
+  try {
+    const d = await get('/api/run?as_of=' + encodeURIComponent($('date').value) + '&use_claude=true');
+    const x = d.extraction || {};
+    const f = d.risk_finding || {};
+    const v = d.verification || {};
+    const r = d.ruling || {};
+    const portfolio = d.portfolio_extraction || {};
+    const docs = portfolio.contracts || {};
+    const wa = d.workstream_analysis || {};
+    const workstreams = wa.workstreams || [];
+
+    // Phase 6 portfolio overview, explorer, heatmap, and event/audit timeline.
+    const contractIds = Object.keys(docs);
+    const p6Ops = d.portfolio_operations || {};
+    const p6OpsTimeline = p6Ops.timeline || {};
+    const p6OpsCounts = p6OpsTimeline.counts || {};
+    const p6Finance = p6Ops.financial_reconciliation || {};
+    const p6FinanceCounts = p6Finance.counts || {};
+    const p6Queue = d.decision_queue || {};
+    const p6QueueCounts = p6Queue.counts || {};
+    const p6Graph = d.contract_graph || {};
+    const p6Reconciliation = d.contract_reconciliation || {};
+    const p6Grounded = d.evidence_grounded_finding || {};
+    const p6Loop = (d.collaboration || {}).loop || {};
+    const p6Timeline = d.timeline || {};
+    const milestones = p6OpsTimeline.milestones || p6Timeline.milestones || [];
+    const allRisks = workstreams.flatMap(w => (w.risk_findings || []).map(risk => ({
+      ...risk, _workstream: w, _contract: (risk.contract_id || (w.contract_ids || [])[0] || 'Unresolved')
+    })));
+    const normalizePriority = item => String(
+      item.priority || item.severity || item.risk_level || item.level ||
+      item.urgency || item.priority_level || ''
+    ).trim().toLowerCase().replace(/[ _-]+/g, '');
+    const isHighPriority = item => ['high','critical','p1','urgent'].includes(normalizePriority(item));
+    const highRisks = allRisks.filter(isHighPriority);
+    // The decision queue schema exposes "issues" (not "items"). Merge both
+    // sources by stable ID first, then contract + normalized claim/title to avoid
+    // counting the same surfaced signal twice.
+    const queueIssues = Array.isArray(p6Queue.issues) ? p6Queue.issues :
+      (Array.isArray(p6Queue.items) ? p6Queue.items : []);
+    const highQueueIssues = queueIssues.filter(isHighPriority);
+    const highSignalKey = item => {
+      const stableId = item.finding_id || item.issue_id || item.id || item.risk_id;
+      if (stableId) return 'id:' + String(stableId).trim().toLowerCase();
+      const contract = String(item.contract_id || item._contract || (item._workstream?.contract_ids || [])[0] || '').trim().toLowerCase();
+      const claim = String(item.claim || item.title || item.description || item.category || item.summary || '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      return contract + '|claim:' + claim;
+    };
+    const highPrioritySignals = new Map();
+    [...highRisks, ...highQueueIssues].forEach(item => {
+      const key = highSignalKey(item);
+      if (key !== '|claim:') highPrioritySignals.set(key, item);
+    });
+    const unresolvedConflictCount = (p6Graph.edges || []).filter(edge =>
+      /conflict|overlap|review/i.test(String(edge.status || '') + ' ' + String(edge.relation || ''))).length
+      + (p6Reconciliation.review_items || []).length;
+    const dueSoon = milestones.filter(item => /upcoming|due_today|overdue|due soon/i.test(String(item.status || '')));
+    $('portfolioStatus').textContent = contractIds.length + ' source documents · ' + workstreams.length + ' workstreams';
+    $('portfolioOverview').innerHTML = [
+      ['Contracts scanned', contractIds.length, 'Source documents present in the portfolio extraction'],
+      ['Contracts analyzed', new Set(workstreams.flatMap(w => w.contract_ids || [])).size, 'Distinct contract IDs represented in workstreams'],
+      ['High-priority signals', highPrioritySignals.size, highPrioritySignals.size ? 'Distinct high/critical signals from workstreams and the decision queue' : (allRisks.length || queueIssues.length ? 'No classified high-priority risks; inspect unclassified signals below' : 'No risk signals were returned by the API')],
+      ['Upcoming / action dates', (p6OpsCounts.upcoming || 0) + (p6OpsCounts.due_today || 0) + (p6OpsCounts.overdue || 0), 'Actionable upcoming, due-today, and overdue dates from the timeline engine'],
+      ['Potential exposure', 'Not calculated', 'No unsupported portfolio-wide financial total is inferred'],
+      ['Unresolved review items', unresolvedConflictCount, 'Relationship/reconciliation items needing review']
+    ].map(([label,value,note]) => '<div class="agent"><b>' + esc(label) + '</b><div class="value">' + esc(value) +
+      '</div><p>' + esc(note) + '</p></div>').join('');
+
+    $('explorerCount').textContent = contractIds.length + ' documents · ' + (p6Graph.edge_count || 0) + ' relationship links';
+    $('contractExplorer').innerHTML = contractIds.map(id => {
+      const item = docs[id] || {};
+      const terms = item.extracted_terms || [];
+      const linkedEdges = (p6Graph.edges || []).filter(edge => edge.source === id || edge.target === id);
+      const ws = workstreams.filter(w => (w.contract_ids || []).includes(id));
+      const verified = terms.filter(term => term.citation && term.citation.verified).length;
+      const related = [...new Set(linkedEdges.map(edge => edge.source === id ? edge.target : edge.source))];
+      const obligations = ws.reduce((n,w) => n + (w.extracted_obligations || []).length, 0);
+      return '<div class="agent contract-explorer-card"><b>' + esc(id) + '</b><p>' +
+        esc(item.document_type || item.title || 'Loaded source document') + '</p><div class="flow">' +
+        '<span class="tag">' + terms.length + ' source lines</span><span class="tag">' + verified + ' verified quotes</span>' +
+        '<span class="tag">' + linkedEdges.length + ' links</span><span class="tag">' + obligations + ' candidate obligations</span></div>' +
+        '<p class="small">Related documents: ' + esc(related.join(', ') || 'No explicit p6Graph links detected') + '</p>' +
+        '<details><summary>Incorporated documents and source terms</summary><p>' +
+        esc(related.join(' · ') || 'No incorporated-document relationship was detected for this node.') +
+        '</p>' + terms.slice(0,6).map(term => '<div class="evidence"><b>' + esc(term.category || 'Extracted term') +
+        '</b><div class="meta">' + esc(term.citation?.clause_reference || '') + ' · ' +
+        (term.citation?.verified ? 'VERIFIED' : 'REVIEW') + '</div><blockquote>' +
+        esc(term.citation?.quote || '') + '</blockquote><p>' + esc(term.value || '') + '</p></div>').join('') +
+        '</details><button type="button" class="jump-contract" data-contract="' + esc(id) + '">Open workstream details ↓</button></div>';
+    }).join('') || '<p class="small">No contract documents returned by portfolio extraction.</p>';
+    document.querySelectorAll('.jump-contract').forEach(button => button.addEventListener('click', () => {
+      const id = button.dataset.contract;
+      const target = [...document.querySelectorAll('#workstreamCards .agent')].find(card => card.textContent.includes(id));
+      (target || $('workstreamCards')).scrollIntoView({behavior:'smooth',block:'start'});
+      if(target) { target.style.outline = '2px solid var(--cyan)'; setTimeout(() => target.style.outline = '', 1800); }
+    }));
+
+    $('heatmapStatus').textContent = (allRisks.length + queueIssues.length) + ' signals · ' + unresolvedConflictCount + ' review items';
+    $('riskHeatmap').innerHTML = workstreams.map(w => {
+      const risks = w.risk_findings || [];
+      const open = w.unresolved_questions || [];
+      const counts = risks.reduce((acc,item) => {
+        const level = String(item.severity || item.priority || 'unclassified').toLowerCase();
+        acc[level] = (acc[level] || 0) + 1; return acc;
+      }, {});
+      const countHtml = Object.entries(counts).map(([level,count]) =>
+        '<span class="tag heat-' + esc(level.replace(/[^a-z0-9_-]/g,'')) + '">' + esc(level) + ': ' + count + '</span>'
+      ).join('');
+      return '<div class="agent"><b>' + esc(w.label || w.id || 'Workstream') + '</b><p>' +
+        esc((w.contract_ids || []).join(', ')) + '</p><div class="flow">' +
+        (countHtml || '<span class="tag">No severity-labelled risks returned</span>') +
+        '<span class="tag">' + risks.length + ' signals</span><span class="tag">' + open.length + ' open questions</span></div>' +
+        risks.slice(0,4).map(item => '<div class="evidence"><b>' + esc(item.severity || item.priority || 'Severity not classified') +
+        ' · ' + esc(item.title || item.claim || item.category || 'Risk signal') + '</b><p>' +
+        esc(item.claim || item.description || '') + '</p><div class="meta">Evidence: ' +
+        esc(item.evidence?.document_id || item.contract_id || 'Source not resolved') + ' · ' +
+        (item.evidence?.verified ? 'verified quote' : 'verification not confirmed') + '</div></div>').join('') +
+        (open.length ? '<p class="small">Outstanding: ' + esc(open.slice(0,5).join(' · ')) + '</p>' : '') +
+        '</div>';
+    }).join('') || '<p class="small">No workstream risk signals returned.</p>';
+
+    const auditItems = [
+      ...milestones.map(item => ({date:item.date || '', title:item.title || 'Portfolio milestone',
+        status:item.status || item.date_type || 'timeline', detail:(item.contract_id || '') + ' · ' + (item.classification_note || item.evidence?.quote || '')})),
+      ...(d.agent_messages || []).map((message,index) => ({date:'Run · ' + (message.iteration ?? index + 1),
+        title:(message.from || 'Agent') + ' · ' + (message.type || 'handoff'),
+        status:message.status || 'recorded', detail:message.summary || message.message || message.to || 'Agent handoff recorded'})),
+      {date:'Current run', title:'Finding: ' + (p6Grounded.claim || f.title || 'Risk review'),
+        status:p6Grounded.status || v.status || 'verification pending',
+        detail:'Breach proven: ' + (p6Grounded.breach_proven ? 'yes' : 'no') + ' · ' +
+          ((p6Grounded.missing_evidence || v.evidence_gaps || []).join('; ') || 'No missing evidence reported')},
+      {date:'Current run', title:'Follow-up p6Loop',
+        status:(d.collaboration || {}).loop_status || 'not reported',
+        detail:(p6Loop.stop_reason || (d.api_usage || {}).stop_reason || 'stop reason not reported') +
+          ' · iterations ' + (p6Loop.iterations_used ?? 0) + '/' + (p6Loop.max_iterations ?? 0)}
+    ].sort((a,b) => String(a.date).localeCompare(String(b.date)));
+    $('auditTimelineCount').textContent = auditItems.length + ' run events / milestones';
+    $('eventAuditTimeline').innerHTML = auditItems.slice(0,60).map(item =>
+      '<div class="milestone"><span class="date">' + esc(item.date || 'Undated') + '</span><b>' +
+      esc(item.title) + '<div class="meta">' + esc(item.detail || '') + '</div></b><span class="tag">' +
+      esc(item.status) + '</span></div>'
+    ).join('') || '<p class="small">No dated events or agent audit records were returned.</p>';
+
+    $('citeMetric').textContent = (x.citation_validation?.verified || 0) + '/' + (x.citation_validation?.total || 0);
+    $('terms').innerHTML = (x.extracted_terms || []).map(t =>
+      '<div class="agent"><b>' + esc((t.category || '').replaceAll('_', ' ')) +
+      '</b><p>' + esc(t.value || '') + '</p><div class="meta">' +
+      esc(t.citation?.document_id || '') + ' · ' + esc(t.citation?.clause_reference || '') +
+      ' · ' + (t.citation?.verified ? 'VERIFIED' : 'UNVERIFIED') + '</div></div>'
+    ).join('');
+
+    $('workstreamMetric').textContent = workstreams.length;
+    $('workstreamCount').textContent = (wa.scope || []).length + ' contracts · ' + workstreams.length + ' streams';
+    $('workstreamCards').innerHTML = workstreams.map(w => {
+      const deadlines = w.deadlines || [];
+      const risks = w.risk_findings || [];
+      const questions = w.unresolved_questions || [];
+      const verification = w.citation_verification || {};
+      const deadlineHtml = deadlines.slice(0, 8).map(m =>
+        '<div class="evidence"><b>' + esc(m.date || '') + ' · ' + esc(m.status || '') +
+        '</b><blockquote>' + esc(m.evidence?.quote || m.title || '') + '</blockquote></div>'
+      ).join('');
+      const riskHtml = risks.slice(0, 6).map(item =>
+        '<div class="evidence"><b>' + esc(item.title || item.signal_id || item.category || 'Review signal') +
+        '</b><p>' + esc(item.claim || item.description || '') +
+        '</p><blockquote>' + esc(item.evidence?.quote || '') + '</blockquote></div>'
+      ).join('');
+      return '<div class="agent"><b>' + esc(w.label || w.id || 'Workstream') +
+        '</b><p>' + esc(w.responsibility || '') + '</p><div class="meta">Contracts: ' +
+        esc((w.contract_ids || []).join(', ')) + ' · ' + esc(w.status || '') +
+        '</div><div class="flow"><span class="tag">' + (w.extracted_obligations || []).length +
+        ' candidate obligations</span><span class="tag">' + deadlines.length +
+        ' explicit dates</span><span class="tag">' + risks.length +
+        ' review signals</span></div><p class="small">Citations verified: ' +
+        esc(verification.verified || 0) + ' / ' + esc(verification.total || 0) +
+        '</p><details><summary>View obligations, deadlines, risks and open questions</summary>' +
+        deadlineHtml + riskHtml + '<p class="small">Open questions: ' +
+        esc(questions.join(' · ')) + '</p></details></div>';
+    }).join('');
+
+    const portfolioValidation = portfolio.citation_validation || {};
+    $('portfolioCount').textContent = (portfolio.documents_processed || 0) +
+      ' documents · ' + (portfolioValidation.verified || 0) + ' quotes verified';
+    $('portfolioTerms').innerHTML = Object.entries(docs).map(([id, item]) => {
+      const terms = item.extracted_terms || [];
+      const evidenceHtml = terms.slice(0, 5).map(t =>
+        '<div class="evidence"><b>' + esc((t.category || '').replaceAll('_', ' ')) +
+        '</b><blockquote>' + esc(t.citation?.quote || '') + '</blockquote></div>'
+      ).join('');
+      const verified = terms.filter(t => t.citation && t.citation.verified).length;
+      return '<div class="agent"><b>' + esc(id) + '</b><p>' + terms.length +
+        ' candidate lines</p><div class="meta">' + verified +
+        ' exact quotes verified</div><details><summary>View evidence</summary>' +
+        (evidenceHtml || '<p class="small">No lines matched current topic patterns.</p>') +
+        '</details></div>';
+    }).join('');
+
+    const graph = d.contract_graph || {};
+    const reconciliation = d.contract_reconciliation || {};
+    const edges = graph.edges || [];
+    const changes = reconciliation.resolved_changes || [];
+    const reviews = reconciliation.review_items || [];
+    $('graphCount').textContent = (graph.node_count || 0) + ' documents · ' + (graph.edge_count || 0) + ' links';
+    $('graphEdges').innerHTML = edges.slice(0, 18).map(edge =>
+      '<div class="agent"><b>' + esc(edge.source || '') + ' → ' + esc(edge.target || '') +
+      '</b><p>' + esc((edge.relation || '').replaceAll('_', ' ')) + ' · ' +
+      esc((edge.status || '').replaceAll('_', ' ')) + '</p><blockquote>' +
+      esc(edge.evidence?.quote || 'No single-line evidence found') +
+      '</blockquote><div class="meta">' + esc(edge.evidence?.document_id || '') +
+      ' · line ' + esc(edge.evidence?.line_number ?? '—') + '</div></div>'
+    ).join('') || '<p class="small">No document relationships detected.</p>';
+
+    $('reconcileCount').textContent = changes.length + ' resolved · ' + reviews.length + ' review items';
+    $('resolvedChanges').innerHTML = changes.map(change =>
+      '<div class="agent"><b>' + esc((change.provision || '').replaceAll('_', ' ')) +
+      '</b><p>' + esc(change.target_document || '') + ': ' + esc(change.original_value || '') +
+      ' → <span class="good">' + esc(change.amended_value || '') +
+      '</span></p><div class="meta">Effective ' + esc(change.effective_date || 'date not resolved') +
+      ' · ' + esc((change.status || '').replaceAll('_', ' ')) + '</div>' +
+      (change.evidence || []).map(ev => '<blockquote>' + esc(ev.document_id || '') +
+        ': ' + esc(ev.quote || '') + '</blockquote>').join('') +
+      '<p class="small">Human review required.</p></div>'
+    ).join('') || '<p class="small">No explicit changes resolved.</p>';
+
+    $('reviewItems').innerHTML = reviews.map(item =>
+      '<div class="agent"><b>' + esc(item.section_heading || item.item_id || item.amendment_document || 'Review item') +
+      '</b><p>' + esc(item.summary || item.reason || 'Further review required.') +
+      '</p><blockquote>' + esc(item.evidence?.quote || '') +
+      '</blockquote><div class="meta">' + esc((item.status || '').replaceAll('_', ' ')) +
+      ' · Human review required</div></div>'
+    ).join('') || '<p class="small">No outstanding amendment review items.</p>';
+
+    $('riskMetric').textContent = (f.severity || 'review').toUpperCase();
+    $('agents').innerHTML = [
+      ['Odin', 'Orchestrates and tracks'], ['Thor', 'Extracts sourced terms'],
+      ['Norns', 'Computes timeline'], ['Loki', 'Challenges interpretations'],
+      ['Heimdall', 'Verifies event evidence'], ['Tyr', 'Rules and drafts action']
+    ].map(agent => '<div class="agent"><b>● ' + agent[0] + '</b><p>' + agent[1] + '</p></div>').join('');
+    $('flow').innerHTML = ['Plan', 'Extract', 'Validate citations', 'Timeline', 'Attack', 'Verify', 'Rule', 'Synthesize']
+      .map((step, index) => (index ? ' → ' : '') + '<span class="step">' + step + '</span>').join('');
+
+    $('riskTitle').textContent = f.title || 'No risk finding returned';
+    $('claim').textContent = f.claim || '';
+    $('riskBadge').textContent = (v.status || 'review').replaceAll('_', ' ');
+    $('attack').innerHTML = (f.attack_path || []).map(item => '<li>' + esc(item) + '</li>').join('');
+    $('verify').textContent = (v.event_evidence || '') + ' ' + (v.challenges || []).join(' ');
+    $('citation').innerHTML = (f.citations || []).map(citation =>
+      '<div class="evidence"><div class="meta">' + esc(citation.document_id || '') + ' · ' +
+      esc(citation.clause_reference || '') + ' · ' +
+      (citation.verified ? 'VERIFIED' : 'UNVERIFIED') + '</div><blockquote>' +
+      esc(citation.quote || '') + '</blockquote><div class="meta">' +
+      esc(citation.verification_note || '') + '</div></div>'
+    ).join('');
+
+    $('decision').textContent = (r.decision || 'review_required').replaceAll('_', ' ');
+    $('rationale').textContent = r.rationale || '';
+    $('asof').textContent = 'As of ' + (d.as_of_date || '');
+    const timeline = d.timeline || {};
+    $('timeline').innerHTML = (timeline.milestones || []).map(milestone =>
+      '<div class="milestone"><span class="date">' + esc(milestone.date || '') +
+      '</span><b>' + esc(milestone.title || '') + '</b><span class="tag">' +
+      esc(milestone.status || '') + '</span></div>'
+    ).join('') + '<p class="small">' + esc(timeline.worst_case_note || '') + '</p>';
+
+    const ops = d.portfolio_operations || {};
+    const opsTimeline = ops.timeline || {};
+    const opsCounts = opsTimeline.counts || {};
+    const finance = ops.financial_reconciliation || {};
+    const financeCounts = finance.counts || {};
+    $('operationsStatus').textContent = finance.status || 'Unavailable';
+    $('opsTimelineCount').textContent = opsCounts.total ?? 0;
+    $('opsTimelineSummary').textContent = (opsCounts.overdue || 0) + ' actionable deadlines overdue · ' +
+      (opsCounts.due_today || 0) + ' due today · ' + (opsCounts.upcoming || 0) + ' upcoming deadlines · ' +
+      (opsCounts.historical_references || 0) + ' historical/reference dates · ' +
+      (opsCounts.contract_milestones || 0) + ' contract-term milestones';
+    $('opsLedgerCount').textContent = financeCounts.transaction_candidates ?? 0;
+    $('opsLedgerSummary').textContent = (financeCounts.contract_linked_candidates || 0) +
+      ' contract-linked · ' + (financeCounts.unlinked_candidates || 0) + ' unlinked';
+    $('opsMilestones').innerHTML = (opsTimeline.milestones || []).slice(0, 30).map(item =>
+      '<div class="milestone"><span class="date">' + esc(item.date || '') +
+      '</span><b>' + esc(item.contract_id || '') + ' · ' + esc(item.title || '') +
+      '<div class="meta">' + esc(item.date_type || '') + ' · ' + esc(item.classification_note || '') + '</div></b><span class="tag">' + esc(item.status || '') + '</span></div>'
+    ).join('') || '<p class="small">No explicit calendar dates were found in the in-scope source documents.</p>';
+    $('opsLedger').innerHTML = (finance.payment_ledger_candidates || []).slice(0, 30).map(item =>
+      '<div class="agent"><b>' + esc(item.transaction_signal || 'Transaction signal') +
+      ' · ' + esc(item.contract_id || 'Contract not resolved') + '</b><p>' +
+      esc(item.timestamp || 'No timestamp') + ' · ' + esc((item.amounts_found || []).join(', ') || 'No explicit amount') +
+      '</p><p>' + esc(item.summary || item.evidence_text || '') + '</p><div class="meta">' +
+      esc(item.event_source || '') + ' · ' + esc(item.payment_status || item.contract_match_status || '') +
+      ' · ' + esc(item.reconciliation_status || '') + ' · Human review required</div></div>'
+    ).join('') || '<p class="small">No payment ledger or invoice/payment event candidates found as of this date.</p>';
+    $('opsNotice').textContent = finance.reconciliation_rule || ops.notice || '';
+
+    const queue = d.decision_queue || {};
+    const queueCounts = queue.counts || {};
+    $('decisionQueueStatus').textContent = queue.status || 'Unavailable';
+    $('decisionQueueCounts').innerHTML = [
+      ['High', queueCounts.high || 0], ['Medium', queueCounts.medium || 0],
+      ['Low', queueCounts.low || 0], ['Total', queueCounts.total || 0]
+    ].map(([label, value]) => '<span class="tag">' + esc(label) + ': ' + esc(value) + '</span>').join('');
+    $('decisionQueueItems').innerHTML = (queue.issues || []).slice(0, 18).map(item =>
+      '<div class="agent"><b>' + esc(item.priority || 'review').toUpperCase() + ' · ' +
+      esc(item.title || item.category || 'Review item') + '</b><div class="meta">' +
+      esc(item.contract_id || 'Contract not resolved') + ' · ' + esc(item.date || '') +
+      ' · ' + esc(item.status || '') + '</div><p>' + esc(item.reason || '') + '</p>' +
+      '<p class="small">Evidence: ' + esc(item.evidence_strength || 'not specified') + '</p>' +
+      '<p>' + esc(item.recommended_next_step || '') + '</p><div class="meta">Human review required</div></div>'
+    ).join('') || '<p class="small">No prioritized review items for the selected simulated date.</p>';
+    $('decisionQueueNotice').textContent = queue.notice || '';
+
+    const collaboration = d.collaboration || {};
+    const shared = d.shared_state || {};
+    const usage = d.api_usage || {};
+    $('collabStatus').textContent = (collaboration.loop_status || 'not reported').replaceAll('_', ' ');
+    $('collabMetrics').innerHTML = [
+      ['Iterations', (usage.iterations_used ?? collaboration.loop?.iterations_used ?? 0) + ' / ' + (usage.max_iterations ?? collaboration.loop?.max_iterations ?? 0)],
+      ['Agent/task calls', (usage.calls_used ?? 0) + ' / ' + (usage.max_calls ?? 0)],
+      ['Handoffs', collaboration.handoff_count ?? (d.agent_messages || []).length],
+      ['Human follow-up', collaboration.loop?.needs_human_follow_up ? 'Required' : 'Not flagged']
+    ].map(([label,value]) => '<span class="tag">' + esc(label) + ': ' + esc(value) + '</span>').join('');
+    $('collabAgents').innerHTML = Object.entries(collaboration.agents || {}).map(([name, item]) =>
+      '<div class="agent"><b>' + esc(name) + '</b><p>' + esc((item.status || 'unknown').replaceAll('_', ' ')) +
+      ' · iteration ' + esc(item.iteration ?? 0) + '</p><div class="meta">Reads: ' +
+      esc((item.consumes || []).join(', ') || '—') + '<br>Writes: ' +
+      esc((item.produces || []).join(', ') || '—') + '</div></div>'
+    ).join('') || '<p class="small">No agent status metadata returned.</p>';
+    const unresolved = collaboration.unresolved_questions || shared.unresolved_questions || [];
+    $('collabQuestions').innerHTML = unresolved.map(question =>
+      '<div class="agent"><p>' + esc(typeof question === 'string' ? question : JSON.stringify(question)) + '</p></div>'
+    ).join('') || '<p class="small">No unresolved questions were emitted by verification.</p>';
+    $('sharedStateSections').textContent = Object.keys(shared).filter(key =>
+      !['agent_messages','agent_status','iteration','api_usage','schema_version','status'].includes(key)
+    ).join(' · ') || 'Shared state unavailable';
+
+    const grounded = d.evidence_grounded_finding || {};
+    $('groundingStatus').textContent = (grounded.status || 'not reported').replaceAll('_', ' ');
+    $('groundingSummary').innerHTML = [
+      ['Finding', grounded.finding_id || f.finding_id || '—'],
+      ['Contract', grounded.contract_id || '—'],
+      ['Severity', grounded.severity || f.severity || 'review'],
+      ['Breach proven', grounded.breach_proven ? 'Yes' : 'No'],
+      ['Facts', (grounded.facts || []).join(' ') || 'No verified facts supplied'],
+      ['Interpretation', (grounded.interpretations || []).join(' ') || grounded.claim || f.claim || '—']
+    ].map(([label,value]) => '<div class="agent"><b>' + esc(label) + '</b><p>' + esc(value) + '</p></div>').join('');
+    $('groundingEvidence').innerHTML = (grounded.evidence || []).map(item =>
+      '<div class="evidence"><b>' + esc(item.document_id || 'Unknown source') + ' · ' +
+      esc(item.source_type || 'source') + '</b><div class="meta">' +
+      esc(item.clause_reference || '') + ' · ' + (item.verified ? 'VERIFIED' : 'UNVERIFIED') +
+      '</div><blockquote>' + esc(item.quote || '') + '</blockquote><p class="small">' +
+      esc(item.verification_note || '') + '</p></div>'
+    ).join('') || '<p class="small">No evidence records were returned.</p>';
+    $('groundingGaps').innerHTML = (grounded.missing_evidence || v.evidence_gaps || []).map(item =>
+      '<div class="agent"><p>' + esc(typeof item === 'string' ? item : JSON.stringify(item)) + '</p></div>'
+    ).join('') || '<p class="good">No missing evidence reported by verification.</p>';
+    $('groundingConflicts').innerHTML = (grounded.conflicting_evidence || []).map(item =>
+      '<div class="agent"><b>' + esc(item.title || item.source || 'Conflict') + '</b><p>' +
+      esc(item.description || item.claim || JSON.stringify(item)) + '</p></div>'
+    ).join('') || '<p class="small">No explicit source-to-source conflict was identified. Missing evidence is shown separately and is not treated as a conflict.</p>';
+
+    const loop = (d.collaboration || {}).loop || {};
+    const actionDraft = (d.ruling || {}).action_draft || {};
+    $('followupStatus').textContent = (d.collaboration || {}).loop_status || 'not reported';
+    $('loopStopReason').textContent = (loop.stop_reason || (d.api_usage || {}).stop_reason || 'Not reported').replaceAll('_', ' ');
+    $('loopBudget').textContent = 'Iterations ' + (loop.iterations_used ?? (d.api_usage || {}).iterations_used ?? 0) +
+      ' / ' + (loop.max_iterations ?? (d.api_usage || {}).max_iterations ?? 0) +
+      ' · Calls ' + ((d.api_usage || {}).calls_used ?? 0) + ' / ' + ((d.api_usage || {}).max_calls ?? 0);
+    $('loopRemainingGaps').innerHTML = (loop.remaining_gaps || grounded.missing_evidence || []).map(gap =>
+      '<p>' + esc(typeof gap === 'string' ? gap : JSON.stringify(gap)) + '</p>'
+    ).join('') || '<p class="good">No remaining gaps reported.</p>';
+    const actionTitle = actionDraft.subject || grounded.recommended_action || 'No next action was produced.';
+    const actionBody = actionDraft.body || '';
+    $('loopNextAction').textContent = actionTitle;
+    $('loopActionFull').textContent = actionBody || 'No additional request text was provided.';
+    $('loopActionDetails').classList.toggle('hidden', !actionBody || actionBody === actionTitle);
+    $('loopApproval').textContent = actionDraft.human_approval_required === false && actionDraft.status === 'approved' ?
+      'Approved by a human reviewer. This dashboard does not send the action.' :
+      'HUMAN APPROVAL REQUIRED · ' + (actionDraft.status || 'draft_only_not_sent').replaceAll('_', ' ') +
+      '. Draft only; no action is sent automatically.';
+
+    const draft = r.action_draft || {};
+    $('subject').textContent = draft.subject || 'No draft action';
+    $('actionType').textContent = (draft.type || 'review') + ' · human approval required';
+    $('body').textContent = draft.body || '';
+    $('actioncite').innerHTML = (draft.citations || []).map(citation =>
+      '<div class="meta">' + esc(citation.document_id || '') + ' · ' +
+      esc(citation.clause_reference || '') + ' · ' +
+      (citation.verified ? 'verified' : 'unverified') + '</div>'
+    ).join('');
+
+    $('audit').innerHTML = (d.agent_messages || []).map(message =>
+      '<div class="auditrow"><span>' + esc(message.from || '') + '</span><span>' +
+      esc((message.type || '').replaceAll('_', ' ')) + '</span><span class="tag">' +
+      esc(message.status || '') + '</span></div>'
+    ).join('');
+
+    const eventSummary = d.event_summary || {};
+    $('integrity').innerHTML = 'Contracts loaded: ' + Object.keys(docs).length +
+      ' portfolio documents analyzed.<br>Drop 1 events in date window: ' +
+      esc(eventSummary.drop1_events_available_as_of_date ?? 'n/a') +
+      '<br>Drop 2 events loaded: ' + esc(eventSummary.drop2_events_loaded ?? 'n/a') +
+      '<br>Parse errors are retained in run metadata.<br>Run status: ' + esc(d.status || 'unknown') +
+      '<br>Scope: ' + esc(d.scope || '');
+
+    currentAuditRunId = (d.audit || {}).run_id || d.run_id || null;
+    $('approvalRunLabel').textContent = currentAuditRunId ? 'Current run: ' + currentAuditRunId : 'Audit run ID not returned.';
+    $('approvalResult').textContent = 'Approval/rejection is recorded only; no consequential action is executed.';
+    await refreshAuditHistory(currentAuditRunId);
+    if (currentAuditRunId) await inspectAuditRun(currentAuditRunId);
+    $('loading').classList.add('hidden');
+    $('dash').classList.remove('hidden');
+    $('error').classList.add('hidden');
+  } catch (error) {
+    $('loading').textContent = 'Run failed safely: ' + error.message;
+    $('error').textContent = 'The run could not be completed. Check the backend logs; no action was sent automatically.';
+    $('error').classList.remove('hidden');
+  } finally {
+    button.disabled = false;
+  }
+}
+if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}\ninit();$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
 </script></body></html>
