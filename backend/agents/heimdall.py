@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta
 from typing import Any
 
 
@@ -150,6 +151,72 @@ def _event_signals(body: str) -> list[str]:
     return [family for family, (pattern, _) in _EVENT_CLAUSE_FAMILIES.items() if pattern.search(body)]
 
 
+_WORD_NUMBERS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+}
+
+
+def _trigger_language_candidates(clause_quote: str) -> list[str]:
+    """Return short source-exact snippets that may express a contractual trigger."""
+    patterns = [
+        r"\b(?:within|no later than|not later than)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:calendar\s+|business\s+)?(?:hours?|days?|weeks?)\b",
+        r"\b(?:promptly|immediately|without undue delay|upon receipt|upon becoming aware|if and when|provided that|subject to)\b[^.;\n]{0,100}",
+        r"\b(?:after|before|following|upon|when)\b[^.;\n]{0,100}",
+    ]
+    found = []
+    for pattern in patterns:
+        found.extend(match.group(0).strip() for match in re.finditer(pattern, clause_quote, re.I))
+    return list(dict.fromkeys(found))[:6]
+
+
+def _candidate_deadline(timestamp: Any, clause_quote: str) -> dict[str, Any] | None:
+    """Compute only a clearly stated numeric hours/days candidate; never infer business-day rules."""
+    period = re.search(
+        r"\b(?:within|no later than|not later than)\s+(?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?P<kind>calendar\s+days?|days?|hours?)\b",
+        clause_quote, re.I
+    )
+    if not period:
+        return None
+    raw_timestamp = str(timestamp or "").strip()
+    if not raw_timestamp:
+        return {"status": "period_found_start_time_missing", "period_text": period.group(0), "deadline": None}
+    kind = re.sub(r"\s+", " ", period.group("kind").casefold())
+    if "business" in kind:
+        return {"status": "business_day_rule_not_calculated", "period_text": period.group(0), "deadline": None}
+    count_text = period.group("count").casefold()
+    count = int(count_text) if count_text.isdigit() else _WORD_NUMBERS.get(count_text)
+    if count is None:
+        return {"status": "period_not_supported", "period_text": period.group(0), "deadline": None}
+    try:
+        if len(raw_timestamp) <= 10:
+            if "hour" in kind:
+                return {
+                    "status": "time_of_day_missing",
+                    "period_text": period.group(0),
+                    "deadline": None,
+                    "note": "The event has a date but no time; an hour-based deadline cannot be calculated.",
+                }
+            start_date = datetime.fromisoformat(raw_timestamp[:10])
+            deadline = start_date + timedelta(days=count)
+            return {
+                "status": "candidate_date_only_requires_counting_rule_review",
+                "period_text": period.group(0),
+                "deadline": deadline.date().isoformat(),
+                "note": "Calendar-day arithmetic only; inclusivity, holidays, and contractual counting conventions are not resolved.",
+            }
+        start = datetime.fromisoformat(raw_timestamp.replace("Z", "+00:00"))
+        deadline = start + (timedelta(hours=count) if "hour" in kind else timedelta(days=count))
+        return {
+            "status": "candidate_deadline_requires_contract_review",
+            "period_text": period.group(0),
+            "deadline": deadline.isoformat(),
+            "note": "Arithmetic candidate only; timezone, trigger occurrence, exceptions, and contractual counting rules require review.",
+        }
+    except (ValueError, OverflowError):
+        return {"status": "invalid_event_timestamp_for_deadline", "period_text": period.group(0), "deadline": None}
+
+
 def verify_contract_review(contract_id: str, source: str, findings: list[dict[str, Any]],
                            events: list[dict[str, Any]]) -> dict[str, Any]:
     """Map events to contracts and candidate clauses with explicit evidence trails.
@@ -173,12 +240,16 @@ def verify_contract_review(contract_id: str, source: str, findings: list[dict[st
             family_matches = [family for family in signals if category in _EVENT_CLAUSE_FAMILIES[family][1]]
             lexical_matches = sorted(_normalized_words(body).intersection(_normalized_words(quote)))
             if family_matches or len(lexical_matches) >= 2:
+                trigger_language = _trigger_language_candidates(quote)
                 matched_findings.append({
                     "finding_id": finding.get("id"), "category": category or None,
                     "title": finding.get("title"), "matched_event_families": family_matches,
                     "matched_terms": lexical_matches[:20],
                     "clause_reference": citation.get("clause_reference"),
                     "clause_quote": quote, "clause_quote_verified": bool(quote and quote in source),
+                    "trigger_language_candidates": trigger_language,
+                    "notice_period_candidate": _candidate_deadline(event.get("timestamp", event.get("date")), quote),
+                    "trigger_status": "not_determined",
                     "status": "candidate_clause_association_requires_trigger_review",
                 })
         date_candidates = sorted(set(re.findall(
