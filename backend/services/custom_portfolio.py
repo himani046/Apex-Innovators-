@@ -95,6 +95,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
 
     base_graph = build_contract_graph(contracts)
     graph = build_rich_contract_graph(contracts, extractions, base_graph)
+    cross_contract_edges = [edge for edge in graph.get("edges", []) if str(edge.get("source", "")) in contracts and str(edge.get("target", "")) in contracts]
     timeline = []
     risks = []
     contract_reports = []
@@ -187,10 +188,10 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         "contract_ids": sorted(contracts),
         "responsibility": "Inspect explicit document references and possible shared-risk signals across the supplied set.",
         "assigned_agents": ["Odin", "Thor", "Loki", "Heimdall", "Tyr"],
-        "status": "complete_with_review_items" if graph.get("edges") else "complete_no_evidenced_relationships",
+        "status": "complete_with_review_items" if cross_contract_edges else "complete_no_evidenced_relationships",
         "progress": {"completed_stages": 1, "total_stages": 1, "percentage": 100},
-        "relationship_count": len(graph.get("edges", [])),
-        "open_questions": ["Review cross-contract effects and precedence where a sourced relationship exists." ] if graph.get("edges") else [],
+        "relationship_count": len(cross_contract_edges),
+        "open_questions": ["Review cross-contract effects and precedence where a sourced relationship exists."] if cross_contract_edges else [],
         "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
     })
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
@@ -198,7 +199,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     contract_reports.sort(key=lambda item: item["contract_id"])
     exposure = {"status": "not_calculated", "value": None,
                 "reason": "Custom portfolio intake does not infer exposure from contractual rates or unlinked event amounts."}
-    cross_contract_edges = [edge for edge in graph.get("edges", []) if str(edge.get("source", "")) in contracts and str(edge.get("target", "")) in contracts]
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "status": "complete_with_limitations", "contract_count": len(contracts),
                       "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges,
