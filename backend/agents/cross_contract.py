@@ -22,7 +22,7 @@ def detect_cross_contract_candidates(contracts):
             if not line: continue
             for topic, pattern in RULES.items():
                 if pattern.search(line):
-                    number_text = re.sub(r"^\s*(?:(?:section|article|clause)\s+)?[A-Z0-9.IVX-]+\s+", "", line, flags=re.I)
+                    number_text = re.sub(r"^\s*(?:(?:section|article|clause)\s+[A-Z0-9.IVX-]+|[0-9]+(?:\.[0-9]+)*)\s+", "", line, flags=re.I)
                     nums = [(m.group(1), (m.group(2) or "").lower().rstrip("s")) for m in NUM.finditer(number_text)]
                     mods = {m.group(1).lower() for m in MOD.finditer(line)}
                     if nums or mods:
