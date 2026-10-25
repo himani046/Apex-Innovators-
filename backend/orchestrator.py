@@ -424,6 +424,28 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "agent_call_budget": state["portfolio_agent_workflow"].get("agent_call_budget"),
         "stop_reason": state["portfolio_agent_workflow"].get("stop_reason"),
     }
+    # Do not report the overall run as complete if a required ruling or the
+    # generalized portfolio workflow stopped at a configured budget/iteration limit.
+    portfolio_workflow = state["portfolio_agent_workflow"]
+    budget_incomplete = (
+        state.get("ruling", {}).get("decision") == "deferred_budget_exhausted"
+        or budget.stop_reason == "api_call_limit_reached"
+        or bool(portfolio_workflow.get("budget_exhausted"))
+    )
+    iteration_incomplete = bool(portfolio_workflow.get("partial_completion"))
+    if budget_incomplete:
+        state["status"] = "partial_budget_exhausted"
+        state["collaboration"]["loop_status"] = "partial_budget_exhausted"
+        state["limitations"].append(
+            "At least one required agent task stopped because the configured call budget was exhausted; inspect the workflow trace before treating this run as complete."
+        )
+    elif iteration_incomplete:
+        state["status"] = "partial_review_limit_reached"
+        state["collaboration"]["loop_status"] = "partial_review_limit_reached"
+        state["limitations"].append(
+            "At least one bounded review loop reached its iteration limit with work or evidence gaps remaining."
+        )
+    state["shared_state"]["status"] = state["status"]
     state["synthesis"] = build_synthesis(state)
     state["synthesis"]["cross_contract_candidates"] = state["cross_contract_candidates"]
     state["synthesis"]["company_risk_report"]["cross_contract_candidates"] = state["cross_contract_candidates"]
