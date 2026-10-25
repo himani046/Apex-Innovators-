@@ -296,12 +296,12 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "reason": "Custom portfolio intake does not infer exposure from contractual rates or unlinked event amounts."}
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "status": "complete_with_limitations", "contract_count": len(contracts),
-                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges,
+                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges, "cross_contract_candidates": cross_contract_candidates,
                       "total_financial_exposure": None, "financial_exposure_status": exposure["status"],
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
-                      "references": [c for report in contract_reports for c in report["citations"]],
-                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]],
+                      "references": [c for report in contract_reports for c in report["citations"]] + [e for item in cross_contract_candidates for e in item.get("evidence", [])],
+                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]] + [q for item in cross_contract_candidates for q in item.get("unresolved_questions", [])],
                       "limitations": ["Keyword-based extraction is triage, not complete semantic interpretation.",
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
@@ -318,13 +318,15 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "agent_status": {name: {"status": "complete_with_limitations", "mode": "deterministic_source_triage"}
                                      for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]},
                     "agent_messages": agent_messages,
-                    "execution": {"mode": "bounded_single_pass", "max_iterations": 0, "iterations_used": 0,
-                                  "note": "This custom-input path performs one deterministic pass; iterative LLM debate is not run for arbitrary inputs."}}
+                    "execution": {"mode": agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow"), "max_iterations": agent_workflow.get("max_iterations", 1), "iterations_used": agent_workflow.get("iterations_used", 0),
+                                  "agent_calls_used": agent_workflow.get("agent_calls_used", 0), "agent_call_budget": agent_workflow.get("agent_call_budget", 300),
+                                  "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
     return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
-            "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Structured deterministic challenge/verification/ruling traces; this path does not claim a live LLM debate."},
+            "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
+            "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
             "contract_reports": contract_reports, "company_risk_report": company_report,
             "shared_state": shared_state, "limitations": company_report["limitations"]}
