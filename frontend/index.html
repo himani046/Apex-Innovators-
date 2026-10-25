@@ -883,9 +883,33 @@ input[type=file]::file-selector-button:hover{
 @media(max-width:900px){.odin-hero{grid-template-columns:1fr;gap:30px;min-height:0}.hero-side{max-width:100%;display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.hero-control-card{grid-column:1/-1}.hero-floating-chip,.hero-floating-chip.chip-agents{align-self:center}.hero-orbit{right:-240px}}
 @media(max-width:560px){.odin-hero{padding:28px 22px!important;border-radius:22px}.odin-hero h2{font-size:clamp(39px,12vw,56px)!important}.hero-side{display:flex}.hero-floating-chip.chip-agents{align-self:flex-end}.hero-proof-points{display:grid;gap:9px}.hero-orbit{right:-330px;opacity:.7}}
 
+
+/* Animated particle globe borrowed from the supplied Vaultra hero asset, adapted for Odin */
+.odin-hero{isolation:isolate}
+.hero-globe-stage{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:.86}
+.hero-globe-mask{position:absolute;inset:0;overflow:hidden;mask-image:linear-gradient(to top,#000 35%,rgba(0,0,0,.86) 65%,transparent 100%),linear-gradient(to right,transparent 0%,#000 12%,#000 88%,transparent 100%);mask-composite:intersect;-webkit-mask-image:linear-gradient(to top,#000 35%,rgba(0,0,0,.86) 65%,transparent 100%),linear-gradient(to right,transparent 0%,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in}
+.hero-globe-media{position:absolute;bottom:-23%;left:50%;transform:translateX(-50%);width:min(110%,1150px);height:115%;object-fit:cover;object-position:center bottom;display:block}
+.hero-globe-still{opacity:.65;filter:saturate(.9) hue-rotate(12deg) brightness(.72)}
+.hero-globe-video{opacity:0;filter:saturate(.9) hue-rotate(12deg) brightness(.72);transition:opacity 1.2s ease}
+.hero-globe-video.is-loaded{opacity:.65}
+.hero-globe-atmosphere{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,9,18,.95) 0%,rgba(10,9,18,.72) 43%,rgba(10,9,18,.25) 100%),linear-gradient(0deg,rgba(10,9,18,.12),rgba(10,9,18,.2));z-index:1}
+.odin-hero>.hero-orbit,.odin-hero>.hero-glow,.odin-hero>.hero-copy,.odin-hero>.hero-side{z-index:2}
+.odin-hero>.hero-orbit{opacity:.42}
+@media(max-width:900px){.hero-globe-media{width:145%;height:100%;bottom:-15%;left:58%}.hero-globe-atmosphere{background:linear-gradient(90deg,rgba(10,9,18,.9),rgba(10,9,18,.42)),linear-gradient(0deg,rgba(10,9,18,.22),rgba(10,9,18,.32))}}
+@media(prefers-reduced-motion:reduce){.hero-globe-video{display:none!important}.hero-globe-still{opacity:.5}}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
+  <div class="hero-globe-stage" aria-hidden="true">
+    <div class="hero-globe-mask">
+      <img class="hero-globe-media hero-globe-still" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg" alt="" loading="eager">
+      <video class="hero-globe-media hero-globe-video" autoplay loop muted playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg">
+        <source src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/e71aea27-a808-4ae3-8231-a469d49285d4.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="hero-globe-atmosphere"></div>
+  </div>
   <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div><div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
   <div class="hero-glow" aria-hidden="true"></div>
   <div class="hero-copy">
@@ -1765,4 +1789,8 @@ async function initOdinApp(){
 
 if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}
 setupOdinPages();initFR9TimeSlider();initOdinApp();$('customAnalyzeButton')?.addEventListener('click',runCustomPortfolio);$('customIngestEvents')?.addEventListener('click',ingestCustomEvents);$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
-</script></body></html>
+</script>
+<script>
+(function(){const globe=document.querySelector('.hero-globe-video');if(!globe)return;const reveal=()=>globe.classList.add('is-loaded');globe.addEventListener('playing',reveal,{once:true});globe.addEventListener('canplay',()=>{globe.play().then(reveal).catch(()=>{});},{once:true});globe.play().then(reveal).catch(()=>{});})();
+</script>
+</body></html>
