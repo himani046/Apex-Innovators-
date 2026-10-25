@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from pathlib import Path
 from typing import Literal
@@ -296,8 +297,8 @@ async def analyze_portfolio_upload(
         await file.close()
 
     try:
-        parsed_events = __import__("json").loads(event_records or "[]")
-        parsed_ledger = __import__("json").loads(payment_ledger or "[]")
+        parsed_events = json.loads(event_records or "[]")
+        parsed_ledger = json.loads(payment_ledger or "[]")
         if not isinstance(parsed_events, list):
             raise ValueError("Event records must be a JSON array.")
         if not isinstance(parsed_ledger, list):
