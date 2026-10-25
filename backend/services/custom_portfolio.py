@@ -309,11 +309,12 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "total_stages": 6,
             "percentage": 100 if ran else 83,
         }
-        stream["status"] = workflow.get("status", stream.get("status"))
+        review_needed = bool(workflow.get("unresolved_questions") or stream.get("open_questions") or stream.get("risk_findings"))
+        stream["status"] = ("not_run_budget_exhausted" if not ran else "complete_with_review_items" if review_needed else "complete")
         stream["completion_gate"] = {
             "workflow_complete": ran,
-            "evidence_gaps_remaining": bool(workflow.get("unresolved_questions")),
-            "human_review_required": bool(workflow.get("human_review_required", True)),
+            "evidence_gaps_remaining": bool(workflow.get("unresolved_questions") or stream.get("open_questions")),
+            "human_review_required": bool(workflow.get("human_review_required", True) or review_needed),
             "legal_outcome_resolved": False,
             "agent_review_iterations": workflow.get("iterations_used", 0),
             "agent_review_stop_reason": workflow.get("stop_reason", "not_run"),
@@ -363,6 +364,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
         status["status"] = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
     final_status = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
+    company_report["status"] = final_status
     return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
