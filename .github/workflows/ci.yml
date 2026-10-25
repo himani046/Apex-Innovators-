@@ -23,5 +23,21 @@ jobs:
           pip install -r requirements.txt
       - name: Compile backend and tests
         run: python -m compileall -q backend tests
+      - name: Set up Node for dashboard syntax validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate inline dashboard JavaScript
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("frontend/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, flags=re.S | re.I)
+          if not scripts:
+              raise SystemExit("No inline dashboard script found")
+          Path("/tmp/odin-dashboard.js").write_text("\\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/odin-dashboard.js
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
