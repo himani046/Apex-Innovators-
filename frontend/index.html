@@ -1626,6 +1626,50 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color: currentColor !important;
 }
 
+
+/* FR9 final visual correction: keep the cockpit consistently dark; prevent light outer panels with dark inner cards. */
+#dash .fr9-panel,
+#dash .fr9-panel:hover,
+#dash .fr9-panel:focus-within {
+  color: #d8d3e8 !important;
+  background: #11101a !important;
+  border-color: rgba(190,165,255,.2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#dash .fr9-panel :is(.fr9-section,.fr9-subcard,.fr9-debate,.fr9-alert-action),
+#dash .fr9-panel :is(.fr9-section,.fr9-subcard,.fr9-debate,.fr9-alert-action):hover {
+  color: #d8d3e8 !important;
+  background: #151320 !important;
+  border-color: rgba(190,165,255,.18) !important;
+}
+#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,b,strong,label),
+#dash .fr9-panel:hover :is(h1,h2,h3,h4,h5,h6,b,strong,label) {
+  color: #faf7ff !important;
+  -webkit-text-fill-color: #faf7ff !important;
+}
+#dash .fr9-panel :is(p,span,small,div,li,summary,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
+#dash .fr9-panel:hover :is(p,span,small,div,li,summary,.muted,.small,.meta,.fr9-time-status,.fr9-scale) {
+  -webkit-text-fill-color: currentColor !important;
+}
+#dash .fr9-panel :is(.tag,.badge,.pill),
+#dash .fr9-panel:hover :is(.tag,.badge,.pill) {
+  color: #e3d8ff !important;
+  -webkit-text-fill-color: #e3d8ff !important;
+  background: rgba(155,126,229,.16) !important;
+  border-color: rgba(194,177,255,.24) !important;
+}
+#dash .fr9-panel .fr9-graph-shell,
+#dash .fr9-panel:hover .fr9-graph-shell {
+  background: #090910 !important;
+  color: #ded8ed !important;
+}
+#dash .fr9-panel .fr9-graph-shell * ,
+#dash .fr9-panel:hover .fr9-graph-shell * {
+  -webkit-text-fill-color: currentColor !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
