@@ -297,17 +297,49 @@ def verify_contract_review(contract_id: str, source: str, findings: list[dict[st
             gaps.append("One or more source quotations could not be verified.")
         if not finding_events:
             gaps.append("No event was associated with this clause candidate; this does not prove that no event occurred.")
+        event_support = []
+        for mapped_event in finding_events:
+            families = mapped_event.get("event_families", [])
+            event_support.append({
+                "event_id": mapped_event.get("event_id"),
+                "timestamp": mapped_event.get("timestamp"),
+                "event_families": families,
+                "event_quote": mapped_event.get("body", ""),
+                "matched_clause_ids": [match.get("finding_id") for match in mapped_event.get("matched_clauses", [])],
+                "source_authenticity_verified": False,
+                "supports_or_challenges_loki": (
+                    "supports_relevance_only" if mapped_event.get("matched_clauses")
+                    else "no_direct_support"
+                ),
+                "note": "An event association supports relevance only; event authenticity, trigger, causation, and breach remain unverified.",
+            })
+        loki_claim = {
+            "finding_id": finding_id, "claim": finding.get("claim") or finding.get("reason"),
+            "severity": finding.get("severity", "medium"),
+            "likelihood": finding.get("likelihood", "indeterminate"),
+            "citation_quotes": [item.get("quote", "") for item in checks],
+        }
+        challenges = [
+            "Quotation verification does not by itself establish contractual applicability, trigger, breach or damages.",
+            "Event-to-clause mapping is a rule-based candidate association, not proof of causation.",
+        ]
+        if not all_verified:
+            challenges.append("CHALLENGE: Loki's claim is not adequately supported because one or more cited quotations failed exact-source verification.")
+        elif not finding_events:
+            challenges.append("CHALLENGE: No supplied event corroborates this claim in the current feed; absence of an event is not proof the risk did not occur.")
+        else:
+            challenges.append("QUALIFIED SUPPORT: Related event text exists, but it does not by itself prove a contractual trigger or breach.")
         results.append({
             "finding_id": finding_id, "contract_id": contract_id,
             "status": "verified_with_limitations" if all_verified and finding_events else "unverified",
             "citation_checks_passed": all_verified,
             "citation_results": checks, "mapped_events": finding_events,
+            "loki_claim": loki_claim,
+            "event_support": event_support,
+            "claim_assessment": "qualified_support" if all_verified and finding_events else "challenged_insufficient_event_or_citation_evidence",
             "supports": (["The cited source quotation exists in the canonical contract text."] if all_verified else [])
                        + ([f"{len(finding_events)} event(s) have candidate overlap with this clause; trigger and causation remain unproven."] if finding_events else []),
-            "challenges": [
-                "Quotation verification does not by itself establish contractual applicability, trigger, breach or damages.",
-                "Event-to-clause mapping is a rule-based candidate association, not proof of causation.",
-            ],
+            "challenges": challenges,
             "evidence_gaps": list(dict.fromkeys(gaps)),
             "recommended_follow_up": "Confirm event authenticity, timestamps, triggering condition, exceptions, amendments, and contract precedence.",
             "agent": "Heimdall",
