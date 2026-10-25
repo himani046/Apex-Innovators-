@@ -184,6 +184,21 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
              "contract_id": cid},
         ])
 
+    for item in timeline:
+        if item.get("date_type") == "deadline_or_notice":
+            alerts.append({
+                "id": f"{item.get('contract_id')}:{item.get('date')}:timeline",
+                "contract_id": item.get("contract_id"),
+                "category": "deadline_candidate",
+                "title": "Review source-stated deadline or notice date",
+                "severity": "medium",
+                "priority": "medium",
+                "status": "date_candidate_requires_trigger_review",
+                "reason": "The source contains a date near deadline/notice language. Confirm the trigger, counting convention, amendment precedence, and whether the date is actionable before treating it as overdue.",
+                "date": item.get("date"),
+                "evidence": item.get("evidence"),
+                "recommended_next_step": "Validate the date and triggering event with the contract owner."
+            })
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
                                   str(item.get("contract_id", "")), str(item.get("id", ""))))
     contract_reports.sort(key=lambda item: item["contract_id"])
