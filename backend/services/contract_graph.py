@@ -43,7 +43,7 @@ def _document_identifiers(contracts: dict[str, str]) -> dict[str, str]:
         # Add restrained title aliases so references such as "the SLA" resolve
         # to the document whose own title explicitly identifies it as an SLA.
         opening = "\n".join(_lines(source)[:12]).casefold()
-        if "service level agreement" in opening or re.search(r"\bsla\b", opening):
+        if not re.search(r"\bamendment\b", opening) and ("service level agreement" in opening or re.search(r"\bsla\b", opening)):
             identifiers["sla"] = key
             identifiers["service level agreement"] = key
         if "standard terms" in opening:
