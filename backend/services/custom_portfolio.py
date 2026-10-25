@@ -285,16 +285,34 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
 
     for item in timeline:
         if item.get("date_type") == "deadline_or_notice":
+            raw_date = str(item.get("date") or "")
+            try:
+                parsed_date = date.fromisoformat(raw_date[:10])
+                days_until = (parsed_date - clock).days
+            except ValueError:
+                parsed_date, days_until = None, None
+            if days_until is not None and days_until < 0:
+                level, state = "high", "past_date_candidate_requires_trigger_review"
+                rationale = "Source-stated date has passed in the selected clock; confirm whether the trigger occurred, was extended, or was superseded."
+            elif days_until is not None and days_until <= 7:
+                level, state = "high", "upcoming_within_7_days"
+                rationale = "Source-stated date is within 7 days; confirm the obligation, owner, counting convention, and completion status."
+            elif days_until is not None and days_until <= 30:
+                level, state = "medium", "upcoming_within_30_days"
+                rationale = "Source-stated date is within 30 days; confirm trigger and amendment precedence."
+            else:
+                level, state = "low", "date_candidate_requires_trigger_review"
+                rationale = "Date is not near-term or could not be normalized; retain as a candidate, not an asserted obligation."
             alerts.append({
-                "id": f"{item.get('contract_id')}:{item.get('date')}:timeline",
+                "id": f"{item.get('contract_id')}:{raw_date}:timeline",
                 "contract_id": item.get("contract_id"),
                 "category": "deadline_candidate",
                 "title": "Review source-stated deadline or notice date",
-                "severity": "medium",
-                "priority": "medium",
-                "status": "date_candidate_requires_trigger_review",
+                "severity": level, "priority": level, "severity_rationale": rationale,
+                "status": state,
                 "reason": "The source contains a date near deadline/notice language. Confirm the trigger, counting convention, amendment precedence, and whether the date is actionable before treating it as overdue.",
-                "date": item.get("date"),
+                "date": raw_date,
+                "days_until": days_until,
                 "evidence": item.get("evidence"),
                 "recommended_next_step": "Validate the date and triggering event with the contract owner."
             })
