@@ -153,6 +153,9 @@ class NextSixRegressionTests(unittest.TestCase):
         self.assertFalse(context["same_scope_confirmed"])
         self.assertFalse(context["precedence_reconciled"])
         self.assertTrue(result[0]["human_review_required"])
+        self.assertEqual(len(result[0]["evidence"]), 2)
+        self.assertTrue(result[0]["explanation"])
+        self.assertTrue(result[0]["unresolved_questions"])
 
     def test_synthesis_does_not_hide_incomplete_workflow_status(self):
         result = build_synthesis({"status": "partial_budget_exhausted"})
