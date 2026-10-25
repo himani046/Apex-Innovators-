@@ -40,6 +40,14 @@ def _document_identifiers(contracts: dict[str, str]) -> dict[str, str]:
         for pattern in DOC_ID_PATTERNS:
             for match in pattern.finditer(source):
                 identifiers[match.group(1).casefold()] = key
+        # Add restrained title aliases so references such as "the SLA" resolve
+        # to the document whose own title explicitly identifies it as an SLA.
+        opening = "\n".join(_lines(source)[:12]).casefold()
+        if "service level agreement" in opening or re.search(r"\bsla\b", opening):
+            identifiers["sla"] = key
+            identifiers["service level agreement"] = key
+        if "standard terms" in opening:
+            identifiers["standard terms"] = key
     # A common filename reference is used in the supplied Standard Terms language.
     if "STD" in contracts:
         identifiers["std.txt"] = "STD"
