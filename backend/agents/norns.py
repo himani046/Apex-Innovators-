@@ -11,7 +11,7 @@ def build_contract_timeline(contract_id, extraction, as_of):
     import re
     from datetime import date, datetime
     current = date.fromisoformat(as_of)
-    pattern = re.compile(r"\${ch}(?:\${ch}{4}-\${ch}{2}-\${ch}{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\${ch}+\${ch}{1,2},?\${ch}+\${ch}{4})\${ch}", re.I)
+    pattern = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
     milestones = []
     for term in extraction.get("extracted_terms", []):
         citation = term.get("citation") or {}
@@ -34,7 +34,7 @@ def build_contract_timeline(contract_id, extraction, as_of):
                 normalized_date = raw_date
                 note = "Source-stated date could not be normalized automatically; human review required."
             around = quote[max(0, match.start()-90):min(len(quote), match.end()+90)]
-            date_type = "deadline_or_notice" if re.search(r"\${ch}(deadline|notice|renew|terminate|due|payable|within)\${ch}", around, re.I) else "reference_or_effective_date"
+            date_type = "deadline_or_notice" if re.search(r"\b(deadline|notice|renew|terminate|due|payable|within)\b", around, re.I) else "reference_or_effective_date"
             milestones.append({"contract_id": contract_id, "date": normalized_date, "raw_date": raw_date,
                                "date_type": date_type, "title": around[:180], "status": status,
                                "evidence": citation, "as_of_date": as_of, "note": note, "agent": "Norns"})
