@@ -26,6 +26,10 @@ class MultiContractWorkstreamTests(unittest.TestCase):
             "contract-C1", "contract-D1", "portfolio-wide",
         })
         self.assertEqual(self.result["portfolio_summary"]["workstream_count"], 5)
+        by_id = {item["id"]: item for item in self.result["workstreams"]}
+        self.assertTrue({"A1", "A2", "A3", "STD"}.issubset(
+            set(by_id["contract-A1"]["source_documents_analyzed"])
+        ))
 
     def test_each_contract_workstream_uses_its_own_source(self):
         by_id = {item["id"]: item for item in self.result["workstreams"]}
