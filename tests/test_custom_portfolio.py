@@ -40,6 +40,21 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertTrue({"Thor", "Norns", "Loki", "Heimdall", "Tyr"}.issubset(senders))
         self.assertEqual(result["company_risk_report"]["contract_count"], 2)
         self.assertEqual(result["company_risk_report"]["total_financial_exposure"], None)
+        company = result["company_risk_report"]
+        self.assertIn("cross_contract_conflicts", company)
+        self.assertIn("candidate_financial_exposure", company)
+        self.assertIn("worst_case_projection", company)
+        self.assertIn("prioritized_action_list", company)
+        self.assertIn("references", company)
+        self.assertTrue(company["references"])
+        self.assertEqual(company["action_priority_order"], ["critical", "high", "medium", "low"])
+        for report in result["contract_reports"]:
+            self.assertIn("risk_assessments", report)
+            self.assertIn("confidence_basis", report)
+            self.assertIn("key_terms", report)
+            self.assertIn("obligations", report)
+            self.assertIn("timeline", report)
+            self.assertIn("citations", report)
 
     def test_uploaded_payment_ledger_reconciles_invoice_candidates_without_confirming_liability(self):
         result = analyze_custom_portfolio(
