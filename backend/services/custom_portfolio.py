@@ -54,7 +54,7 @@ def _event_alert_level(category: str, body: str, matched_clauses: list[dict], ev
         if category in {"payment_event", "contract_milestone_event"} and days <= 30:
             return "medium", "Scheduled obligation/event is within 30 days; verify contractual date and responsible owner."
         return "low", "Future-dated feed item; treat as a scheduled candidate, not an occurred event."
-    if re.search(r"\\b(data breach|security incident|unauthorized access|regulatory violation|service outage|material breach|missed deadline|payment overdue|unpaid invoice|failed payment)\\b", text):
+    if re.search(r"\b(data breach|security incident|unauthorized access|regulatory violation|service outage|material breach|missed deadline|payment overdue|unpaid invoice|failed payment)\b", text):
         return "high", "Event text describes a potentially material incident or missed obligation; verify source and contractual trigger."
     if matched_clauses:
         return "medium", "Event text overlaps a source-cited clause candidate; verify authenticity, timing, and trigger before escalation."
