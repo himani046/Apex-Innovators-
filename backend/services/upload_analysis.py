@@ -3,8 +3,13 @@ import re
 from typing import Any
 
 RULES = [
-    ("payment", r"\b(fee|payment|invoice|price|cost|interest|usd|\$|payable|payment period)\b"),
-    ("term_and_renewal", r"\b(term|renew|renewal|effective date|subscription period|expiration|expiry)\b"),
+    ("parties", r"\b(between the parties|customer:|client:|buyer:|supplier:|provider:|vendor:|landlord:|tenant:|party a|party b)\b"),
+    ("duration_and_term", r"\b(term of (?:this )?agreement|initial term|for a period of|commences on|expires on|effective date|duration)\b"),
+    ("renewal", r"\b(auto(?:matic)?[- ]renew|renewal|renew|non[- ]renewal|renewal date)\b"),
+    ("payment_schedule", r"\b(fee|payment|invoice|price|cost|interest|usd|\$|payable|payment period|monthly|quarterly|annually|net \d+)\b"),
+    ("obligations", r"\b(shall|must|required to|will provide|undertakes to|is obligated to)\b"),
+    ("penalty_and_liquidated_damages", r"\b(penalty|liquidated damages|late fee|interest rate|service credit|damages)\b"),
+    ("compliance_and_regulatory", r"\b(comply|compliance|regulation|regulatory|applicable law|audit right|certification|data protection)\b"),
     ("notice_and_communications", r"\b(notice|notify|notification|written notice|business days|calendar days)\b"),
     ("liability_and_indemnity", r"\b(liability|liable|indemnif|limitation of liability|damages|cap amount)\b"),
     ("service_levels_and_incidents", r"\b(sla|service level|outage|disruption|incident|response time|resolution time)\b"),
