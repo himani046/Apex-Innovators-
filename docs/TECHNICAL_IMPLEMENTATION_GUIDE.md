@@ -122,7 +122,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: broad source-grounded triage and targeted re-extraction exist; semantic completeness and calibrated confidence are not established.
 
 ### FR3 — Norns Timeline Agent
-- FR3.1: The fixed demo provides a timeline and portfolio operations view for explicit dates and transaction candidates. Invoice-reference groups can include source-grounded payment and penalty/credit trigger candidates; trigger occurrence, applicability, credits, settlement, and exposure remain unverified unless supported by reconciled evidence.
+- FR3.1: The timeline and portfolio operations view includes explicit dates and transaction candidates. Invoice-reference groups calculate a candidate ledger balance only when an invoice amount, payment/credit amounts, currency, event IDs, and due-date evidence are internally reconcilable. The balance is arithmetic over supplied rows, not verified exposure; source authenticity and contractual trigger applicability remain separate gates.
 - FR3.2: The date selector and FR9 slider rerun analysis with the selected simulated date.
 - FR3.3: The A1 scenario has a worst-case note; synthesis reports timelines and states when a defensible financial projection is unavailable.
 - Status: partial. The current A1 timeline still contains scenario-specific dates/fee information; a generic obligation calculator for arbitrary clauses and penalty triggers remains unfinished.
@@ -172,7 +172,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - GET /api/health — health/configuration.
 - GET /api/pack — configured pack summary.
 - GET /api/run?as_of=2027-03-15&use_claude=false — fixed-pack orchestration.
-- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, optional payment_ledger rows, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates, and shared state.
+- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, optional payment_ledger rows, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates (including conditional arithmetic balance candidates), and shared state.
 - POST /api/events/ingest — persist source-labeled event records with deduplication; records remain unverified.
 - GET /api/events?as_of=YYYY-MM-DD — list stored events and exclude future-dated records for the selected simulated date; changed records include revision metadata.
 - GET /api/events/history?source=...&event_id=... — retrieve before/after payload snapshots for a changed event.
