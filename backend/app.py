@@ -149,7 +149,7 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
     """Re-extract one requested clause and return the updated structured shared state."""
     from backend.services.upload_analysis import extract_document_terms
 
-    extraction = extract_document_terms(body.text, body.contract_id)
+    extraction = extract_document_terms(body.text, body.contract_id, body.clause_reference)
     terms = extraction.get("extracted_terms", [])
     for term in terms:
         citation = term.get("citation") or {}

@@ -18,9 +18,47 @@ RULES = [
     ("governing_law_and_disputes", r"\b(governing law|jurisdiction|arbitration|dispute|venue)\b"),
 ]
 
-def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
-    """Return source-grounded excerpts only; do not invent a legal interpretation."""
+def extract_document_terms(text: str, document_id: str, clause_reference: str | None = None) -> dict[str, Any]:
+    """Return source-grounded excerpts, optionally restricted to one named section.
+
+    A requested section that cannot be located returns no terms instead of silently
+    falling back to a whole-document scan.
+    """
     lines = text.splitlines()
+    if clause_reference:
+        needle = clause_reference.strip().casefold()
+        heading_pattern = re.compile(r"^(?:section|article|[0-9]+(?:\\.[0-9]+)*|[A-Z]\\.)\\b", re.I)
+        heading_indexes = [
+            index for index, raw in enumerate(lines)
+            if raw.strip() and len(raw.strip()) < 120
+            and (heading_pattern.match(raw.strip()) or raw.strip().isupper())
+        ]
+        matched_index = None
+        for index in heading_indexes:
+            heading = lines[index].strip()
+            if needle in heading.casefold():
+                matched_index = index
+                break
+            requested_numbers = re.findall(r"\\d+(?:\\.\\d+)*", needle)
+            heading_numbers = re.findall(r"\\d+(?:\\.\\d+)*", heading)
+            if requested_numbers and heading_numbers and requested_numbers[0] == heading_numbers[0]:
+                matched_index = index
+                break
+        if matched_index is None:
+            return {
+                "contract_id": document_id,
+                "summary": "Requested clause or section was not located; no whole-document fallback was performed.",
+                "extracted_terms": [],
+                "ambiguities": [f"Requested clause reference '{clause_reference}' was not found as a section heading."],
+                "missing_category_candidates": ["parties", "duration_and_term", "renewal", "payment_schedule",
+                    "obligations", "penalty_and_liquidated_damages", "compliance_and_regulatory", "termination"],
+                "agent": "Thor",
+                "mode": "targeted_clause_scan",
+                "target_clause_reference": clause_reference,
+                "target_clause_found": False,
+            }
+        next_heading = next((index for index in heading_indexes if index > matched_index), len(lines))
+        lines = lines[matched_index:next_heading]
     records = []
     current_heading = "Unlabelled section"
     for line_no, raw in enumerate(lines, start=1):
@@ -81,5 +119,7 @@ def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
         "ambiguities": ambiguity_flags,
         "missing_category_candidates": missing_categories,
         "agent": "Thor",
-        "mode": "deterministic_upload_scan",
+        "mode": "targeted_clause_scan" if clause_reference else "deterministic_upload_scan",
+        "target_clause_reference": clause_reference,
+        "target_clause_found": True if clause_reference else None,
     }
