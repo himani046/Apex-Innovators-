@@ -31,8 +31,6 @@ Open http://127.0.0.1:8000. API checks:
 - `GET /api/pack`
 - `GET /api/run?as_of=2027-03-15&use_claude=false`
 
-To use Claude, put your own API key in `.env`; do not put keys in source, GitHub, or frontend code. The `.env` file is ignored by Git. Confirm the configured model is available to your Anthropic API account. Claude calls are limited by `MAX_AGENT_CALLS` in `.env`; the current first slice only calls Claude for Thor and Loki.
-
 ## Data / citation policy
 
 The supplied `.txt` files are canonical citation anchors. A citation must include document ID, clause reference, and an exact quote. Unverified quotes must not be treated as evidence. The supplied data is fictional. Draft actions are never sent automatically.
