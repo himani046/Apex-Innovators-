@@ -107,7 +107,31 @@ async function runOdin() {
     const allRisks = workstreams.flatMap(w => (w.risk_findings || []).map(risk => ({
       ...risk, _workstream: w, _contract: (risk.contract_id || (w.contract_ids || [])[0] || 'Unresolved')
     })));
-    const highRisks = allRisks.filter(item => ['high','critical'].includes(String(item.severity || item.priority || '').toLowerCase()));
+    const normalizePriority = item => String(
+      item.priority || item.severity || item.risk_level || item.level ||
+      item.urgency || item.priority_level || ''
+    ).trim().toLowerCase().replace(/[ _-]+/g, '');
+    const isHighPriority = item => ['high','critical','p1','urgent'].includes(normalizePriority(item));
+    const highRisks = allRisks.filter(isHighPriority);
+    // The decision queue schema exposes "issues" (not "items"). Merge both
+    // sources by stable ID first, then contract + normalized claim/title to avoid
+    // counting the same surfaced signal twice.
+    const queueIssues = Array.isArray(p6Queue.issues) ? p6Queue.issues :
+      (Array.isArray(p6Queue.items) ? p6Queue.items : []);
+    const highQueueIssues = queueIssues.filter(isHighPriority);
+    const highSignalKey = item => {
+      const stableId = item.finding_id || item.issue_id || item.id || item.risk_id;
+      if (stableId) return 'id:' + String(stableId).trim().toLowerCase();
+      const contract = String(item.contract_id || item._contract || (item._workstream?.contract_ids || [])[0] || '').trim().toLowerCase();
+      const claim = String(item.claim || item.title || item.description || item.category || item.summary || '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      return contract + '|claim:' + claim;
+    };
+    const highPrioritySignals = new Map();
+    [...highRisks, ...highQueueIssues].forEach(item => {
+      const key = highSignalKey(item);
+      if (key !== '|claim:') highPrioritySignals.set(key, item);
+    });
     const unresolvedConflictCount = (p6Graph.edges || []).filter(edge =>
       /conflict|overlap|review/i.test(String(edge.status || '') + ' ' + String(edge.relation || ''))).length
       + (p6Reconciliation.review_items || []).length;
@@ -116,7 +140,7 @@ async function runOdin() {
     $('portfolioOverview').innerHTML = [
       ['Contracts scanned', contractIds.length, 'Source documents present in the portfolio extraction'],
       ['Contracts analyzed', new Set(workstreams.flatMap(w => w.contract_ids || [])).size, 'Distinct contract IDs represented in workstreams'],
-      ['High-priority signals', new Set([...highRisks.map(item => item.finding_id || item.id || item.claim || item.title || JSON.stringify(item)), ...(p6Queue.items || []).filter(item => ['high','critical'].includes(String(item.severity || item.priority || '').toLowerCase())).map(item => item.finding_id || item.id || item.claim || item.title || JSON.stringify(item))]).size, 'Deduplicated by finding identifier or claim where available'],
+      ['High-priority signals', highPrioritySignals.size, highPrioritySignals.size ? 'Distinct high/critical signals from workstreams and the decision queue' : (allRisks.length || queueIssues.length ? 'No classified high-priority risks; inspect unclassified signals below' : 'No risk signals were returned by the API')],
       ['Upcoming / action dates', (p6OpsCounts.upcoming || 0) + (p6OpsCounts.due_today || 0) + (p6OpsCounts.overdue || 0), 'Actionable upcoming, due-today, and overdue dates from the timeline engine'],
       ['Potential exposure', 'Not calculated', 'No unsupported portfolio-wide financial total is inferred'],
       ['Unresolved review items', unresolvedConflictCount, 'Relationship/reconciliation items needing review']
@@ -152,7 +176,7 @@ async function runOdin() {
       if(target) { target.style.outline = '2px solid var(--cyan)'; setTimeout(() => target.style.outline = '', 1800); }
     }));
 
-    $('heatmapStatus').textContent = allRisks.length + ' signals · ' + unresolvedConflictCount + ' review items';
+    $('heatmapStatus').textContent = (allRisks.length + queueIssues.length) + ' signals · ' + unresolvedConflictCount + ' review items';
     $('riskHeatmap').innerHTML = workstreams.map(w => {
       const risks = w.risk_findings || [];
       const open = w.unresolved_questions || [];
