@@ -75,13 +75,28 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
             for term in terms
             if isinstance(term.get("confidence"), (int, float))
         ]
+        contract_risks = contract_issues + ([contract_finding] if contract_finding else [])
+        risk_assessments = [
+            {
+                "finding_id": item.get("id") or item.get("finding_id"),
+                "title": item.get("title") or item.get("category") or "Risk candidate",
+                "severity": item.get("severity") or item.get("priority") or "unknown",
+                "confidence": item.get("confidence"),
+                "confidence_label": item.get("confidence_label") or "triage estimate; not calibrated",
+                "citations": item.get("citations") or ([item.get("evidence")] if item.get("evidence") else []),
+                "evidence_gaps": item.get("evidence_gaps") or item.get("missing_evidence") or [],
+                "human_review_required": True,
+            }
+            for item in contract_risks
+        ]
         reports.append({
             "contract_id": contract_id,
             "status": "complete_with_review_items" if gaps or any(not c.get("verified") for c in citations) else "source_triage_complete",
             "key_terms": terms,
             "obligations": stream_terms,
             "timeline": _unique(contract_milestones + stream_dates, ("date", "title", "contract_id")),
-            "risks": contract_issues + ([contract_finding] if contract_finding else []),
+            "risks": contract_risks,
+            "risk_assessments": risk_assessments,
             "recommended_actions": (
                 [contract_ruling.get("action_draft")]
                 if contract_ruling and contract_ruling.get("action_draft") else
@@ -94,6 +109,7 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
                 "failed": len(citations) - verified,
             },
             "confidence": round(sum(confidence_values) / len(confidence_values), 3) if confidence_values else None,
+            "confidence_basis": "Mean extractor confidence across terms; not a calibrated probability of breach or legal correctness.",
             "unresolved_questions": gaps,
             "notice": "Source-grounded triage, not legal advice. Extracted terms and risk signals require human review.",
         })
@@ -125,6 +141,21 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
     }
     if run_status not in allowed_run_statuses:
         run_status = "complete_with_limitations"
+    cross_contract_conflicts = _unique(
+        [
+            {"source": "reconciliation_review_item", **item, "legal_conflict_determined": False, "human_review_required": True}
+            for item in review_items
+        ] + [
+            {"source": "potential_shared_risk", **item, "legal_conflict_determined": False, "human_review_required": True}
+            for item in overlap
+        ],
+        ("source", "contract_id", "contract_ids", "topic", "title", "summary"),
+    )
+    candidate_invoice_rows = (
+        financial.get("invoice_reconciliation_candidates", [])
+        or financial.get("invoice_groups", [])
+        or []
+    )
     company_report = {
         "title": "Quillhub portfolio risk report" if run.get("scope") else "Company portfolio risk report",
         "as_of_date": run.get("as_of_date"),
@@ -134,8 +165,10 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         "cross_contract_relationships": cross_contract_edges,
         "resolved_amendment_changes": resolved_changes,
         "cross_contract_review_items": review_items,
+        "cross_contract_conflicts": cross_contract_conflicts,
         "potential_shared_risks": overlap,
         "total_financial_exposure": exposure,
+        "total_financial_exposure_status": "calculated_from_supported_inputs" if exposure is not None else "not_confirmed_no_verified_liability_amounts",
         "financial_exposure_status": "calculated_from_supported_inputs" if exposure is not None else "not_calculated_insufficient_reconciliation_evidence",
         "financial_reconciliation": {
             "status": financial.get("status", "not_calculated"),
@@ -147,9 +180,17 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         },
         "prioritized_action_list": prioritized,
         "worst_case_projection": {
+            "status": "supported_projection_available" if exposure is not None else "not_calculable_from_available_evidence",
+            "total_financial_exposure": exposure,
+            "invoice_reconciliation_candidates": candidate_invoice_rows,
             "timeline": timeline.get("milestones", []) or milestones,
+            "assumptions": [
+                "Only amounts supported by the financial reconciliation are included in total exposure.",
+                "Candidate invoice links are not treated as confirmed liabilities.",
+                "Unverified trigger dates, periods, payment application, currency, and contractual exceptions may change the outcome.",
+            ],
             "note": timeline.get("worst_case_note") or (
-                "A defensible portfolio-wide worst-case financial projection is unavailable until trigger dates, amounts, periods, and payment status are reconciled."
+                "A defensible portfolio-wide worst-case projection cannot be quantified until trigger dates, amounts, periods, currency, and payment status are reconciled."
             ),
         },
         "references": all_citations,
