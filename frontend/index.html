@@ -899,28 +899,15 @@ input[type=file]::file-selector-button:hover{
 @media(prefers-reduced-motion:reduce){.hero-globe-video{display:none!important}.hero-globe-still{opacity:.5}}
 
 
-/* Self-contained animated globe: no external media, so FastAPI CSP cannot block it. */
-.hero-globe-stage{opacity:1;overflow:hidden}
-.hero-globe-mask{inset:-8% -3% -18% 22%;mask-image:linear-gradient(to top,rgba(0,0,0,.95),rgba(0,0,0,.68) 60%,transparent 100%),linear-gradient(to left,transparent 0%,#000 15%,#000 88%,transparent 100%);mask-composite:intersect;-webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.95),rgba(0,0,0,.68) 60%,transparent 100%),linear-gradient(to left,transparent 0%,#000 15%,#000 88%,transparent 100%);-webkit-mask-composite:source-in}
-.odin-particle-globe{position:absolute;width:min(72vw,760px);aspect-ratio:1;right:-1%;top:50%;transform:translateY(-43%);border-radius:50%;overflow:hidden;isolation:isolate;background:radial-gradient(circle at 34% 27%,rgba(176,137,255,.18),transparent 27%),radial-gradient(circle at 50% 50%,rgba(118,69,238,.11),transparent 58%);box-shadow:inset -42px -8px 90px rgba(0,0,0,.8),inset 18px 0 55px rgba(179,126,255,.12),0 0 100px rgba(109,64,220,.1)}
-.odin-particle-globe:before{content:"";position:absolute;inset:0;border-radius:50%;background-image:radial-gradient(circle,rgba(218,197,255,.92) 1px,transparent 1.8px),radial-gradient(circle,rgba(143,112,255,.72) 1px,transparent 2px);background-size:13px 13px,19px 19px;background-position:0 0,6px 7px;mask-image:radial-gradient(ellipse at 48% 48%,#000 0%,rgba(0,0,0,.9) 42%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at 48% 48%,#000 0%,rgba(0,0,0,.9) 42%,transparent 70%);animation:odin-globe-drift 18s linear infinite}
-.odin-particle-globe:after{content:"";position:absolute;inset:3% -28%;border:1px solid rgba(172,135,255,.25);border-radius:50%;transform:rotate(-24deg);box-shadow:0 0 0 20px rgba(172,135,255,.025),0 0 0 42px rgba(172,135,255,.025),0 0 0 66px rgba(172,135,255,.02);animation:odin-orbit-turn 28s linear infinite}
-.odin-globe-surface{position:absolute;inset:0;border-radius:50%;background:repeating-radial-gradient(ellipse at 50% 50%,transparent 0 14px,rgba(176,142,255,.16) 15px 16px,transparent 17px 30px);transform:scaleX(.62) rotate(-18deg);animation:odin-globe-pulse 8s ease-in-out infinite alternate}
-.odin-globe-longitude{position:absolute;inset:0;border-radius:50%;background:repeating-linear-gradient(90deg,transparent 0 31px,rgba(183,151,255,.15) 32px,transparent 33px 61px);transform:scaleX(.56);animation:odin-longitude-spin 12s linear infinite}
-.odin-globe-latitude{position:absolute;inset:12% 0;border-radius:50%;border-top:1px solid rgba(194,163,255,.28);border-bottom:1px solid rgba(194,163,255,.24);transform:rotate(-17deg);box-shadow:0 24px 0 -11px rgba(194,163,255,.22),0 -24px 0 -11px rgba(194,163,255,.22),0 52px 0 -25px rgba(194,163,255,.17),0 -52px 0 -25px rgba(194,163,255,.17)}
-@keyframes odin-globe-drift{from{background-position:0 0,6px 7px}to{background-position:156px 52px,-70px 114px}}
-@keyframes odin-orbit-turn{from{transform:rotate(-24deg)}to{transform:rotate(336deg)}}
-@keyframes odin-globe-pulse{from{opacity:.45;transform:scaleX(.58) rotate(-25deg)}to{opacity:.95;transform:scaleX(.68) rotate(8deg)}}
-@keyframes odin-longitude-spin{from{background-position:0 0;transform:scaleX(.56) rotateY(0)}to{background-position:122px 0;transform:scaleX(.56) rotateY(360deg)}}
-@media(max-width:700px){.hero-globe-mask{inset:5% -24% -10% 0;opacity:.55}.odin-particle-globe{width:105vw;right:-25%;top:61%}}
-@media(prefers-reduced-motion:reduce){.odin-particle-globe:before,.odin-particle-globe:after,.odin-globe-surface,.odin-globe-longitude{animation:none!important}}
-
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
   <div class="hero-globe-stage" aria-hidden="true">
     <div class="hero-globe-mask">
-      <div class="odin-particle-globe" aria-hidden="true"><div class="odin-globe-surface"></div><div class="odin-globe-longitude"></div><div class="odin-globe-latitude"></div></div>
+      <img class="hero-globe-media hero-globe-still" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg" alt="" loading="eager">
+      <video class="hero-globe-media hero-globe-video" autoplay loop muted playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg">
+        <source src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/e71aea27-a808-4ae3-8231-a469d49285d4.mp4" type="video/mp4">
+      </video>
     </div>
     <div class="hero-globe-atmosphere"></div>
   </div>
