@@ -41,7 +41,7 @@ class CrossContractIntelligenceTests(unittest.TestCase):
 
     def test_event_ingestion_filters_future_and_rejects_malformed(self):
         result = normalize_event_records([
-            {"event_id": "E1", "timestamp": "2027-03-10", "body": "A1 incident reported"},
+            {"event_id": "E1", "timestamp": "2027-03-10", "body": "A1 incident reported", "source_verified": True},
             {"event_id": "E2", "timestamp": "2027-03-20", "body": "Future event"},
             {"event_id": "E3", "timestamp": "not-a-date", "body": "Bad timestamp"},
             {"event_id": "E4", "timestamp": "2027-03-10", "body": ""},
@@ -50,6 +50,7 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertEqual([event["event_id"] for event in result["events"]], ["E1"])
         self.assertEqual(result["counts"]["rejected"], 3)
         self.assertFalse(result["source_authenticity_verified"])
+        self.assertFalse(result["events"][0]["source_verified"])
 
     def test_payment_records_link_by_explicit_invoice_but_never_claim_exposure(self):
         contracts = {"A1": "Customer pays invoices within 30 days."}
