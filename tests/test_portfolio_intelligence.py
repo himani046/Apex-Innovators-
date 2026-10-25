@@ -126,6 +126,7 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertEqual(result["counts"]["rejected"], 3)
         self.assertFalse(result["source_authenticity_verified"])
         self.assertFalse(result["events"][0]["source_verified"])
+        self.assertTrue(result["events"][0]["source_verified_claimed"])
 
     def test_payment_records_link_by_explicit_invoice_but_never_claim_exposure(self):
         contracts = {"A1": "Customer pays invoices within 30 days."}
