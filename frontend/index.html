@@ -1931,6 +1931,42 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 .odin-chat-prompts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .odin-chat-prompts button{font-size:10px;padding:7px 9px;border-radius:999px;background:#fff;border:1px solid #d7d9cf;color:#596052}
 @media(max-width:560px){#odinChatLauncher{right:14px;bottom:14px;padding:12px 16px}#odinChatPanel{right:7px;bottom:72px;width:calc(100vw - 14px);height:calc(100dvh - 90px);border-radius:19px}.odin-chat-head{padding:14px}.odin-chat-controls{padding:10px 12px}}
+
+/* Contracts page: prevent hover/focus from washing out neighboring cards. */
+#contractExplorer .contract-explorer-card,
+#contractExplorer .contract-explorer-card:hover,
+#contractExplorer .contract-explorer-card:focus,
+#contractExplorer .contract-explorer-card:focus-within {
+  opacity: 1 !important;
+  filter: none !important;
+  color: #151813 !important;
+  background: #fff !important;
+  transform: none !important;
+}
+#contractExplorer .contract-explorer-card:not(:hover),
+#contractExplorer:has(.contract-explorer-card:hover) .contract-explorer-card:not(:hover) {
+  opacity: 1 !important;
+  filter: none !important;
+  color: #151813 !important;
+  background: #fff !important;
+}
+#contractExplorer .contract-explorer-card h3,
+#contractExplorer .contract-explorer-card p,
+#contractExplorer .contract-explorer-card .meta,
+#contractExplorer .contract-explorer-card .small,
+#contractExplorer .contract-explorer-card .label,
+#contractExplorer .contract-explorer-card .value,
+#contractExplorer .contract-explorer-card summary,
+#contractExplorer .contract-explorer-card details,
+#contractExplorer .contract-explorer-card span,
+#contractExplorer .contract-explorer-card b {
+  color: #151813 !important;
+}
+#contractExplorer .contract-explorer-card .tag,
+#contractExplorer .contract-explorer-card .step {
+  color: #454b3e !important;
+}
+
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
