@@ -117,8 +117,8 @@ def _event_contract_link(event: dict[str, Any], contract_id: str, source: str) -
             matches.append(party)
     if len(matches) == 1:
         return {"method": "contract_party_name_candidate", "confidence": "medium", "matched_party": matches[0]}
-    if len(matches) > 1:
-        return {"method": "ambiguous_party_name_candidates", "confidence": "low", "matched_parties": matches}
+    # Do not attach an event to a contract when multiple party candidates match.
+    # Ambiguous records remain unlinked rather than multiplying false associations.
     return None
 
 
