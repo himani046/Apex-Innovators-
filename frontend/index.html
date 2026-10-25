@@ -1531,6 +1531,60 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   border-color:rgba(194,177,255,.24)!important;
 }
 
+
+/* Final hover-contrast guard: no nested element may inherit the global white-card/white-text hover styles. */
+.page-view[data-view="review"] *,
+.page-view[data-view="audit"] * {
+  -webkit-text-fill-color: currentColor !important;
+}
+.page-view[data-view="review"] .card,
+.page-view[data-view="review"] .card:hover,
+.page-view[data-view="review"] .card:focus-within,
+.page-view[data-view="review"] .card *,
+.page-view[data-view="review"] .card:hover *,
+.page-view[data-view="audit"] .card,
+.page-view[data-view="audit"] .card:hover,
+.page-view[data-view="audit"] .card:focus-within,
+.page-view[data-view="audit"] .card *,
+.page-view[data-view="audit"] .card:hover * {
+  color: #ded8ed !important;
+  -webkit-text-fill-color: #ded8ed !important;
+}
+.page-view[data-view="review"] .card,
+.page-view[data-view="review"] .card:hover,
+.page-view[data-view="review"] .card:focus-within,
+.page-view[data-view="audit"] .card,
+.page-view[data-view="audit"] .card:hover,
+.page-view[data-view="audit"] .card:focus-within {
+  background: #141320 !important;
+  border-color: rgba(190,165,255,.2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+.page-view[data-view="review"] .card :is(h1,h2,h3,h4,h5,strong,b,label),
+.page-view[data-view="review"] .card:hover :is(h1,h2,h3,h4,h5,strong,b,label),
+.page-view[data-view="audit"] .card :is(h1,h2,h3,h4,h5,strong,b,label),
+.page-view[data-view="audit"] .card:hover :is(h1,h2,h3,h4,h5,strong,b,label) {
+  color: #faf7ff !important;
+  -webkit-text-fill-color: #faf7ff !important;
+}
+.page-view[data-view="review"] .card :is(.muted,.small,.meta,.hint),
+.page-view[data-view="review"] .card:hover :is(.muted,.small,.meta,.hint),
+.page-view[data-view="audit"] .card :is(.muted,.small,.meta,.hint),
+.page-view[data-view="audit"] .card:hover :is(.muted,.small,.meta,.hint) {
+  color: #bdb6d0 !important;
+  -webkit-text-fill-color: #bdb6d0 !important;
+}
+.page-view[data-view="review"] .card :is(.tag,.badge,.pill),
+.page-view[data-view="review"] .card:hover :is(.tag,.badge,.pill),
+.page-view[data-view="audit"] .card :is(.tag,.badge,.pill),
+.page-view[data-view="audit"] .card:hover :is(.tag,.badge,.pill) {
+  color: #e3d8ff !important;
+  -webkit-text-fill-color: #e3d8ff !important;
+  background: rgba(155,126,229,.16) !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
