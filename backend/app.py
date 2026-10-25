@@ -150,6 +150,13 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
             "input_fingerprint": audit["input_fingerprint"],
         }
         result["run_id"] = audit["run_id"]
+        result.setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        if isinstance(result.get("shared_state"), dict):
+            result["shared_state"].setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        audit_store.update_run_payload(
+            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+            details={"input_fingerprint": audit["input_fingerprint"]},
+        )
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="as_of must be an ISO date, e.g. 2027-03-15") from exc
