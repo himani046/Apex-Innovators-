@@ -57,14 +57,27 @@ def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
         if quote not in seen:
             unique.append(record)
             seen.add(quote)
+    source_lower = text.casefold()
+    ambiguity_flags = [
+        "This upload scan is not cross-referenced against other contracts, amendments, event logs, or payment records.",
+        "Keyword classification can miss important provisions and can flag text that is not legally operative. Human review is required.",
+    ]
+    if re.search(r"\b(auto(?:matic)?[- ]renew|renewal)\b", source_lower) and re.search(r"\b(non[- ]renewal|does not renew|shall not renew)\b", source_lower):
+        ambiguity_flags.append("Both renewal and non-renewal language occurs in the document; inspect scope, exceptions, and precedence rather than resolving automatically.")
+    if re.search(r"\b(may terminate)\b", source_lower) and re.search(r"\b(may not terminate|shall not terminate)\b", source_lower):
+        ambiguity_flags.append("Potentially conflicting termination language detected; section context and precedence require human review.")
+    if re.search(r"\b(notwithstanding|subject to|except as provided)\b", source_lower):
+        ambiguity_flags.append("Override or exception language detected; identify the provision it modifies before interpreting the obligation.")
+    expected_categories = ["parties", "duration_and_term", "renewal", "payment_schedule", "obligations",
+                           "penalty_and_liquidated_damages", "compliance_and_regulatory", "termination"]
+    observed_categories = {term.get("category") for term in unique}
+    missing_categories = [category for category in expected_categories if category not in observed_categories]
     return {
         "contract_id": document_id,
         "summary": "Generic upload scan completed. Returned items are source excerpts classified by keywords, not legal conclusions.",
         "extracted_terms": unique[:80],
-        "ambiguities": [
-            "This upload scan is not cross-referenced against other contracts, amendments, event logs, or payment records.",
-            "Keyword classification can miss important provisions and can flag text that is not legally operative. Human review is required.",
-        ],
+        "ambiguities": ambiguity_flags,
+        "missing_category_candidates": missing_categories,
         "agent": "Thor",
         "mode": "deterministic_upload_scan",
     }
