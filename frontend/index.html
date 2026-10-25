@@ -387,6 +387,66 @@ header #health{justify-self:end}
   color:#171b15!important;
 }
 
+
+/* FR1.1 contract intake: proper responsive form layout */
+#customPortfolioInput{overflow:hidden}
+#customPortfolioInput .fr9-title{align-items:flex-start;gap:24px;margin-bottom:22px}
+#customPortfolioInput .fr9-title>div{min-width:0}
+#customPortfolioInput .fr9-title h3{font-size:24px;line-height:1.2;margin:8px 0 10px}
+#customPortfolioInput .fr9-title p{max-width:760px;margin:0}
+#customPortfolioInput .form-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(260px,.88fr) minmax(0,1fr);
+  gap:20px;
+  align-items:start;
+  margin:24px 0 20px;
+}
+#customPortfolioInput .form-grid>label{
+  display:flex;flex-direction:column;align-items:stretch;gap:9px;
+  min-width:0;font-size:13px;font-weight:650;color:#4f554a;
+}
+#customPortfolioInput textarea{
+  display:block;width:100%;min-width:0;box-sizing:border-box;
+  min-height:132px;resize:vertical;padding:14px 15px;
+  border:1px solid #d9ddd1;border-radius:13px;background:#fafbf8;
+  color:#242820;font:13px/1.6 system-ui,sans-serif;
+}
+#customPortfolioInput textarea:focus,
+#customPortfolioInput input:focus{outline:3px solid #dce7d0;border-color:#879879}
+#customPortfolioInput input[type=file]{
+  display:block;width:100%;min-width:0;box-sizing:border-box;
+  min-height:132px;padding:18px 14px;border:1px dashed #bfc7b5;
+  border-radius:13px;background:#fafbf8;color:#555d50;
+  font:13px/1.5 system-ui,sans-serif;
+}
+#customPortfolioInput input[type=file]::file-selector-button{
+  display:block;margin:0 0 12px;padding:10px 14px;
+  border:1px solid #d4d9cd;border-radius:999px;background:#fff;
+  color:#20251d;font-weight:650;cursor:pointer;
+}
+#customPortfolioInput .controls{
+  display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+  gap:12px;margin:0 0 18px;padding:16px;background:#f5f6f0;
+  border:1px solid #e4e6dd;border-radius:15px;
+}
+#customPortfolioInput .controls label{font-size:13px;font-weight:650;color:#4f554a}
+#customPortfolioInput .controls input[type=date]{min-height:42px}
+#customAnalyzeButton{min-height:42px;padding:0 20px;background:#151813;color:#fff;border-color:#151813;font-weight:700}
+#customPortfolioInput>.small{font-size:12px;line-height:1.65;margin:12px 0;color:#747a6d}
+#customPortfolioStatus{padding:12px 14px;background:#f7f8f3;border:1px solid #e5e7df;border-radius:12px}
+#customPortfolioResults{min-width:0}
+@media(max-width:900px){
+  #customPortfolioInput .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #customPortfolioInput .form-grid>label:first-child{grid-column:1/-1}
+}
+@media(max-width:560px){
+  #customPortfolioInput .form-grid{grid-template-columns:minmax(0,1fr);gap:15px}
+  #customPortfolioInput .form-grid>label:first-child{grid-column:auto}
+  #customPortfolioInput .fr9-title{flex-direction:column}
+  #customPortfolioInput input[type=file],#customPortfolioInput textarea{min-height:110px}
+  #customPortfolioInput .controls{align-items:stretch}
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
