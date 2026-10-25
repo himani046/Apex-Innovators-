@@ -116,8 +116,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     budget_allows_contracts = execution_budget.max_calls >= len(stage_names) * len(contracts)
     budget_exhausted = not budget_allows_contracts
     shared_agent_state = SharedAgentState()
-    shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})
-    debate_traces = []
+    shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})debate_traces = []
     verification_records = []
     alerts = []
     events = events or []
