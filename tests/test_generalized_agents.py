@@ -19,6 +19,7 @@ class GeneralizedAgentTests(unittest.TestCase):
         result = build_timeline(extraction, "2027-03-15")
         self.assertEqual(result["contract_id"], "VENDOR_X")
         self.assertEqual(len(result["milestones"]), 2)
+        self.assertTrue(all(item["actionable"] is False for item in result["milestones"]))
         self.assertIsNone(result["worst_case_projection"]["total_exposure"])
         self.assertNotIn("8000", str(result))
 
