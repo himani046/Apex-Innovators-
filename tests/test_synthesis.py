@@ -34,6 +34,9 @@ class SynthesisTests(unittest.TestCase):
         self.assertEqual(result["contract_reports"][0]["contract_id"], "A1")
         self.assertIsNone(result["company_risk_report"]["total_financial_exposure"])
         self.assertIn("Notice timestamp", result["company_risk_report"]["unresolved_questions"])
+        self.assertIn("cross_contract_conflicts", result["company_risk_report"])
+        self.assertIn("risk_assessments", result["contract_reports"][0])
+        self.assertIn("confidence_basis", result["contract_reports"][0])
 
 
 if __name__ == "__main__":
