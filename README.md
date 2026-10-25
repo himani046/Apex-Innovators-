@@ -160,3 +160,23 @@ Audit API:
 - `POST /api/audit/runs/{run_id}/decision` with JSON such as `{"action_id":"recommended-action","decision":"approved","reviewer":"Contract Counsel","note":"Reviewed the draft."}`
 
 **Operational/security notes:** SQLite is suitable for the current single-instance prototype. Configure a durable writable volume and set `ODIN_AUDIT_DB` in deployments where filesystem persistence is not guaranteed. This prototype records the reviewer identity as supplied by the caller; it does not authenticate that identity or provide tamper-proof/WORM storage. Do not treat the approval record as an electronic signature or permission to dispatch the action. A recorded approval/rejection never executes a consequential action.
+
+
+## Phase 8 — Production hardening (first increment)
+
+Phase 8 begins adding explicit API controls and safer request handling. This is an incremental hardening layer, not a claim that the prototype is production-certified.
+
+- **Optional bearer-token gate:** set `ODIN_API_TOKEN` to require a matching `Authorization: Bearer <token>` header for audit history reads, reviewer decisions, and contract uploads. The dashboard has a token field; the value is held in the current browser tab's session storage.
+- **Fail-closed production configuration:** set `ODIN_ENV=production`. If no `ODIN_API_TOKEN` is configured, protected endpoints return HTTP 503 rather than silently allowing anonymous access.
+- **Request validation:** human decisions use a strict schema; unsupported fields and invalid decision values are rejected. Reviewer and note lengths are bounded.
+- **Upload bounds:** uploaded content is capped at 15 MiB at the API boundary.
+- **Response hardening:** common security headers are added, API responses are not cached, and server exception details are not returned to clients.
+- **Regression coverage:** `python -m unittest tests.test_security -v` checks local, production-misconfiguration, and bearer-token behavior.
+
+### Configure local / deployed environments
+
+Copy `.env.example` to `.env` for local use. For a protected review workflow, set a long random `ODIN_API_TOKEN` value. For a production deployment, set both `ODIN_ENV=production` and `ODIN_API_TOKEN`; configure them as deployment secrets, never commit the real token, and restart the service. Paste the same token into the dashboard's API access token field. Requests to `/api/health` remain public so health checks can work.
+
+### Important limits still open
+
+The bearer token is a **shared access secret**, not individual reviewer authentication, roles, SSO, or per-reviewer attribution verified by an identity provider. Audit history is SQLite-backed but not yet cryptographically tamper-evident or WORM storage. Production deployment still needs durable-volume verification, TLS/reverse-proxy configuration, rate limiting, operational secret rotation, and a full security review. Do not expose this prototype to public or sensitive contract data until those controls are addressed.
