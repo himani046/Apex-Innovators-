@@ -547,6 +547,69 @@ header #health{justify-self:end}
   background:#eaf0e2!important;
 }
 
+
+/* Hard override for nested contract evidence: readable at rest, white only on the evidence card hover. */
+#contractExplorer .contract-explorer-card,
+#contractExplorer .contract-explorer-card:hover,
+#contractExplorer .contract-explorer-card:focus,
+#contractExplorer .contract-explorer-card:focus-within {
+  color:#171b15!important;
+  background:#fff!important;
+  border-color:#e0e3da!important;
+  box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
+  transform:none!important;
+}
+#contractExplorer .contract-explorer-card > b,
+#contractExplorer .contract-explorer-card > p,
+#contractExplorer .contract-explorer-card > .flow,
+#contractExplorer .contract-explorer-card > details,
+#contractExplorer .contract-explorer-card > details > p,
+#contractExplorer .contract-explorer-card > details > summary,
+#contractExplorer .contract-explorer-card > details > summary:focus,
+#contractExplorer .contract-explorer-card > details > summary:focus-visible {
+  color:#252a22!important;
+}
+#contractExplorer .contract-explorer-card > details > summary {
+  background:#f4f6ef!important;
+  border:1px solid #e0e5d8!important;
+  border-radius:10px!important;
+  padding:10px 12px!important;
+  outline-offset:2px;
+}
+#contractExplorer .contract-explorer-card > details > summary:hover {
+  color:#34402b!important;
+  background:#eaf0e2!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence,
+#contractExplorer .contract-explorer-card details[open] .evidence * {
+  color:#252a22!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence {
+  background:linear-gradient(145deg,#fbfcf8,#f0f3eb)!important;
+  border:1px solid #dce2d5!important;
+  box-shadow:0 4px 14px rgba(30,36,25,.045)!important;
+  transform:none!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence:hover,
+#contractExplorer .contract-explorer-card details[open] .evidence:hover * {
+  color:#fff!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence:hover {
+  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%)!important;
+  border-color:#6d7770!important;
+  box-shadow:0 12px 25px rgba(35,42,34,.14)!important;
+  transform:translateY(-2px)!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence blockquote {
+  color:#252a22!important;
+  background:#fff!important;
+}
+#contractExplorer .contract-explorer-card details[open] .evidence:hover blockquote {
+  color:#fff!important;
+  background:rgba(255,255,255,.12)!important;
+  border-left-color:#dce8d0!important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
