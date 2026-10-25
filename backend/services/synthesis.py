@@ -118,7 +118,12 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
     all_citations = _unique(all_citations, ("document_id", "clause_reference", "quote"))
 
     run_status = str(run.get("status") or "complete_with_limitations")
-    if run_status not in {"partial_budget_exhausted", "partial_review_limit_reached"}:
+    allowed_run_statuses = {
+        "running", "complete", "complete_with_review_items", "complete_with_limitations",
+        "source_triage_complete", "partial_budget_exhausted", "partial_review_limit_reached",
+        "failed", "not_run",
+    }
+    if run_status not in allowed_run_statuses:
         run_status = "complete_with_limitations"
     company_report = {
         "title": "Quillhub portfolio risk report" if run.get("scope") else "Company portfolio risk report",
@@ -132,6 +137,14 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         "potential_shared_risks": overlap,
         "total_financial_exposure": exposure,
         "financial_exposure_status": "calculated_from_supported_inputs" if exposure is not None else "not_calculated_insufficient_reconciliation_evidence",
+        "financial_reconciliation": {
+            "status": financial.get("status", "not_calculated"),
+            "counts": financial.get("counts", {}),
+            "invoice_reconciliation_candidates": financial.get("invoice_reconciliation_candidates", []),
+            "unresolved_questions": financial.get("unresolved_questions", []),
+            "confirmed_liability": False,
+            "note": "Ledger and invoice links remain candidates until contract triggers, billing periods, payment/credit application, and source evidence are reconciled.",
+        },
         "prioritized_action_list": prioritized,
         "worst_case_projection": {
             "timeline": timeline.get("milestones", []) or milestones,
