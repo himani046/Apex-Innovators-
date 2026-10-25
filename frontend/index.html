@@ -1089,7 +1089,7 @@ async function runOdin() {
     const edges = graph.edges || [];
     const changes = reconciliation.resolved_changes || [];
     const reviews = reconciliation.review_items || [];
-    $('graphCount').textContent = (graph.node_count || 0) + ' documents · ' + (graph.edge_count || 0) + ' links';
+    $('graphCount').textContent = (graph.nodes || []).filter(n => n && (n.type === 'contract' || n.document_id && !n.type)).length + ' contracts · ' + (graph.edges || []).length + ' relationships';
     $('graphEdges').innerHTML = edges.slice(0, 18).map(edge =>
       '<div class="agent"><b>' + esc(edge.source || '') + ' → ' + esc(edge.target || '') +
       '</b><p>' + esc((edge.relation || '').replaceAll('_', ' ')) + ' · ' +
