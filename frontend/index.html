@@ -843,7 +843,7 @@ input[type=file]::file-selector-button:hover{
   position:relative;isolation:isolate;overflow:hidden;display:grid!important;
   grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);align-items:center;
   gap:clamp(28px,5vw,80px);min-height:470px;margin:0 0 34px!important;
-  padding:clamp(34px,5.5vw,76px)!important;border:1px solid rgba(190,165,255,.13);
+  padding:clamp(30px,3.2vw,48px) clamp(24px,3.2vw,48px)!important;border:1px solid rgba(190,165,255,.13);
   border-radius:30px;background:
     radial-gradient(ellipse at 72% 52%,rgba(113,64,177,.25),transparent 42%),
     radial-gradient(ellipse at 24% 100%,rgba(68,47,132,.2),transparent 44%),
@@ -887,12 +887,12 @@ input[type=file]::file-selector-button:hover{
 /* Animated particle globe borrowed from the supplied Vaultra hero asset, adapted for Odin */
 .odin-hero{isolation:isolate}
 .hero-globe-stage{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:1}
-.hero-globe-mask{position:absolute;inset:0;overflow:hidden;mask-image:linear-gradient(to top,#000 35%,rgba(0,0,0,.86) 65%,transparent 100%),linear-gradient(to right,transparent 0%,#000 12%,#000 88%,transparent 100%);mask-composite:intersect;-webkit-mask-image:linear-gradient(to top,#000 35%,rgba(0,0,0,.86) 65%,transparent 100%),linear-gradient(to right,transparent 0%,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in}
+.hero-globe-mask{position:absolute;inset:0;overflow:hidden;mask-image:linear-gradient(to top,#000 28%,rgba(0,0,0,.92) 70%,#000 100%);-webkit-mask-image:linear-gradient(to top,#000 28%,rgba(0,0,0,.92) 70%,#000 100%)}
 .hero-globe-media{position:absolute;bottom:-23%;left:50%;transform:translateX(-50%);width:min(110%,1150px);height:115%;object-fit:cover;object-position:center bottom;display:block}
 .hero-globe-still{opacity:.65;filter:saturate(.9) hue-rotate(12deg) brightness(.72)}
 .hero-globe-video{opacity:.95;filter:saturate(1) hue-rotate(0deg) brightness(.95);transition:opacity 1.2s ease}
 .hero-globe-video.is-loaded{opacity:.95}
-.hero-globe-atmosphere{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,9,18,.48) 0%,rgba(10,9,18,.24) 43%,rgba(10,9,18,.04) 100%),linear-gradient(0deg,rgba(10,9,18,.06),rgba(10,9,18,.08));z-index:1}
+.hero-globe-atmosphere{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(10,9,18,.72) 0%,rgba(10,9,18,.42) 48%,rgba(10,9,18,.34) 100%),linear-gradient(0deg,rgba(10,9,18,.18),rgba(10,9,18,.18))}
 .odin-hero>.hero-orbit,.odin-hero>.hero-glow,.odin-hero>.hero-copy,.odin-hero>.hero-side{z-index:2}
 .odin-hero>.hero-orbit{opacity:.42}
 @media(max-width:900px){.hero-globe-media{width:145%;height:100%;bottom:-15%;left:58%}.hero-globe-atmosphere{background:linear-gradient(90deg,rgba(10,9,18,.48),rgba(10,9,18,.18)),linear-gradient(0deg,rgba(10,9,18,.06),rgba(10,9,18,.08))}}
