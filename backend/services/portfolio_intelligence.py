@@ -339,19 +339,85 @@ def reconcile_payment_events(
                 payment_trigger_candidates.append(evidence)
             if re.search(r"\b(late fee|late charge|interest|penalty|service credit|credit cap|liquidated damages|chargeback)\b", quote, re.I):
                 penalty_trigger_candidates.append(evidence)
-        kinds = {str(row.get("event_kind", "")).casefold() for row in rows}
-        amounts = {row.get("amount_candidate") for row in rows if row.get("amount_candidate") is not None}
-        currencies = {row.get("currency_candidate") for row in rows if row.get("currency_candidate")}
-        structurally_matched = len(rows) >= 2 and len(kinds.intersection({"invoice", "payment", "credit"})) >= 2
-        amount_consistent = len(amounts) <= 1 and len(currencies) <= 1
+        # Calculate a *candidate ledger balance* only when invoice, payment, and
+        # credit rows can be arithmetically reconciled without guessing. This is
+        # not confirmed liability: source authenticity and contractual triggers
+        # remain separate verification gates.
+        unique_rows_by_id: dict[str, dict[str, Any]] = {}
+        conflicting_event_ids: set[str] = set()
+        for row in rows:
+            event_key = str(row.get("event_id") or "")
+            if event_key in unique_rows_by_id and unique_rows_by_id[event_key] != row:
+                conflicting_event_ids.add(event_key)
+            else:
+                unique_rows_by_id[event_key] = row
+        reconciliation_rows = list(unique_rows_by_id.values())
+        kinds = {str(row.get("event_kind", "")).casefold() for row in reconciliation_rows}
+        amounts = {row.get("amount_candidate") for row in reconciliation_rows if row.get("amount_candidate") is not None}
+        currencies = {row.get("currency_candidate") for row in reconciliation_rows if row.get("currency_candidate")}
+        structurally_matched = len(reconciliation_rows) >= 2 and len(kinds.intersection({"invoice", "payment", "credit"})) >= 2
+        amount_consistent = len(currencies) <= 1
+        invoice_rows = [row for row in reconciliation_rows if str(row.get("event_kind", "")).casefold() == "invoice"]
+        payment_rows = [row for row in reconciliation_rows if str(row.get("event_kind", "")).casefold() == "payment"]
+        credit_rows = [row for row in reconciliation_rows if str(row.get("event_kind", "")).casefold() == "credit"]
+        invoice_amounts = {row.get("amount_candidate") for row in invoice_rows if row.get("amount_candidate") is not None}
+        invoice_amount_conflict = len(invoice_amounts) > 1
+        missing_amount_rows = [
+            str(row.get("event_id") or "unknown")
+            for row in invoice_rows + payment_rows + credit_rows
+            if row.get("amount_candidate") is None
+        ]
+        all_amount_rows = invoice_rows + payment_rows + credit_rows
+        all_have_one_currency = bool(all_amount_rows) and len(currencies) == 1 and all(
+            row.get("currency_candidate") in currencies for row in all_amount_rows
+            if row.get("amount_candidate") is not None
+        )
+        due_dates = sorted({
+            str(row.get("due_date_candidate") or "").strip()
+            for row in reconciliation_rows if str(row.get("due_date_candidate") or "").strip()
+        })
+        candidate_balance = None
+        balance_status = "insufficient_reconciliation_evidence"
+        if conflicting_event_ids:
+            balance_status = "conflicting_duplicate_event_ids"
+        elif invoice_amount_conflict:
+            balance_status = "invoice_amount_conflict_requires_review"
+        elif not invoice_rows or len(invoice_amounts) != 1:
+            balance_status = "invoice_amount_missing"
+        elif missing_amount_rows:
+            balance_status = "amount_missing_on_reconciliation_rows"
+        elif not all_have_one_currency:
+            balance_status = "currency_missing_or_inconsistent"
+        elif len(due_dates) > 1:
+            balance_status = "conflicting_due_dates_requires_review"
+        else:
+            invoice_total = float(next(iter(invoice_amounts)))
+            paid_total = sum(float(row["amount_candidate"]) for row in payment_rows)
+            credited_total = sum(float(row["amount_candidate"]) for row in credit_rows)
+            candidate_balance = round(invoice_total - paid_total - credited_total, 2)
+            balance_status = (
+                "candidate_outstanding_balance_requires_verification" if candidate_balance > 0
+                else "candidate_fully_offset_requires_verification" if candidate_balance == 0
+                else "candidate_overpayment_or_excess_credit_requires_review"
+            )
+        structurally_matched = structurally_matched and not conflicting_event_ids
         groups.append({
-            "contract_id": cid, "invoice_id": invoice_id, "event_ids": [row["event_id"] for row in rows],
+            "contract_id": cid, "invoice_id": invoice_id, "event_ids": [row["event_id"] for row in reconciliation_rows],
             "event_kinds": sorted(kinds), "amount_candidates": sorted(amounts),
             "currency_candidates": sorted(currencies),
+            "candidate_ledger_balance": candidate_balance,
+            "candidate_balance_currency": next(iter(currencies)) if len(currencies) == 1 else None,
+            "candidate_balance_status": balance_status,
+            "invoice_amount_candidate": next(iter(invoice_amounts)) if len(invoice_amounts) == 1 else None,
+            "payment_amount_candidates": [row.get("amount_candidate") for row in payment_rows],
+            "credit_amount_candidates": [row.get("amount_candidate") for row in credit_rows],
+            "due_date_candidates": due_dates,
+            "conflicting_event_ids": sorted(conflicting_event_ids),
+            "missing_amount_event_ids": missing_amount_rows,
             "structurally_matched": structurally_matched,
-            "amounts_consistent": amount_consistent,
+            "amounts_consistent": amount_consistent and not invoice_amount_conflict,
             "status": (
-                "structural_match_requires_source_verification" if structurally_matched and amount_consistent
+                "structural_match_requires_source_verification" if structurally_matched and amount_consistent and not invoice_amount_conflict
                 else "amount_or_event_type_mismatch_requires_review" if structurally_matched
                 else "unmatched_invoice_payment_candidate"
             ),
