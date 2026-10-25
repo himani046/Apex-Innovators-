@@ -52,3 +52,16 @@ The supplied `.txt` files are canonical citation anchors. A citation must includ
 - `backend/orchestrator.py`: bounded state-machine orchestration.
 - `frontend/index.html`: single-page command-center UI.
 - `tests/`: automated checks.
+
+## Upload a contract (PDF or TXT)
+
+The dashboard accepts a single `.pdf` or `.txt` file (up to 15 MB) through **Upload a contract**. PDF text extraction uses `pypdf`; TXT is decoded as UTF-8 with a Windows-1252 fallback. The upload response includes the original filename, format, page count when available, SHA-256 fingerprint, extracted terms, and exact-quote validation against the uploaded document text. Scanned/image-only PDFs return a clear OCR-required message rather than silently producing empty evidence.
+
+Install the upload dependencies and start the app:
+
+```bash
+pip install -r requirements.txt
+uvicorn backend.app:app --reload
+```
+
+The `POST /api/analyze-upload` endpoint currently provides document-level extraction and citation checks. It does not yet reconcile an uploaded file against every contract, event drop, or the payment ledger. Treat output as evidence triage, not legal advice. Uploading both PDF and TXT copies is not required; different SHA-256 hashes do not necessarily mean different contract text.
