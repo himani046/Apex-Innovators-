@@ -31,6 +31,9 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
     queue = run.get("decision_queue", {}) or {}
     issues = queue.get("issues", []) or []
     graph = run.get("contract_graph", {}) or {}
+    contract_ids = set(portfolio)
+    cross_contract_edges = [edge for edge in (graph.get("edges", []) or [])
+                            if str(edge.get("source", "")) in contract_ids and str(edge.get("target", "")) in contract_ids]
     reconciliation = run.get("contract_reconciliation", {}) or {}
     finding = run.get("evidence_grounded_finding", {}) or {}
     ruling = run.get("ruling", {}) or {}
@@ -120,7 +123,7 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         "status": "complete_with_limitations",
         "contract_count": len(reports),
         "contract_reports": len(reports),
-        "cross_contract_relationships": graph.get("edges", []) or [],
+        "cross_contract_relationships": cross_contract_edges,
         "resolved_amendment_changes": resolved_changes,
         "cross_contract_review_items": review_items,
         "potential_shared_risks": overlap,
