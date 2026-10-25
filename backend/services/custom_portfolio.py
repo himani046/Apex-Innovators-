@@ -17,6 +17,7 @@ from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
+from backend.agents.cross_contract import detect_cross_contract_candidates
 from backend.services.agentic_state import ExecutionBudget, SharedAgentState
 from backend.config import MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
 
@@ -107,6 +108,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     base_graph = build_contract_graph(contracts)
     graph = build_rich_contract_graph(contracts, extractions, base_graph)
     cross_contract_edges = [edge for edge in graph.get("edges", []) if str(edge.get("source", "")) in contracts and str(edge.get("target", "")) in contracts]
+    cross_contract_conflicts = detect_cross_contract_candidates(contracts)
     timeline = []
     risks = []
     contract_reports = []
@@ -237,6 +239,17 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                   "notice": "Keyword-based source triage; not legal advice and not a complete semantic contract review."}
         contract_reports.append(report)
 
+    for conflict in cross_contract_conflicts:
+        risks.append(conflict)
+        alerts.append({**conflict, "alert_source": "cross_contract_review"})
+        agent_messages.append({"from": "Loki", "to": "Tyr", "type": "cross_contract_inconsistency",
+                               "status": "candidate_requires_human_review", "contract_ids": conflict["contract_ids"],
+                               "finding_id": conflict["id"]})
+        debate_traces.append({"scope": "cross_contract", "loki_attack": conflict,
+                              "heimdall_status": "source_quotes_present_not_semantic_validation",
+                              "tyr_ruling": {"decision": "human_review_required",
+                                             "rationale": "Different source terms require review of scope and precedence.",
+                                             "human_approval_required": True}})
     for item in timeline:
         if item.get("date_type") == "possible_action_deadline":
             alerts.append({
@@ -297,7 +310,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 "reason": "Custom portfolio intake does not infer exposure from contractual rates or unlinked event amounts."}
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "status": "complete_with_limitations", "contract_count": len(contracts),
-                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges,
+                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges, "cross_contract_conflicts": cross_contract_conflicts,
                       "total_financial_exposure": None, "financial_exposure_status": exposure["status"],
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
@@ -339,7 +352,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     return {"status": "incomplete_budget_exhausted" if budget_exhausted else "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
-            "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
+            "contract_graph": graph, "cross_contract_conflicts": cross_contract_conflicts, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Structured deterministic challenge/verification/ruling traces; this path does not claim a live LLM debate."},
             "contract_reports": contract_reports, "company_risk_report": company_report,
