@@ -1080,6 +1080,48 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   opacity:0!important;
 }
 
+
+/* Contract page hover fix: keep contract text readable, avoid the dark hover wash. */
+#contracts .card:hover,
+#contracts .card:focus-within,
+#contracts .agent:hover,
+#contracts .evidence:hover,
+#contracts .action:hover,
+#contracts .milestone:hover,
+#contracts .overview-metric:hover {
+  color: var(--txt, #151813) !important;
+  background: #fff !important;
+  border-color: #d7d9cf !important;
+  box-shadow: 0 4px 18px rgba(30,36,25,.025) !important;
+  transform: none !important;
+}
+#contracts .card:hover h1,
+#contracts .card:hover h2,
+#contracts .card:hover h3,
+#contracts .card:hover h4,
+#contracts .card:hover p,
+#contracts .card:hover li,
+#contracts .card:hover small,
+#contracts .card:hover label,
+#contracts .card:hover .value,
+#contracts .card:hover .muted,
+#contracts .card:hover .label,
+#contracts .card:hover .hint,
+#contracts .agent:hover,
+#contracts .evidence:hover,
+#contracts .action:hover,
+#contracts .milestone:hover {
+  color: var(--txt, #151813) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+#contracts .card:hover .tag,
+#contracts .card:hover .badge,
+#contracts .card:hover .pill {
+  background: #edf0e8 !important;
+  border-color: #d7d9cf !important;
+  color: #62695d !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
