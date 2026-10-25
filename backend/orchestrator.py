@@ -1,6 +1,6 @@
 from datetime import date
 
-from backend.config import PACK_DIR, USE_CLAUDE, MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
+from backend.config import PACK_DIR, USE_CLAUDE, MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS
 from backend.services.agentic_state import SharedAgentState, ExecutionBudget, run_bounded_follow_up
 from backend.services.ingestion import load_pack
 from backend.services.citations import verify_all
@@ -364,8 +364,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         extractions=portfolio_extraction.get("contracts", {}),
         events=portfolio_events,
         as_of=as_of,
-        max_iterations=1,
-        max_agent_calls=max(MAX_AGENT_CALLS * 10, len(contracts) * 13),
+        max_iterations=MAX_AGENT_ITERATIONS,
+        max_agent_calls=MAX_PORTFOLIO_AGENT_CALLS,
         use_llm=use,
     )
     state["cross_contract_candidates"] = detect_cross_contract_candidates(contracts)
