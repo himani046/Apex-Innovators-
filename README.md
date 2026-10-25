@@ -14,7 +14,7 @@ A hackathon prototype for evidence-grounded multi-agent contract intelligence, b
 - Includes a responsive dashboard, health endpoint, pack summary endpoint, and selected simulated date.
 - Uses deterministic fallback behavior without an API key. Thor and Loki can call Claude when configured.
 
-**This is intentionally an incremental prototype, not yet the complete portfolio implementation.** Thor now scans A1, A2, A3, B1, B2, C1, D1, and STD when those files are present, but its new portfolio pass only identifies evidence-linked candidate lines. The downstream timeline, incident review, verification, and ruling still operate on A1; cross-contract precedence and final interpretation remain future work.
+**Phase 1 is implemented as an evidence-grounded reconciliation layer, not as a claim of complete legal analysis.** The graph links documents using explicit identifiers and relationship language. The reconciliation layer resolves only the specifically detected non-renewal amendment; other amendment sections are flagged for human review. The downstream timeline, incident review, verification, and ruling still operate on A1, and multi-contract workstreams remain future work.
 
 ## Quick start (macOS)
 
