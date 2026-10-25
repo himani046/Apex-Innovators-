@@ -41,6 +41,24 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertEqual(result["company_risk_report"]["contract_count"], 2)
         self.assertEqual(result["company_risk_report"]["total_financial_exposure"], None)
 
+    def test_contract_actions_have_stable_ids_and_require_human_approval(self):
+        result = analyze_custom_portfolio(
+            company_context="Example Buyer manages vendor agreements and renewal obligations.",
+            contract_items=self.contracts,
+            events=[],
+            as_of="2027-03-15",
+        )
+        actions = [
+            (report["contract_id"], action)
+            for report in result["contract_reports"]
+            for action in report.get("recommended_actions", [])
+        ]
+        self.assertTrue(actions)
+        for contract_id, action in actions:
+            self.assertTrue(action["action_id"].startswith(contract_id + ":action:"))
+            self.assertTrue(action["human_approval_required"])
+            self.assertEqual(action["status"], "draft_only_not_sent")
+
     def test_graph_contains_contract_clause_and_explicit_party_nodes(self):
         result = analyze_custom_portfolio(
             company_context="Example Buyer manages vendor agreements and renewal obligations.",
