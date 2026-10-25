@@ -183,12 +183,8 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
         saved_payload = dict(saved_run.get("payload") or {})
         saved_payload["shared_state"] = snapshot
         history = list(saved_payload.get("reextraction_history") or [])
-        history.append({
-            "contract_id": body.contract_id,
-            "clause_reference": body.clause_reference,
-            "terms_returned": len(terms),
-            "status": "complete" if terms else "no_matching_terms",
-        })
+        history.append({"contract_id": body.contract_id, "clause_reference": body.clause_reference,
+                        "terms_returned": len(terms), "status": "complete" if terms else "no_matching_terms"})
         saved_payload["reextraction_history"] = history
         updated = audit_store.update_run_payload(
             body.run_id, saved_payload, actor="Thor", event_type="targeted_reextraction",

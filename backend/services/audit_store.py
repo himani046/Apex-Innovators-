@@ -141,12 +141,7 @@ class AuditStore:
 
     def update_run_payload(self, run_id: str, payload: dict, actor: str = "system",
                           event_type: str = "run_state_updated", details: dict | None = None) -> dict:
-        """Persist a state update to an existing run and append an audit event.
-
-        The existing run ID and original input fingerprint remain stable. This is
-        intended for targeted re-extraction and other bounded workflow updates;
-        it does not approve or execute any recommended action.
-        """
+        """Persist a bounded workflow update and append an audit event."""
         if not isinstance(payload, dict):
             raise ValueError("payload must be a dictionary")
         actor = str(actor or "system").strip()[:120] or "system"
@@ -245,12 +240,41 @@ class AuditStore:
             if not run:
                 raise KeyError("run not found")
             payload = json.loads(run["payload_json"])
-            draft = payload.get("action_draft") or (payload.get("ruling") or {}).get("action_draft") or {}
-            if not draft:
-                raise ValueError("this run has no action draft to review")
-            allowed_ids = {str(draft.get("action_id") or draft.get("id") or "recommended-action")}
-            if str(action_id) not in allowed_ids:
-                raise ValueError("action_id does not match the run's draft action")
+            candidates = []
+            def add_action(candidate):
+                if not isinstance(candidate, dict):
+                    return
+                if not any(candidate.get(key) for key in ("action_id", "id", "subject", "title", "body")):
+                    return
+                candidate_id = str(candidate.get("action_id") or candidate.get("id") or "recommended-action")
+                if not any(str(existing.get("action_id") or existing.get("id") or "recommended-action") == candidate_id
+                           for existing in candidates):
+                    normalized = dict(candidate)
+                    normalized.setdefault("action_id", candidate_id)
+                    candidates.append(normalized)
+
+            add_action(payload.get("action_draft"))
+            add_action((payload.get("ruling") or {}).get("action_draft"))
+            for candidate in payload.get("recommended_actions", []) or []:
+                add_action(candidate)
+            for candidate in (payload.get("shared_state") or {}).get("recommended_actions", []) or []:
+                add_action(candidate)
+            for report in payload.get("contract_reports", []) or []:
+                for candidate in report.get("recommended_actions", []) or []:
+                    add_action(candidate)
+            for report in (payload.get("company_risk_report") or {}).get("contract_reports", []) or []:
+                for candidate in report.get("recommended_actions", []) or []:
+                    add_action(candidate)
+            if not candidates:
+                raise ValueError("this run has no draft action to review")
+            requested_id = str(action_id)
+            selected = next((item for item in candidates if str(item.get("action_id")) == requested_id), None)
+            if selected is None and requested_id == "recommended-action" and len(candidates) == 1:
+                selected = candidates[0]
+                requested_id = str(selected.get("action_id") or "recommended-action")
+            if selected is None:
+                raise ValueError("action_id must match one draft action in this run; portfolio actions need an explicit action_id")
+            action_id = requested_id
             now = _now()
             finding_id = (payload.get("evidence_grounded_finding") or {}).get("finding_id")
             db.execute(

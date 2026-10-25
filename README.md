@@ -52,10 +52,12 @@ The supplied `.txt` files are canonical citation anchors. A citation must includ
 
 ### Recent completion increment
 
-- Targeted re-extraction can now be attached to an existing audit run by supplying `run_id` to `POST /api/reextract`.
+- Targeted re-extraction can be attached to an existing audit run by supplying `run_id` to `POST /api/reextract`.
 - The updated shared-state snapshot and re-extraction history are written back to the saved run, and a `targeted_reextraction` event records the actor, contract, clause reference, result count, and status.
-- Calls without `run_id` remain backward-compatible, but explicitly report that the returned state is not durable. Missing run IDs return `404`; no human decision or consequential action is executed by re-extraction.
-- Regression tests cover durable state updates and missing-run behavior.
+- Missing section references return an explicit no-match result without a whole-document fallback. Source line numbers remain anchored to the original document.
+- Portfolio draft actions receive stable IDs so a reviewer can approve or reject one action at a time; decisions remain records only and never dispatch an action.
+- Calls without `run_id` remain compatible, but explicitly report that the returned state is not durable. Missing run IDs return `404`.
+- Regression tests cover targeted extraction, persistent state updates, and action-specific decisions.
 
 ## Project layout
 

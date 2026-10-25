@@ -5,7 +5,7 @@ from typing import Any
 RULES = [
     ("parties", r"\b(between the parties|customer:|client:|buyer:|supplier:|provider:|vendor:|landlord:|tenant:|party a|party b)\b"),
     ("duration_and_term", r"\b(term of (?:this )?agreement|initial term|for a period of|commences on|expires on|effective date|duration)\b"),
-    ("renewal", r"\b(auto(?:matic)?[- ]renew|renewal|renew|non[- ]renewal|renewal date)\b"),
+    ("renewal", r"\b(automatic(?:ally)?\s+renew(?:s|ed|ing)?|auto[- ]renew(?:s|ed|ing)?|renewal|renew(?:s|ed|ing)?|non[- ]renewal|renewal date)\b"),
     ("payment_schedule", r"\b(fee|payment|invoice|price|cost|interest|usd|\$|payable|payment period|monthly|quarterly|annually|net \d+)\b"),
     ("obligations", r"\b(shall|must|required to|will provide|undertakes to|is obligated to)\b"),
     ("penalty_and_liquidated_damages", r"\b(penalty|liquidated damages|late fee|interest rate|service credit|damages)\b"),
@@ -21,7 +21,7 @@ RULES = [
 def extract_document_terms(text: str, document_id: str, clause_reference: str | None = None) -> dict[str, Any]:
     """Return source-grounded excerpts, optionally restricted to one named section.
 
-    A requested section that cannot be located returns no terms instead of silently
+    If the requested section cannot be located, return no terms rather than silently
     falling back to a whole-document scan.
     """
     lines = text.splitlines()

@@ -72,15 +72,6 @@ class AuditStoreTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.store.update_run_payload("missing", {})
 
-    def test_human_decision_is_timestamped_and_never_executes_action(self):
-        saved = self.store.record_run(self.payload())
-        result = self.store.decide(saved["run_id"], "recommended-action", "approved", "Contract Counsel", "Reviewed")
-        self.assertEqual(result["decision"], "approved")
-        self.assertFalse(result["consequential_action_executed"])
-        record = self.store.get_run(saved["run_id"])
-        self.assertEqual(record["decisions"][0]["reviewer"], "Contract Counsel")
-        self.assertTrue(any(event["event_type"] == "human_decision" for event in record["events"]))
-
     def test_specific_portfolio_action_can_be_reviewed_without_approving_other_actions(self):
         payload = self.payload()
         payload["contract_reports"] = [
@@ -109,6 +100,15 @@ class AuditStoreTests(unittest.TestCase):
         saved = self.store.record_run(payload)
         with self.assertRaisesRegex(ValueError, "explicit action_id"):
             self.store.decide(saved["run_id"], "recommended-action", "approved", "Legal Reviewer")
+
+    def test_human_decision_is_timestamped_and_never_executes_action(self):
+        saved = self.store.record_run(self.payload())
+        result = self.store.decide(saved["run_id"], "recommended-action", "approved", "Contract Counsel", "Reviewed")
+        self.assertEqual(result["decision"], "approved")
+        self.assertFalse(result["consequential_action_executed"])
+        record = self.store.get_run(saved["run_id"])
+        self.assertEqual(record["decisions"][0]["reviewer"], "Contract Counsel")
+        self.assertTrue(any(event["event_type"] == "human_decision" for event in record["events"]))
 
     def test_decision_requires_reviewer_and_existing_run(self):
         saved = self.store.record_run(self.payload())
