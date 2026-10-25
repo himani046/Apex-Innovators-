@@ -136,9 +136,9 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 
 ### FR5 — Heimdall Event Monitoring
 - FR5.1: The fixed pack loads JSONL event drops and retains parse errors. Custom intake accepts supplied events; `POST /api/events/ingest` stores source-labeled event records in SQLite, deduplicates unchanged records, and retains before/after payload snapshots when an existing event changes. `GET /api/events?as_of=YYYY-MM-DD` filters future-dated events for a simulated date and exposes revision counts.
-- FR5.2: Event records are normalized; missing bodies and invalid timestamps are rejected, and event-to-contract mapping remains evidence-led. Explicit IDs and lexical clause overlap are candidates, not proof of causation.
+- FR5.2: Event records are normalized; missing bodies and invalid timestamps are rejected. Heimdall links events by explicit contract identifiers or a unique extracted party-name candidate, then maps event families (payment, renewal, termination, notice, penalty, delivery/performance, data security, confidentiality, force majeure, compliance) to source-quoted clause candidates. Mapping method, candidate families, clause quote verification, event date candidates, and unresolved trigger/causation status are returned to reports and the dashboard. Party-name and clause-family links remain heuristic candidates, not proof of event authenticity, contractual trigger, causation, or breach.
 - FR5.3: The verifier preserves missing awareness/notification timestamps. Event source authenticity is never accepted from a user-supplied flag; a trusted external-source connector and signature/provenance validation are still required.
-- Status: substantial ingestion and normalization foundation; authenticated external integrations and causal event-to-clause verification remain partial.
+- Status: event ingestion and evidence-labelled event-to-clause candidate mapping are implemented. Authenticated external-source integrations, clause interpretation beyond deterministic families, deadline computation from complex notice/counting rules, and causal trigger verification remain partial.
 
 ### FR6 — Tyr Arbitration and Action
 - FR6.1: The A1 path resolves the current Loki/Heimdall evidence disagreement into a qualified ruling.
@@ -172,7 +172,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - GET /api/health — health/configuration.
 - GET /api/pack — configured pack summary.
 - GET /api/run?as_of=2027-03-15&use_claude=false — fixed-pack orchestration.
-- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, optional payment_ledger rows, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates (including conditional arithmetic balance candidates), and shared state.
+- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, optional payment_ledger rows, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports (including event-to-clause candidate trails), company report, alerts, financial reconciliation candidates (including conditional arithmetic balance candidates), and shared state.
 - POST /api/events/ingest — persist source-labeled event records with deduplication; records remain unverified.
 - GET /api/events?as_of=YYYY-MM-DD — list stored events and exclude future-dated records for the selected simulated date; changed records include revision metadata.
 - GET /api/events/history?source=...&event_id=... — retrieve before/after payload snapshots for a changed event.
