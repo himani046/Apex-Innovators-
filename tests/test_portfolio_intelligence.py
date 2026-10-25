@@ -33,6 +33,42 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertTrue(any(item["classification"] == "opposing_modality_candidate" for item in candidates))
         self.assertTrue(all(item["status"] == "candidate_requires_human_review" for item in candidates))
 
+    def test_context_diagnostics_never_claim_party_scope_or_precedence_resolved(self):
+        contracts = {
+            "MSA-1": (
+                "Supplier shall provide incident notice within 4 hours for hosted platform services. "
+                "This Agreement incorporates the Master Services Agreement by reference."
+            ),
+            "SOW-2": (
+                "Supplier shall provide incident notice within 24 hours for hosted platform services. "
+                "This SOW is subject to MSA-1 and the Master Services Agreement."
+            ),
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        self.assertTrue(candidates)
+        candidate = next(item for item in candidates if item["classification"] == "numeric_term_difference")
+        checks = candidate["context_checks"]
+        self.assertFalse(checks["same_parties_confirmed"])
+        self.assertFalse(checks["same_scope_confirmed"])
+        self.assertFalse(checks["amendment_precedence_resolved"])
+        self.assertFalse(checks["incorporated_terms_resolved"])
+        self.assertTrue(checks["party_roles_overlap"])
+        self.assertIn("MSA-1", checks["explicit_cross_references"])
+        self.assertTrue(any("incorporated" in question.casefold() for question in candidate["unresolved_questions"]))
+
+    def test_precedence_marker_is_diagnostic_not_a_resolution(self):
+        contracts = {
+            "A": "Notwithstanding the Master Agreement, Supplier shall provide notice within 4 hours.",
+            "B": "Supplier shall provide notice within 24 hours.",
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        self.assertTrue(candidates)
+        candidate = candidates[0]
+        self.assertEqual(candidate["classification"], "precedence_or_amendment_review")
+        self.assertTrue(candidate["context_checks"]["amendment_or_precedence_marker_detected"])
+        self.assertFalse(candidate["context_checks"]["amendment_precedence_resolved"])
+        self.assertFalse(candidate["legal_conflict_determined"])
+
     def test_does_not_compare_clauses_within_one_contract(self):
         contracts = {
             "A": "Supplier shall provide written notice within 4 hours. Supplier shall provide written notice within 24 hours."
