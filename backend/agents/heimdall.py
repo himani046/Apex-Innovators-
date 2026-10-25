@@ -100,8 +100,15 @@ def verify_contract_review(contract_id: str, source: str, findings: list[dict[st
             "body": body, "contract_id": contract_id,
             "matched_clauses": matched_findings,
             "status": "mapped_to_contract_and_candidate_clauses" if matched_findings else "mapped_to_contract_only",
+            # Preserve provenance for auditability; a source label or supplied
+            # boolean is not treated as independent authentication.
+            "event_source": event.get("event_source", event.get("source")),
+            "source_url": event.get("source_url", event.get("url")),
+            "source_type": event.get("source_type"),
+            "verification_method": event.get("verification_method"),
             "source_verified": bool(event.get("source_verified", False)),
-            "note": "Explicit contract mapping only; clause matches are lexical candidates, not proof of causation.",
+            "authenticity_status": "independently_verified" if event.get("source_verified") is True else "not_independently_verified",
+            "note": "Explicit contract mapping only; clause matches are lexical candidates, not proof of causation. Source provenance is retained but not independently authenticated here.",
         })
     results = []
     for finding in findings:
