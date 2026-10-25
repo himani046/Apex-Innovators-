@@ -8,6 +8,7 @@ RULES = {
     "termination": re.compile(r"\b(termination|terminate|cure period)\b", re.I),
     "liability": re.compile(r"\b(liability|indemnity|indemnify|damages)\b", re.I),
     "service_level": re.compile(r"\b(uptime|availability|service level|response time)\b", re.I),
+    "exclusivity": re.compile(r"\b(exclusive|exclusivity|non-exclusive)\b", re.I),
 }
 NUM = re.compile(r"\b(\d+(?:\.\d+)?)\s*(hours?|days?|months?|years?|%)?\b", re.I)
 MOD = re.compile(r"\b(must not|shall not|may not|prohibited|non-exclusive|exclusive|must|shall|required|permitted|allowed)\b", re.I)
