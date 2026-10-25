@@ -2265,7 +2265,7 @@ async function refreshAuditHistory(selectedRunId) {
       '<div class="agent"><b>' + esc(run.run_id) + '</b><p>' + esc(run.created_at) +
       ' · as of ' + esc(run.as_of_date || 'unknown') + ' · ' + esc(run.status || 'unknown') +
       '</p><p class="small">Input fingerprint: ' + esc((run.input_fingerprint || '').slice(0,16)) +
-      '…</p><button type="button" data-audit-run="' + esc(run.run_id) + '">Inspect history</button></div>'
+      '…</p><button type="button" data-audit-run="' + esc(run.run_id) + '" style="color:#111!important;-webkit-text-fill-color:#111;background:#fff;border:1px solid #d7d9cf">Inspect history</button></div>'
     ).join('') || '<p class="small">No saved runs yet. Run Odin to create the first audit snapshot.</p>';
     box.querySelectorAll('[data-audit-run]').forEach(button => button.addEventListener('click', () => inspectAuditRun(button.dataset.auditRun)));
     if (selectedRunId) $('approvalRunLabel').textContent = 'Current run: ' + selectedRunId;
