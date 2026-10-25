@@ -37,7 +37,7 @@ def _rich_graph(contracts: dict[str, str], extractions: dict[str, dict], base_gr
     nodes = []
     for item in base_graph.get("nodes", []):
         cid = item.get("document_id", "")
-        nodes.append({**item, "id": "contract:" + cid, "type": "contract", "label": cid})
+        nodes.append({**item, "id": cid, "type": "contract", "label": cid})
     edges = list(base_graph.get("edges", []))
     parties_seen: dict[str, dict] = {}
     for cid, text in contracts.items():
@@ -52,7 +52,7 @@ def _rich_graph(contracts: dict[str, str], extractions: dict[str, dict], base_gr
                 parties_seen.setdefault(key, {"id": "party:" + key, "type": "party", "label": name, "name": name,
                                               "source_document_id": cid, "line_number": idx, "quote": raw,
                                               "verified": raw in text})
-                edges.append({"source": "contract:" + cid, "target": "party:" + key,
+                edges.append({"source": cid, "target": "party:" + key,
                               "relation": "names_party", "status": "evidence_linked",
                               "evidence": {"document_id": cid, "line_number": idx, "quote": raw, "verified": raw in text}})
     nodes.extend(parties_seen.values())
@@ -63,7 +63,7 @@ def _rich_graph(contracts: dict[str, str], extractions: dict[str, dict], base_gr
             nodes.append({"id": node_id, "type": "clause", "label": term.get("category", "Clause candidate"),
                           "contract_id": cid, "category": term.get("category"),
                           "confidence": term.get("confidence"), "citation": citation})
-            edges.append({"source": "contract:" + cid, "target": node_id, "relation": "contains_clause",
+            edges.append({"source": cid, "target": node_id, "relation": "contains_clause",
                           "status": "evidence_linked" if citation.get("verified") else "requires_review",
                           "evidence": citation})
     edges.sort(key=lambda e: (str(e.get("source")), str(e.get("target")), str(e.get("relation"))))
