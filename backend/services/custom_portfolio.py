@@ -110,6 +110,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     contract_reports = []
     agent_messages = []
     debate_traces = []
+    verification_records = []
     alerts = []
     events = events or []
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
@@ -121,6 +122,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
+        verification_records.append({"contract_id": cid, **heimdall_result})
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
                               "heimdall_verification": heimdall_result, "tyr_rulings": tyr_result.get("rulings", [])})
@@ -253,8 +255,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "extracted_clauses": [term for item in extractions.values() for term in item.get("extracted_terms", [])],
                     "timeline_events": timeline, "financial_calculations": [], "risk_claims": risks,
                     "evidence_references": [c for report in contract_reports for c in report["citations"]],
-                    "verification_outcomes": [{"contract_id": r["contract_id"], "citation_validation": r["citation_validation"]}
-                                              for r in contract_reports],
+                    "verification_outcomes": verification_records,
                     "unresolved_questions": company_report["unresolved_questions"],
                     "recommended_actions": [action for report in contract_reports for action in report["recommended_actions"]],
                     "agent_status": {name: {"status": "complete_with_limitations", "mode": "deterministic_source_triage"}
