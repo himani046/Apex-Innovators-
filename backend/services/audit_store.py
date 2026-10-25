@@ -100,6 +100,9 @@ class AuditStore:
             "as_of_date": payload.get("as_of_date"),
             "portfolio_extraction": payload.get("portfolio_extraction"),
             "contract_graph": payload.get("contract_graph"),
+            "source_fingerprint": payload.get("source_fingerprint"),
+            "company_context": payload.get("company_context"),
+            "contracts": payload.get("contracts"),
         }).encode("utf-8")).hexdigest()
         snapshot = dict(payload)
         snapshot["run_id"] = run_id
