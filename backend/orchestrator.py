@@ -218,7 +218,18 @@ def run_demo(as_of="2027-03-15", request_claude=True):
             "note": "Re-analysis cannot manufacture missing source records; missing proof remains unresolved.",
         }
         revised_finding["citations"] = verify_all(revised_finding.get("citations", []), {"A1": source})
+        # This retry only re-reads existing documents/events; it cannot resolve
+        # external evidence gaps without new source records.
+        revised_finding["evidence_gaps"] = list(dict.fromkeys(
+            list(previous_verification.get("evidence_gaps", []) or [])
+            + list(revised_finding.get("evidence_gaps", []) or [])
+        ))
         revised_verification = verify(revised_finding, relevant_events, revised_finding.get("citations", []))
+        revised_verification["evidence_gaps"] = list(dict.fromkeys(
+            list(previous_verification.get("evidence_gaps", []) or [])
+            + list(revised_verification.get("evidence_gaps", []) or [])
+            + list(revised_finding.get("evidence_gaps", []) or [])
+        ))
         shared.message("Odin", "Thor", "targeted_follow_up_request", "issued",
                        iteration=iteration, missing_evidence=previous_verification.get("evidence_gaps", []))
         shared.message("Thor", "Loki", "targeted_extraction", "complete", iteration=iteration,
@@ -231,6 +242,9 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     finding, verification, loop_summary = run_bounded_follow_up(
         finding, state["verification"], MAX_AGENT_ITERATIONS, budget, targeted_follow_up
     )
+    # Keep the risk claim and verifier aligned: a gap is not closed merely
+    # because a later deterministic pass omitted it.
+    finding["evidence_gaps"] = list(verification.get("evidence_gaps", []) or [])
     state["risk_finding"] = finding
     state["verification"] = verification
     state["collaboration"] = {
