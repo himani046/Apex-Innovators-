@@ -12,6 +12,10 @@ from typing import Any
 
 from backend.services.contract_graph import build_contract_graph
 from backend.services.upload_analysis import extract_document_terms
+from backend.agents.norns import build_contract_timeline
+from backend.agents.loki import review_contract_candidates
+from backend.agents.heimdall import verify_contract_review
+from backend.agents.tyr import arbitrate_contract_review
 
 
 DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
@@ -100,67 +104,34 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
     for cid, source in contracts.items():
         extraction = extractions[cid]
-        citations = []
-        for term in extraction.get("extracted_terms", []):
-            citation = term.get("citation") or {}
-            citations.append(citation)
-            quote = str(citation.get("quote", ""))
-            if not quote:
-                continue
-            for match in DATE_RE.finditer(quote):
-                raw_date = match.group(0)
-                # Normalize only ISO dates; named dates remain candidates until normalized.
-                status, note = _date_status(raw_date, clock) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_date) else ("date_candidate", "Named date is source-grounded but requires normalization.")
-                around = quote[max(0, match.start()-90):min(len(quote), match.end()+90)]
-                kind = "deadline_or_notice" if re.search(r"deadline|notice|renew|terminate|due|payable|within", around, re.I) else "reference_or_effective_date"
-                item = {"contract_id": cid, "date": raw_date, "date_type": kind, "title": around[:180],
-                        "status": status, "evidence": citation, "as_of_date": as_of, "note": note}
-                timeline.append(item)
-        contract_risks = []
-        for line_no, raw in enumerate(source.splitlines(), start=1):
-            for category, pattern, severity in RISK_RULES:
-                if pattern.search(raw):
-                    risk = {"id": f"{cid}:{category}:{line_no}", "contract_id": cid, "category": category,
-                            "title": category.replace("_", " ").title(), "severity": severity,
-                            "likelihood": "unassessed_source_triage", "confidence": 0.65,
-                            "priority": severity, "status": "candidate_requires_review",
-                            "claim": "A potentially relevant contractual provision was identified; applicability and legal effect require review.",
-                            "reason": "Keyword-based source triage; this is not a finding of breach.",
-                            "evidence": {"document_id": cid, "clause_reference": "line " + str(line_no),
-                                         "line_number": line_no, "quote": raw, "verified": raw in source},
-                            "recommended_next_step": "Review the cited provision in context and confirm applicable facts."}
-                    contract_risks.append(risk)
-        mapped_events = []
-        for event in visible_events:
-            body = str(event.get("body", event.get("text", "")))
-            if re.search(r"(?<![A-Za-z0-9])" + re.escape(cid) + r"(?![A-Za-z0-9])", body, re.I):
-                mapped_events.append({"event": event, "contract_id": cid, "status": "mapped_by_explicit_id",
-                                      "note": "Mapped only because event text explicitly names this contract ID."})
-        risks.extend(contract_risks)
+        citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
+        contract_timeline = build_contract_timeline(cid, extraction, as_of)
+        timeline.extend(contract_timeline)
+        loki_result = review_contract_candidates(cid, source, extraction)
+        contract_risks = loki_result.get("findings", [])
+        heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
+        tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
+        mapped_events = heimdall_result.get("mapped_events", [])
+                risks.extend(contract_risks)
+        agent_messages.extend(loki_result.get("clarification_requests", []))
+        agent_messages.extend([
+            {"from": "Thor", "to": "Norns", "type": "extracted_terms", "status": "complete",
+             "contract_id": cid, "count": len(extraction.get("extracted_terms", []))},
+            {"from": "Norns", "to": "Loki", "type": "timeline_candidates", "status": "complete",
+             "contract_id": cid, "count": len(contract_timeline)},
+            {"from": "Loki", "to": "Heimdall", "type": "risk_challenge", "status": "candidate_review",
+             "contract_id": cid, "findings": len(contract_risks)},
+            {"from": "Heimdall", "to": "Tyr", "type": "evidence_verification", "status": heimdall_result.get("status", "unknown"),
+             "contract_id": cid, "verified_findings": sum(bool(x.get("citation_checks_passed")) for x in heimdall_result.get("findings", []))},
+            {"from": "Tyr", "to": "Odin", "type": "qualified_ruling", "status": tyr_result.get("status", "unknown"),
+             "contract_id": cid, "rulings": len(tyr_result.get("rulings", []))}
+        ])
         for risk in contract_risks:
             alerts.append({**risk, "alert_source": "contract_clause_triage"})
         confidence = [float(t["confidence"]) for t in extraction.get("extracted_terms", [])
                       if isinstance(t.get("confidence"), (int, float))]
         gaps = extraction.get("ambiguities", [])
-        actions = []
-        for risk in contract_risks:
-            category = risk["category"]
-            if category == "renewal":
-                action_type, subject = "renewal_review", f"Review renewal and notice requirements for {cid}"
-            elif category == "termination":
-                action_type, subject = "termination_review", f"Review termination and cure-period language for {cid}"
-            elif category == "penalty_or_interest":
-                action_type, subject = "financial_escalation_memo", f"Validate penalty or interest trigger for {cid}"
-            elif category == "notice_obligation":
-                action_type, subject = "evidence_request", f"Confirm notice timing and delivery evidence for {cid}"
-            elif category == "liability_or_indemnity":
-                action_type, subject = "legal_review_memo", f"Review liability allocation in {cid}"
-            else:
-                action_type, subject = "cross_contract_review", f"Review possible term interaction in {cid}"
-            actions.append({"type": action_type, "subject": subject,
-                            "body": "Please review the cited source language, confirm the applicable trigger and relevant facts, and determine whether a notice or other action is appropriate. This draft is not sent automatically.",
-                            "citations": [risk["evidence"]], "confidence": 0.65,
-                            "human_approval_required": True, "status": "draft_only_not_sent"})
+        actions = [item.get("action_draft") for item in tyr_result.get("rulings", []) if item.get("action_draft")]
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
