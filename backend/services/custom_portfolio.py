@@ -141,6 +141,30 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         ])
         for risk in contract_risks:
             alerts.append({**risk, "alert_source": "contract_clause_triage"})
+        for mapped in mapped_events:
+            event_body = str(mapped.get("body", ""))
+            event_category = None
+            if re.search(r"\b(invoice|payment|remittance|refund|credit|billing|paid|overdue)\b", event_body, re.I):
+                event_category = "payment_event"
+            elif re.search(r"\b(renewal|renew|termination|notice|deadline|expiry|expires)\b", event_body, re.I):
+                event_category = "contract_milestone_event"
+            elif re.search(r"\b(outage|incident|breach|disruption|failure|complaint)\b", event_body, re.I):
+                event_category = "operational_incident"
+            if event_category:
+                alerts.append({
+                    "id": str(mapped.get("event_id") or "event") + ":" + cid,
+                    "contract_id": cid, "category": event_category,
+                    "title": "Review supplied " + event_category.replace("_", " "),
+                    "severity": "medium", "priority": "medium",
+                    "status": "event_candidate_requires_review",
+                    "reason": "Event text explicitly names this contract and contains a relevant operational keyword. Verify the event source and clause applicability before treating it as a breach or financial obligation.",
+                    "date": mapped.get("timestamp"),
+                    "evidence": {"document_id": str(mapped.get("event_id") or "supplied event"),
+                                 "quote": event_body, "verified": False,
+                                 "verification_note": "User-supplied event record; source authenticity not independently verified."},
+                    "matched_clauses": mapped.get("matched_clauses", []),
+                    "recommended_next_step": "Verify event authenticity, timestamps, and applicable clause trigger."
+                })
         confidence = [float(t["confidence"]) for t in extraction.get("extracted_terms", [])
                       if isinstance(t.get("confidence"), (int, float))]
         gaps = list(dict.fromkeys(list(extraction.get("ambiguities", []) or []) + [gap for item in heimdall_result.get("findings", []) for gap in (item.get("evidence_gaps", []) or [])]))
