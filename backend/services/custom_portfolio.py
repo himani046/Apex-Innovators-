@@ -16,7 +16,7 @@ from backend.services.upload_analysis import extract_document_terms
 from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
-from backend.agents.tyr import arbitrate_contract_review
+from backend.agents.tyr import arbitrate_contract_review, arbitrate_contract_finding
 from backend.agents.cross_contract import detect_cross_contract_candidates
 from backend.services.agentic_state import ExecutionBudget, SharedAgentState
 from backend.config import MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
@@ -252,6 +252,16 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         contract_reports.append(report)
 
     for conflict in cross_contract_conflicts:
+        cross_verification = {
+            "status": "unverified",
+            "supports": [],
+            "challenges": ["Source-level differences do not establish a legal conflict; scope and precedence remain unresolved."],
+            "citation_results": [{"document_id": citation["document_id"], "quote": citation["quote"],
+                                  "verified": citation["verified"]} for citation in conflict["citations"]],
+            "evidence_gaps": conflict["evidence_gaps"],
+        }
+        tyr_ruling = arbitrate_contract_finding(conflict["contract_ids"][0], conflict, cross_verification)
+        conflict["tyr_ruling"] = tyr_ruling
         risks.append(conflict)
         alerts.append({**conflict, "alert_source": "cross_contract_review"})
         agent_messages.append({"from": "Loki", "to": "Tyr", "type": "cross_contract_inconsistency",
@@ -259,9 +269,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                "finding_id": conflict["id"]})
         debate_traces.append({"scope": "cross_contract", "loki_attack": conflict,
                               "heimdall_status": "source_quotes_present_not_semantic_validation",
-                              "tyr_ruling": {"decision": "human_review_required",
-                                             "rationale": "Different source terms require review of scope and precedence.",
-                                             "human_approval_required": True}})
+                              "tyr_ruling": tyr_ruling})
     for item in timeline:
         if item.get("date_type") == "possible_action_deadline":
             alerts.append({
@@ -347,7 +355,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     shared_agent_state.update("risk_claims", risks)
     shared_agent_state.update("evidence_references", [c for report in contract_reports for c in report["citations"]])
     shared_agent_state.update("verification_outcomes", verification_records)
-    shared_agent_state.update("recommended_actions", [action for report in contract_reports for action in report["recommended_actions"]])
+    shared_agent_state.update("recommended_actions", [action for report in contract_reports for action in report["recommended_actions"]] + [conflict["tyr_ruling"]["action_draft"] for conflict in cross_contract_conflicts])
     shared_state = {"schema_version": "1.1", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,
@@ -356,7 +364,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "evidence_references": [c for report in contract_reports for c in report["citations"]],
                     "verification_outcomes": verification_records,
                     "unresolved_questions": company_report["unresolved_questions"],
-                    "recommended_actions": [action for report in contract_reports for action in report["recommended_actions"]],
+                    "recommended_actions": [action for report in contract_reports for action in report["recommended_actions"]] + [conflict["tyr_ruling"]["action_draft"] for conflict in cross_contract_conflicts],
                     "agent_messages": agent_messages + shared_agent_state.data["agent_messages"],
                     "agent_status": {name: shared_agent_state.data["agent_status"].get(name, {"status": "not_run", "mode": "deterministic_source_triage"}) for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]},
                     "execution": {**execution_budget.as_dict(), "mode": "bounded_deterministic_review",
