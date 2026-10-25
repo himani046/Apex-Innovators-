@@ -244,3 +244,19 @@ See [docs/TECHNICAL_IMPLEMENTATION_GUIDE.md](docs/TECHNICAL_IMPLEMENTATION_GUIDE
 - **Invoice/payment candidate matching:** structured invoice IDs, contract IDs, event kinds, and amounts can be grouped for reconciliation. Structural linkage is not treated as proof of payment, outstanding liability, or financial exposure.
 - **Dashboard and CI:** both the custom portfolio panel and fixed-pack synthesis surface bounded-workflow status, cross-contract evidence, and reconciliation counts. CI now syntax-checks the inline JavaScript in addition to compiling Python and running unit tests.
 - **Remaining limits:** a real external event connector and authenticated event provenance, semantic legal reasoning over all amendments/precedence rules, invoice-to-ledger/contract trigger reconciliation, and full browser/API end-to-end acceptance are still required before production use.
+
+
+## FR7 — Agent workflow, feedback loops, and termination
+
+- **Loki → Thor clarification:** when the evidence/citation review remains below the configured citation-verification threshold, Loki emits a structured, contract-scoped re-extraction request listing the open questions and requested source context. Thor returns a targeted extraction result; re-reading the same source is explicitly not treated as new external evidence.
+- **Loki ↔ Heimdall disagreement:** Heimdall's per-finding support, challenges, citation checks, event associations, and evidence gaps are passed to Tyr. The collaboration trace records an explicit `evidence_disagreement` / `revised_evidence_disagreement` handoff and Tyr's qualified ruling. Disagreement is not silently converted into proof of breach.
+- **Bounded feedback:** `MAX_AGENT_ITERATIONS` controls follow-up passes (supported range: 0–3). `MAX_PORTFOLIO_AGENT_CALLS` is a hard cap for the generalized portfolio workflow. A workstream that cannot fit its required initial tasks is marked `not_run_budget_exhausted`; it is not reported as completed.
+- **Evidence-based stop:** `CITATION_VERIFICATION_THRESHOLD` (default `0.75`) controls when the workflow stops repeating source-only passes because enough citations are verified. Open event/trigger facts remain explicit review questions; a repeated read cannot manufacture external evidence. The loop also stops when there are no remaining gaps, the iteration limit is reached, or the call budget would be exceeded.
+- **Traceability:** each workstream reports iteration count, requested and remaining gaps, citation-verification ratio where applicable, stop reason, agent messages, and whether human review remains required.
+- **Safety:** Tyr's rulings and action drafts remain qualified assessments requiring human approval. No notices are sent and no consequential contract action is executed automatically.
+
+Configure these values in your local `.env` file (never commit secrets). Regression tests for FR7 are in `tests/test_fr7_workflow.py`; run them and then the full suite after pulling:
+```bash
+python -m unittest tests.test_fr7_workflow -v
+python -m unittest discover -s tests -v
+```
