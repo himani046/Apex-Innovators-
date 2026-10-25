@@ -62,6 +62,8 @@ class CustomPortfolioTests(unittest.TestCase):
         group = finance["invoice_groups"][0]
         self.assertEqual(group["invoice_id"], "INV-42")
         self.assertTrue(group["structurally_matched"])
+        self.assertTrue(group["trigger_evidence_status"]["payment_trigger_candidate_found"])
+        self.assertFalse(group["trigger_evidence_status"]["trigger_occurrence_verified"])
         self.assertIsNone(finance["verified_financial_exposure"])
         self.assertIsNone(result["company_risk_report"]["total_financial_exposure"])
 
