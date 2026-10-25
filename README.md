@@ -139,3 +139,22 @@ Phase 6 expands the single-page dashboard into a portfolio-level view using the 
 **Interpretation safeguards:** dashboard counts are triage summaries and may overlap (for example, a risk signal can also appear in the decision queue). Potential exposure is deliberately displayed as not calculated unless the source data and reconciliation logic support a defensible figure. Relationship edges and risk signals are not treated as proven legal conflicts or breaches.
 
 **Scope limitation:** the event/audit timeline is based on the current API run and is not a persistent cross-run audit database. The contract explorer shows available extracted terms and relationships, not a guarantee that every obligation or incorporated document has been identified. Dates and financial items remain subject to the existing source-grounding and human-review safeguards.
+
+
+## Phase 7 — Persistent audit trail and decision governance
+
+Phase 7 adds a SQLite-backed audit trail. The default database is `data/odin_audit.sqlite3`; set `ODIN_AUDIT_DB` to choose a different persistent path. Runtime database files are excluded from Git.
+
+- **Run snapshots:** every successful `GET /api/run` response is stored with run ID, simulated date, status, a source/input fingerprint, and the complete response payload. Repeated runs are stored separately.
+- **Finding history:** material finding snapshots are tracked by finding ID. A changed claim/status/severity/evidence snapshot emits a `finding_changed` event containing previous and current values.
+- **Evidence provenance:** exact quote, source document ID, clause reference, verification result, and verification note are recorded as provenance events. Remaining verification gaps are captured separately.
+- **Agent/audit events:** the store records run completion, agent messages, finding creation/changes, evidence provenance, remaining gaps, and reviewer decisions with UTC timestamps.
+- **Human review:** `POST /api/audit/runs/{run_id}/decision` records an explicit `approved` or `rejected` decision with reviewer, note, and timestamp. The endpoint does not send or execute the draft action.
+- **Audit explorer:** the dashboard lists saved runs and lets a reviewer inspect a run's event history and recorded decisions.
+
+Audit API:
+- `GET /api/audit/runs?limit=20`
+- `GET /api/audit/runs/{run_id}`
+- `POST /api/audit/runs/{run_id}/decision` with JSON such as `{"action_id":"recommended-action","decision":"approved","reviewer":"Contract Counsel","note":"Reviewed the draft."}`
+
+**Operational/security notes:** SQLite is suitable for the current single-instance prototype. Configure a durable writable volume and set `ODIN_AUDIT_DB` in deployments where filesystem persistence is not guaranteed. This prototype records the reviewer identity as supplied by the caller; it does not authenticate that identity or provide tamper-proof/WORM storage. Do not treat the approval record as an electronic signature or permission to dispatch the action. A recorded approval/rejection never executes a consequential action.
