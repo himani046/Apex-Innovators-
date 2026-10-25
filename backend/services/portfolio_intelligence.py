@@ -731,9 +731,11 @@ def run_bounded_review_cycles(
         })
 
     not_run_workstreams = [item for item in workstreams if item.get("status") == "not_run_budget_exhausted"]
+    # Unresolved evidence after a completed, bounded pass is a review item,
+    # not an orchestration failure. Mark partial only when the workflow was
+    # actually prevented from performing required work by its iteration limit.
     iteration_limited = any(
         trace.get("stop_reason") == "iteration_limit_reached"
-        or (trace.get("iterations_used", 0) >= max_iterations and bool(trace.get("final_unresolved_gaps")))
         for trace in loop_traces
     )
     partial_completion = bool(
