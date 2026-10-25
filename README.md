@@ -6,13 +6,15 @@ A hackathon prototype for evidence-grounded multi-agent contract intelligence, b
 
 - Loads the supplied canonical `.txt` contract sources, company context, ledger, holidays, clock, and JSONL event drops.
 - Preserves malformed JSONL records as parse errors rather than aborting a whole drop.
-- Runs an A1-only vertical slice through Odin, Thor, Norns, Loki, Heimdall, and Tyr.
+- Runs an A1-focused vertical slice through Odin, Norns, Loki, Heimdall, and Tyr.
+- Runs Thor's first portfolio-wide triage pass across every loaded contract, extracting potentially relevant source lines with exact-quote citations and review flags.
+- Shows portfolio-scan counts and sample evidence in the dashboard; this is keyword-based triage, not yet cross-contract legal reconciliation.
 - Verifies every displayed citation against the exact source text.
 - Produces a simulated timeline, a bounded risk finding, event verification, a reasoned ruling, and a human-approval-only draft action.
 - Includes a responsive dashboard, health endpoint, pack summary endpoint, and selected simulated date.
 - Uses deterministic fallback behavior without an API key. Thor and Loki can call Claude when configured.
 
-**This is intentionally the first vertical slice, not yet the complete portfolio implementation.** It does not claim to have fully analyzed A2, A3, B1, B2, C1, D1, and STD or resolved every cross-contract relationship.
+**This is intentionally an incremental prototype, not yet the complete portfolio implementation.** Thor now scans A1, A2, A3, B1, B2, C1, D1, and STD when those files are present, but its new portfolio pass only identifies evidence-linked candidate lines. The downstream timeline, incident review, verification, and ruling still operate on A1; cross-contract precedence and final interpretation remain future work.
 
 ## Quick start (macOS)
 
