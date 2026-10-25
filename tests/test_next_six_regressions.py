@@ -3,6 +3,8 @@ import unittest
 from backend.agents.heimdall import verify_contract_review
 from backend.services.portfolio_operations import build_portfolio_operations
 from backend.services.synthesis import build_synthesis
+from backend.services.portfolio_intelligence import run_bounded_review_cycles
+from backend.agents.cross_contract import detect_cross_contract_candidates
 
 
 class NextSixRegressionTests(unittest.TestCase):
@@ -90,6 +92,61 @@ class NextSixRegressionTests(unittest.TestCase):
         self.assertEqual(event["source_type"], "customer_report")
         self.assertEqual(event["authenticity_status"], "not_independently_verified")
         self.assertFalse(event["source_verified"])
+
+    def test_invoice_reference_linkage_is_explicit_and_still_unconfirmed(self):
+        result = build_portfolio_operations(
+            {
+                "workstreams": [{
+                    "id": "contract-VENDOR_X",
+                    "primary_contract_id": "VENDOR_X",
+                    "contract_ids": ["VENDOR_X"],
+                    "deadlines": [],
+                    "financial_exposure": {"amounts_found": []},
+                }]
+            },
+            {},
+            "2027-03-15",
+            payment_ledger=[{
+                "date": "2027-03-10",
+                "from": "Customer",
+                "to": "VENDOR_X",
+                "reference": "Invoice INV-42",
+                "status": "overdue",
+                "amount": "125.00",
+            }],
+        )
+        finance = result["financial_reconciliation"]
+        self.assertEqual(len(finance["invoice_reconciliation_candidates"]), 1)
+        candidate = finance["invoice_reconciliation_candidates"][0]
+        self.assertEqual(candidate["invoice_reference"], "INV-42")
+        self.assertFalse(candidate["confirmed_liability"])
+        self.assertIsNone(finance["portfolio_total_usd"])
+
+    def test_budget_exhaustion_marks_generalized_workflow_partial(self):
+        result = run_bounded_review_cycles(
+            contracts={"VENDOR_X": "Section 1. Supplier shall provide notice within 4 hours."},
+            extractions={},
+            events=[],
+            as_of="2027-03-15",
+            max_iterations=1,
+            max_agent_calls=1,
+            use_llm=False,
+        )
+        self.assertTrue(result["budget_exhausted"])
+        self.assertTrue(result["partial_completion"])
+        self.assertEqual(result["status"], "partial_budget_exhausted")
+        self.assertEqual(result["not_run_contract_ids"], ["VENDOR_X"])
+
+    def test_cross_contract_candidates_expose_context_review_gaps(self):
+        result = detect_cross_contract_candidates({
+            "VENDOR_X": "Section 2. For retail customers, Supplier shall provide notice within 4 hours.",
+            "VENDOR_Y": "Section 5. For enterprise customers, Supplier shall provide notice within 24 hours.",
+        })
+        self.assertTrue(result)
+        context = result[0]["context_review"]
+        self.assertFalse(context["same_scope_confirmed"])
+        self.assertFalse(context["precedence_reconciled"])
+        self.assertTrue(result[0]["human_review_required"])
 
     def test_synthesis_does_not_hide_incomplete_workflow_status(self):
         result = build_synthesis({"status": "partial_budget_exhausted"})
