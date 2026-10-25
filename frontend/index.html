@@ -50,8 +50,28 @@ details[open] summary{margin-bottom:8px}
 
 /* Light theme skin only — original dashboard markup, data flow, and interactions are preserved. */
 body{background:radial-gradient(ellipse at top left,#f3f4ec,#e9eae4 58%);color:var(--txt)}header{background:#e9eae4ed;backdrop-filter:blur(14px)}.card,.agent,.evidence,.action,.milestone{box-shadow:0 10px 30px #2026160b;border-radius:18px}.card{border-color:var(--line)}button,select,input,textarea{color:var(--txt)}button{background:#fff;border:1px solid var(--line);border-radius:999px}button:hover{border-color:#81916f}button#run,button.primary{background:#151813;color:#fff}.tag{border-radius:999px}.evidence blockquote,blockquote{color:var(--txt)}.notice{background:#fff3d5;border-color:#e8d9b5;color:#876521}.err{background:#fbe8e5;color:#a6423d}.flow .step{background:#fff}.contract-explorer-card,.agentlist .agent{background:#fff}
+
+/* Reference-inspired visual skin. All existing features, data bindings and analysis handlers remain in place. */
+:root{--bg:#e9eae4;--p:#fff;--line:#d7d9cf;--txt:#151813;--muted:#777d6e;--cyan:#81916f;--gold:#c89a45;--green:#50765c}
+html{scroll-behavior:smooth;scroll-padding-top:95px}
+body{max-width:none;margin:0;padding:0 2.35vw 30px;background:radial-gradient(ellipse at 30% 0%,#d9d7cd 0,transparent 300px),#e9eae4;color:var(--txt)}
+header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:minmax(190px,1fr) auto auto;align-items:center;gap:22px;margin:0 -2.35vw 34px;padding:20px 2.35vw;background:rgba(233,234,228,.94);backdrop-filter:blur(16px);border-bottom:1px solid #d7d9cf}
+header h1{font-size:25px;letter-spacing:-1.2px;margin:0;font-weight:750}header p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.top-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.top-tabs a{display:inline-flex;align-items:center;justify-content:center;padding:13px 20px;border:1px solid #c9ccbf;border-radius:999px;text-decoration:none;color:#596052;font-size:13px;font-weight:600;white-space:nowrap}.top-tabs a:hover,.top-tabs a:focus{background:#fff;color:#151813;border-color:#151813}.top-tabs a.active{background:#151813;color:#fff;border-color:#151813}
+#health{justify-self:end}
+.intro{padding:14px 0 22px}
+.card,.agent,.evidence,.action,.milestone{border-radius:20px;box-shadow:0 8px 26px rgba(32,38,22,.035)}
+.card{background:#fff;border:1px solid rgba(215,217,207,.72);padding:20px}
+.card h2,.card h3{letter-spacing:-.45px}
+.metric{min-height:150px}
+button{transition:background .15s,border-color .15s,transform .15s}button:hover{transform:translateY(-1px)}
+input,select,textarea{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+.tag{border-radius:999px}
+section[id],.wide[id],.side[id],.half[id]{scroll-margin-top:105px}
+@media(max-width:1000px){header{grid-template-columns:1fr auto}.top-tabs{grid-column:1/-1;grid-row:2;justify-content:flex-start}#health{grid-column:2;grid-row:1}}
+@media(max-width:560px){body{padding:0 14px 24px}header{margin:0 -14px 22px;padding:14px;grid-template-columns:1fr auto;gap:10px}.top-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.top-tabs a{padding:10px 14px}.card{padding:15px}}
 </style></head><body>
-<header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><span class="tag" id="health">Connecting…</span></header>
+<header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard sections"><a class="active" href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#timeline">Time machine</a><a href="#agents">Agents</a><a href="#audit">Audit</a></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
 <div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
 <div id="dash" class="grid hidden">
