@@ -585,8 +585,9 @@ def run_bounded_review_cycles(
         iteration = 0
         while iteration < max_iterations:
             gaps = list(dict.fromkeys(
-                str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or [])
-                if str(gap).strip()
+                [str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or []) if str(gap).strip()]
+                + [str(gap) for gap in (verification.get("evidence_gaps") or []) if str(gap).strip()]
+                + [str(gap) for item in (verification.get("findings") or []) for gap in (item.get("evidence_gaps") or []) if str(gap).strip()]
             ))
             if not gaps:
                 trace["stop_reason"] = "evidence_threshold_met"
@@ -658,8 +659,9 @@ def run_bounded_review_cycles(
                              "human_approval_required": True})
         trace["iterations_used"] = iteration
         trace["final_unresolved_gaps"] = list(dict.fromkeys(
-            str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or [])
-            if str(gap).strip()
+            [str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or []) if str(gap).strip()]
+            + [str(gap) for gap in (verification.get("evidence_gaps") or []) if str(gap).strip()]
+            + [str(gap) for item in (verification.get("findings") or []) for gap in (item.get("evidence_gaps") or []) if str(gap).strip()]
         ))
         trace["human_review_required"] = bool(trace["final_unresolved_gaps"] or findings)
         loop_traces.append(trace)
