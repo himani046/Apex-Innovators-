@@ -261,9 +261,27 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                       if isinstance(t.get("confidence"), (int, float))]
         gaps = list(dict.fromkeys(list(extraction.get("ambiguities", []) or []) + [gap for item in heimdall_result.get("findings", []) for gap in (item.get("evidence_gaps", []) or [])]))
         actions = [item.get("action_draft") for item in tyr_result.get("rulings", []) if item.get("action_draft")]
+        ruling_by_finding = {
+            str(item.get("finding_id") or item.get("finding", {}).get("id") or item.get("id") or ""): item
+            for item in tyr_result.get("rulings", [])
+        }
+        risk_assessments = []
+        for risk in contract_risks:
+            ruling = ruling_by_finding.get(str(risk.get("id") or ""), {})
+            risk_assessments.append({
+                "finding_id": risk.get("id"), "title": risk.get("title"),
+                "severity": risk.get("severity", "unknown"),
+                "confidence": ruling.get("confidence", risk.get("confidence")),
+                "confidence_label": ruling.get("confidence_label", "triage estimate; not calibrated"),
+                "decision": ruling.get("decision", "pending_evidence_review"),
+                "citations": risk.get("citations") or ([risk.get("evidence")] if risk.get("evidence") else []),
+                "evidence_gaps": risk.get("evidence_gaps", []),
+                "human_review_required": True,
+            })
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
+                  "risk_assessments": risk_assessments,
                   "mapped_events": mapped_events,
                   "event_clause_mapping": {
                       "events_mapped": len(mapped_events),
@@ -275,6 +293,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                   "citation_validation": {"total": len(citations), "verified": sum(bool(c.get("verified")) for c in citations),
                                           "failed": sum(not c.get("verified", False) for c in citations)},
                   "confidence": round(sum(confidence)/len(confidence), 3) if confidence else None,
+                  "confidence_basis": "Mean extractor confidence across terms; not a calibrated probability of breach or legal correctness.",
                   "unresolved_questions": gaps,
                   "tyr_rulings": tyr_result.get("rulings", []),
                   "tyr_summary": tyr_result.get("summary", {}),
