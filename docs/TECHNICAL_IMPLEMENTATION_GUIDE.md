@@ -135,7 +135,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: partial; generalized adversarial review across every arbitrary contract remains unfinished.
 
 ### FR5 — Heimdall Event Monitoring
-- FR5.1: The fixed pack loads JSONL event drops, retains parse errors, filters events for the selected date, and links events to known contracts only using explicit identifiers. Custom intake accepts events and maps only explicit contract-ID matches.
+- FR5.1: The fixed pack loads JSONL event drops, retains parse errors, filters events for the selected date, and links events to known contracts only using explicit identifiers. Custom intake accepts events, maps only explicit contract-ID matches, and uses lexical overlap to suggest clause candidates; those mappings are review signals, not proof of causation.
 - FR5.2: The A1 verifier checks documented outage facts and preserves missing awareness/notification timestamps. Citation checks are separately exposed.
 - FR5.3: The decision queue prioritizes returned deadline, payment, and risk candidates. These are not all verified breach alerts.
 - Status: partial; generalized event-to-clause mapping and continuous event ingestion remain unfinished.
@@ -229,7 +229,7 @@ Run tests:
 
     python -m unittest discover -s tests -v
 
-GitHub Actions run 40195473116 completed successfully for commit 7256e3eb9c0b3039c3ddc9583d1756ce2e46f528: dependency installation, Python compileall, and unittest discovery all passed. A full browser/API end-to-end acceptance test has not yet been run. The CI result validates compilation and unit tests, not every functional requirement.
+GitHub Actions run 40195717406 completed successfully for commit 4ff4886d9280529cd3c1f7b1270ae1d0da7c0286: dependency installation, Python compileall, and unittest discovery all passed. The dashboard JavaScript also passed a syntax compilation check. A full browser/API end-to-end acceptance test has not yet been run. These checks validate compilation and unit tests, not every functional requirement.
 
 ## 11. Highest-priority remaining work
 
