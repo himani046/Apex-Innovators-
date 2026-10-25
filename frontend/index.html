@@ -12,7 +12,7 @@
 <div class="card full"><h3>Agent operations <span class="tag">Observable state machine</span></h3><div class="agentlist" id="agents"></div><div class="flow" id="flow"></div></div>
 <div class="card full"><h3>Odin · multi-contract workstreams <span class="tag" id="workstreamCount">Loading</span></h3><p class="muted">Each contract is analyzed against its own source text. Portfolio-level signals are potential conflicts for human review, not legal conclusions.</p><div id="workstreamCards" class="agentlist"></div></div><div class="card full"><h3>Thor · extracted terms <span class="tag">Canonical source citations</span></h3><div id="terms" class="agentlist"></div></div><div class="card wide"><h3>Evidence-backed risk <span class="tag" id="riskBadge">Review</span></h3><div class="risk" id="riskTitle"></div><p id="claim"></p><div class="eyebrow">Loki's attack path</div><ol id="attack"></ol><div class="eyebrow">Heimdall verification</div><p id="verify"></p><div id="citation"></div></div>
 <div class="card side"><h3>Tyr's ruling</h3><div class="decision"><div class="eyebrow">Decision</div><h3 id="decision"></h3><p id="rationale"></p></div><div class="notice">Evidence triage prototype, not legal advice. No action is sent automatically.</div></div>
-<div class="card half"><h3>Norns · timeline <span class="tag" id="asof"></span></h3><div id="timeline" class="milestones"></div></div><div class="card half"><h3>Action center <span class="tag">Draft only</span></h3><div class="action"><h3 id="subject"></h3><div class="meta" id="actionType"></div><p id="body"></p><div id="actioncite"></div></div></div>
+<div class="card half"><h3>Norns · timeline <span class="tag" id="asof"></span></h3><div id="timeline" class="milestones"></div></div><div class="card full"><h3>Phase 3 · Portfolio operations <span class="tag" id="operationsStatus">Awaiting run</span></h3><p class="muted">Explicit dates are normalized against the selected simulated date. Payment signals remain candidates until linked to contract, invoice, trigger, and payment/credit evidence.</p><div class="agentlist"><div class="agent"><b>Normalized timeline</b><div class="value" id="opsTimelineCount">—</div><p id="opsTimelineSummary" class="small">Milestone status summary</p></div><div class="agent"><b>Financial reconciliation</b><div class="value" id="opsLedgerCount">—</div><p id="opsLedgerSummary" class="small">Payment-event candidates</p></div><div class="agent"><b>Portfolio total</b><div class="value">Not calculated</div><p class="small">No aggregate exposure is inferred from contract-stated amounts.</p></div></div><h3 style="margin-top:18px">Timeline milestones</h3><div id="opsMilestones" class="milestones"></div><h3 style="margin-top:18px">Payment ledger candidates</h3><div id="opsLedger" class="agentlist"></div><p id="opsNotice" class="small"></p></div><div class="card half"><h3>Action center <span class="tag">Draft only</span></h3><div class="action"><h3 id="subject"></h3><div class="meta" id="actionType"></div><p id="body"></p><div id="actioncite"></div></div></div>
 <div class="card half"><h3>Agent message trace</h3><div id="audit"></div></div><div class="card half"><h3>Data integrity</h3><div id="integrity" class="small"></div></div>
 <div class="card full"><h3>Thor · portfolio scan <span class="tag" id="portfolioCount">Loading documents</span></h3><p class="muted">Evidence-linked candidate lines across every loaded contract. These are triage signals, not final legal conclusions.</p><div id="portfolioTerms" class="agentlist"></div></div><div class="card full"><h3>Odin · contract relationship graph <span class="tag" id="graphCount">Loading relationships</span></h3><p class="muted">Evidence-backed document links and precedence clauses. A graph edge is a sourced relationship signal, not a standalone legal conclusion.</p><div id="graphEdges" class="agentlist"></div></div><div class="card full"><h3>Amendment reconciliation <span class="tag" id="reconcileCount">Review required</span></h3><p class="muted">Explicit changes are separated from amendment sections that still require clause-level review.</p><div id="resolvedChanges" class="agentlist"></div><div id="reviewItems" class="agentlist" style="margin-top:10px"></div></div><div class="card full"><h3>Scope note</h3><p class="muted">Phase 2 adds independent A1, B1, B2, C1, and D1 workstreams plus a portfolio-wide review. Dates and financial amounts are source-grounded; financial totals are not inferred without invoice and trigger evidence. Potential conflicts and candidate obligations require human review. Malformed JSONL records are reported rather than silently dropped.</p></div></div><div class="footer">ODIN · all challenge data is fictional</div></main>
 <script>
@@ -161,6 +161,32 @@ async function runOdin() {
       '</span><b>' + esc(milestone.title || '') + '</b><span class="tag">' +
       esc(milestone.status || '') + '</span></div>'
     ).join('') + '<p class="small">' + esc(timeline.worst_case_note || '') + '</p>';
+
+    const ops = d.portfolio_operations || {};
+    const opsTimeline = ops.timeline || {};
+    const opsCounts = opsTimeline.counts || {};
+    const finance = ops.financial_reconciliation || {};
+    const financeCounts = finance.counts || {};
+    $('operationsStatus').textContent = finance.status || 'Unavailable';
+    $('opsTimelineCount').textContent = opsCounts.total ?? 0;
+    $('opsTimelineSummary').textContent = (opsCounts.overdue || 0) + ' overdue · ' +
+      (opsCounts.due_today || 0) + ' due today · ' + (opsCounts.upcoming || 0) + ' upcoming';
+    $('opsLedgerCount').textContent = financeCounts.transaction_candidates ?? 0;
+    $('opsLedgerSummary').textContent = (financeCounts.contract_linked_candidates || 0) +
+      ' contract-linked · ' + (financeCounts.unlinked_candidates || 0) + ' unlinked';
+    $('opsMilestones').innerHTML = (opsTimeline.milestones || []).slice(0, 30).map(item =>
+      '<div class="milestone"><span class="date">' + esc(item.date || '') +
+      '</span><b>' + esc(item.contract_id || '') + ' · ' + esc(item.title || '') +
+      '</b><span class="tag">' + esc(item.status || '') + '</span></div>'
+    ).join('') || '<p class="small">No explicit calendar dates were found in the in-scope source documents.</p>';
+    $('opsLedger').innerHTML = (finance.payment_ledger_candidates || []).slice(0, 30).map(item =>
+      '<div class="agent"><b>' + esc(item.transaction_signal || 'Transaction signal') +
+      ' · ' + esc(item.contract_id || 'Contract not resolved') + '</b><p>' +
+      esc(item.timestamp || 'No timestamp') + ' · ' + esc(item.amounts_found.join(', ') || 'No explicit amount') +
+      '</p><p>' + esc(item.summary || item.evidence_text || '') + '</p><div class="meta">' +
+      esc(item.reconciliation_status || '') + ' · Human review required</div></div>'
+    ).join('') || '<p class="small">No invoice/payment event candidates found in the loaded event drops as of this date.</p>';
+    $('opsNotice').textContent = finance.reconciliation_rule || ops.notice || '';
 
     const draft = r.action_draft || {};
     $('subject').textContent = draft.subject || 'No draft action';
