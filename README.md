@@ -260,3 +260,17 @@ Configure these values in your local `.env` file (never commit secrets). Regress
 python -m unittest tests.test_fr7_workflow -v
 python -m unittest discover -s tests -v
 ```
+
+
+## Claude API configuration
+
+Odin reads the Anthropic API key from the server-side `.env` file. Never paste the key into frontend code, commit it, or send it in chat.
+
+1. Copy `.env.example` to `.env` if you have not already done so.
+2. Set `ANTHROPIC_API_KEY` to your own key locally and confirm `CLAUDE_MODEL` is available to your Anthropic account.
+3. Keep `MAX_LLM_CALLS` and `MAX_LLM_TOKENS` bounded while testing. The provider-call cap counts attempted network calls, including failed requests; cached responses do not consume another provider call.
+4. Restart the FastAPI server after editing `.env`.
+5. Open `/api/health` and check `claude_configured`, `claude_model`, and `llm_limits`. These fields never reveal the key.
+6. Use **Ask Odin** for source-grounded contract Q&A, or **Analyze portfolio** for the multi-agent portfolio workflow. Claude review is enabled by default in the portfolio request when the key is configured; clear the checkbox to run deterministic-only analysis.
+
+Claude is used as a bounded semantic reviewer where enabled. Exact-quote validation, date arithmetic, evidence checks, and safety/approval rules remain deterministic. If the API is unavailable or the budget is exhausted, inspect the returned agent modes/statuses and usage metadata; do not assume that a configured key means every agent used Claude. The system may continue with explicitly recorded deterministic fallback behavior. A live provider call must be verified locally with your own key.
