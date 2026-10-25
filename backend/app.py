@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import FastAPI,HTTPException,Query
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from backend.config import PACK_DIR,USE_CLAUDE
