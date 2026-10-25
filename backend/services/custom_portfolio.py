@@ -17,7 +17,7 @@ from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
-from backend.services.portfolio_intelligence import detect_cross_contract_candidates, run_bounded_review_cycles
+from backend.services.portfolio_intelligence import detect_cross_contract_candidates, reconcile_payment_events, run_bounded_review_cycles
 
 
 DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
@@ -281,6 +281,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         contracts=contracts, extractions=extractions, events=visible_events,
         as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 9),
     )
+    financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
     for candidate in cross_contract_candidates:
         ids = candidate.get("contract_ids", [])
@@ -329,11 +330,12 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                   str(item.get("contract_id", "")), str(item.get("id", ""))))
     contract_reports.sort(key=lambda item: item["contract_id"])
     exposure = {"status": "not_calculated", "value": None,
-                "reason": "Custom portfolio intake does not infer exposure from contractual rates or unlinked event amounts."}
+                "candidate_count": financial_reconciliation.get("counts", {}).get("payment_candidates", 0),
+                "reason": "Custom portfolio intake does not aggregate exposure from unverified invoice/payment candidates."}
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "status": "complete_with_limitations", "contract_count": len(contracts),
                       "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges, "cross_contract_candidates": cross_contract_candidates,
-                      "total_financial_exposure": None, "financial_exposure_status": exposure["status"],
+                      "total_financial_exposure": None, "financial_exposure_status": exposure["status"], "financial_reconciliation": financial_reconciliation,
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
                       "references": [c for report in contract_reports for c in report["citations"]] + [e for item in cross_contract_candidates for e in item.get("evidence", [])],
@@ -346,7 +348,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,
                     "extracted_clauses": [term for item in extractions.values() for term in item.get("extracted_terms", [])],
-                    "timeline_events": timeline, "financial_calculations": [], "risk_claims": risks,
+                    "timeline_events": timeline, "financial_calculations": financial_reconciliation.get("payment_candidates", []), "financial_reconciliation": financial_reconciliation, "risk_claims": risks,
                     "evidence_references": [c for report in contract_reports for c in report["citations"]],
                     "verification_outcomes": verification_records,
                     "unresolved_questions": company_report["unresolved_questions"],
@@ -365,7 +367,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
-            "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
+            "risk_signals": risks, "alert_feed": alerts, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
             "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
             "contract_reports": contract_reports, "company_risk_report": company_report,
