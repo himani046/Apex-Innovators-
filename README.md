@@ -71,3 +71,17 @@ uvicorn backend.app:app --reload
 ```
 
 The `POST /api/analyze-upload` endpoint currently provides document-level extraction and citation checks. It does not yet reconcile an uploaded file against every contract, event drop, or the payment ledger. Treat output as evidence triage, not legal advice. Uploading both PDF and TXT copies is not required; different SHA-256 hashes do not necessarily mean different contract text.
+
+
+## Phase 3 — Portfolio operations
+
+Phase 3 adds an explicit-date portfolio timeline and an evidence-led payment-event reconciliation view.
+
+- Normalizes source-grounded calendar dates against the selected `as_of` date into overdue, due-today, and upcoming milestones.
+- Surfaces invoice, payment, remittance, refund, credit, and billing event candidates from loaded event drops.
+- Links a ledger candidate to a contract only when the event text explicitly names exactly one known contract/document ID; otherwise it remains unlinked for review.
+- Keeps contract-stated amounts separate from transaction candidates. It does not sum contract rates, caps, recurring fees, or candidate events into a portfolio exposure total.
+- Preserves event source, timestamp, text evidence, extracted amount strings, match status, and unresolved reconciliation questions.
+- The dashboard displays the normalized timeline and payment-ledger candidates alongside the existing six workstreams.
+
+**Limitations:** These are operational triage candidates, not accounting entries, confirmed liabilities, or legal conclusions. Reconciliation requires a contract-linked invoice/credit, applicable trigger and period, and payment/dispute status. Relative deadlines are not converted into dates without a supported trigger date. Human review remains required.
