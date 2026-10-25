@@ -15,6 +15,7 @@ from backend.services.document_upload import DocumentUploadError, extract_upload
 from backend.services.ingestion import load_pack
 from backend.services.upload_analysis import extract_document_terms
 from backend.services.custom_portfolio import analyze_custom_portfolio
+from backend.services.agentic_state import SharedAgentState
 
 app = FastAPI(
     title="Odin | Contract War Room",
@@ -56,6 +57,13 @@ class PortfolioAnalysisRequest(BaseModel):
     contracts: list[ContractTextInput] = Field(min_length=1, max_length=50)
     event_records: list[dict] = Field(default_factory=list, max_length=1000)
     as_of: date = Field(default=date(2027, 3, 15))
+
+class ReExtractionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    contract_id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
+    text: str = Field(min_length=20, max_length=2_000_000)
+    clause_reference: str | None = Field(default=None, max_length=200)
+    shared_state: dict = Field(default_factory=dict)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -104,6 +112,37 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
     except Exception as exc:
         # Avoid returning internal exception text, paths, or provider details to clients.
         raise HTTPException(status_code=500, detail="Odin run failed safely; inspect server logs.") from exc
+
+
+@app.post("/api/reextract", dependencies=[Depends(require_api_token)])
+def reextract_clause(body: ReExtractionRequest = Body(...)):
+    """Re-extract one requested clause and return the updated structured shared state."""
+    from backend.services.upload_analysis import extract_document_terms
+
+    extraction = extract_document_terms(body.text, body.contract_id)
+    terms = extraction.get("extracted_terms", [])
+    for term in terms:
+        citation = term.get("citation") or {}
+        citation["verified"] = bool(citation.get("quote") and citation["quote"] in body.text)
+        citation["document_id"] = body.contract_id
+        term["citation"] = citation
+    if body.clause_reference:
+        needle = body.clause_reference.casefold()
+        terms = [term for term in terms if needle in str((term.get("citation") or {}).get("clause_reference", "")).casefold()
+                 or needle in str((term.get("citation") or {}).get("quote", "")).casefold()]
+    shared = SharedAgentState(body.shared_state)
+    existing_terms = shared.data.get("extracted_clauses", []) or []
+    existing_refs = shared.data.get("evidence_references", []) or []
+    shared.update("extracted_clauses", existing_terms + terms)
+    shared.update("evidence_references", existing_refs + [term.get("citation") for term in terms if term.get("citation")])
+    shared.message("Odin", "Thor", "targeted_reextraction_request", "complete",
+                   contract_id=body.contract_id, clause_reference=body.clause_reference)
+    shared.message("Thor", "Odin", "targeted_reextraction_result", "complete" if terms else "no_matching_terms",
+                   contract_id=body.contract_id, terms_returned=len(terms))
+    return {"status": "complete" if terms else "no_matching_terms", "contract_id": body.contract_id,
+            "clause_reference": body.clause_reference, "extracted_terms": terms,
+            "shared_state": shared.snapshot(),
+            "notice": "Returned terms are source-grounded candidates. Shared state is updated in this response; persist the returned snapshot with the run record if durable history is required."}
 
 
 @app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])
