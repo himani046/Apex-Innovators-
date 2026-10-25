@@ -1334,6 +1334,57 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform:none!important;
 }
 
+
+/* Phase 4 decision queue: keep the section and every queue card dark in all states. */
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems),
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems):hover,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems):focus-within {
+  background:linear-gradient(145deg,#191727,#0d0d17)!important;
+  color:#f3efff!important;
+  border-color:rgba(190,165,255,.18)!important;
+}
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) > h3,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) > p,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) > h3 *,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) > p *,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueCounts,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueCounts * {
+  color:#f3efff!important;
+  -webkit-text-fill-color:#f3efff!important;
+}
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:focus-within {
+  background:linear-gradient(145deg,#191727,#10101b)!important;
+  color:#f3efff!important;
+  border-color:rgba(190,165,255,.18)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+}
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent *,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover * {
+  color:#cfc7e3!important;
+  -webkit-text-fill-color:#cfc7e3!important;
+}
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent h3,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent h4,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent b,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent strong,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover h3,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover h4,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover b,
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .agent:hover strong {
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+}
+.page-view[data-view="timeline"] .card:has(#decisionQueueItems) #decisionQueueItems .tag {
+  color:#dcd2ff!important;
+  -webkit-text-fill-color:#dcd2ff!important;
+  background:rgba(155,126,229,.14)!important;
+  border-color:rgba(194,177,255,.24)!important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
