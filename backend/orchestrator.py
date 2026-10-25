@@ -1,6 +1,7 @@
 from datetime import date
 
-from backend.config import PACK_DIR, USE_CLAUDE, MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS
+from backend.config import PACK_DIR, USE_CLAUDE, MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS, MAX_LLM_TOKENS
+from backend.services.llm_runtime import llm_run_context, usage_snapshot
 from backend.services.agentic_state import SharedAgentState, ExecutionBudget, run_bounded_follow_up
 from backend.services.ingestion import load_pack
 from backend.services.citations import verify_all
@@ -21,7 +22,7 @@ from backend.agents.heimdall import verify
 from backend.agents.tyr import arbitrate
 
 
-def run_demo(as_of="2027-03-15", request_claude=True):
+def _run_demo(as_of="2027-03-15", request_claude=True):
     date.fromisoformat(as_of)
     pack = load_pack(PACK_DIR)
     contracts = pack["contracts"]
@@ -497,3 +498,27 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         for item in state["cross_contract_candidates"]
     )
     return state
+
+
+
+def run_demo(as_of="2027-03-15", request_claude=True):
+    """Execute a reproducible run with explicit LLM token accounting and deduplication."""
+    with llm_run_context(MAX_LLM_TOKENS) as llm_usage:
+        result = _run_demo(as_of=as_of, request_claude=request_claude)
+        result["llm_usage"] = usage_snapshot(llm_usage)
+        result["reproducibility"] = {
+            "as_of_date": result.get("as_of_date", as_of),
+            "input_fingerprint": result.get("audit", {}).get("input_fingerprint"),
+            "configuration": {
+                "model": __import__("backend.config", fromlist=["MODEL"]).MODEL,
+                "max_agent_calls": MAX_AGENT_CALLS,
+                "max_agent_iterations": MAX_AGENT_ITERATIONS,
+                "max_portfolio_agent_calls": MAX_PORTFOLIO_AGENT_CALLS,
+                "max_llm_tokens": MAX_LLM_TOKENS,
+                "llm_requested": bool(request_claude and USE_CLAUDE),
+            },
+            "note": "Exact-input LLM responses are cached within this run; deterministic steps use source text and explicit simulated date. Provider/model updates can still change results across runs.",
+        }
+        result.setdefault("shared_state", {})["llm_usage"] = result["llm_usage"]
+        result["shared_state"]["reproducibility"] = result["reproducibility"]
+        return result
