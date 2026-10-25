@@ -8,6 +8,7 @@ machine-readable trace records without requiring an LLM provider.
 from __future__ import annotations
 
 import re
+import json
 from datetime import date
 from typing import Any
 
@@ -303,6 +304,188 @@ def reconcile_payment_events(
         "verified_financial_exposure": None,
         "note": "No financial exposure is aggregated from unverified events. Reconcile original invoice, due date, contractual trigger, payment/credit record, and source authenticity first.",
     }
+
+
+def _call_llm_json(system_prompt: str, user_prompt: str, max_tokens: int = 1400) -> tuple[dict[str, Any] | None, str]:
+    """Call the configured provider only when the caller explicitly enables it."""
+    from backend.config import USE_CLAUDE
+    if not USE_CLAUDE:
+        return None, "provider_not_configured"
+    try:
+        from backend.claude_client import ask_claude
+        raw = ask_claude(system_prompt, user_prompt, max_tokens)
+        start, end = raw.find("{"), raw.rfind("}")
+        if start < 0 or end <= start:
+            return None, "invalid_json_response"
+        value = json.loads(raw[start:end + 1])
+        return (value, "complete") if isinstance(value, dict) else (None, "invalid_json_response")
+    except Exception as exc:
+        return None, "provider_error_" + type(exc).__name__
+
+
+def _llm_thor_terms(contract_id: str, source: str) -> tuple[list[dict[str, Any]], str]:
+    payload, status = _call_llm_json(
+        "You are Thor, a conservative contract extraction agent. Return JSON only. Extract source-stated terms; never infer missing facts.",
+        "Return JSON {\"extracted_terms\":[{\"category\":\"...\",\"quote\":\"exact verbatim source quotation\",\"value\":\"...\"}]}. "
+        "Every quote must be copied exactly from SOURCE. Do not return summaries without a quote. SOURCE ID: "
+        + contract_id + "\nSOURCE:\n" + source[:40000],
+        1500,
+    )
+    if not payload:
+        return [], status
+    terms = []
+    seen = set()
+    for item in payload.get("extracted_terms", [])[:20]:
+        if not isinstance(item, dict):
+            continue
+        quote = str(item.get("quote", ""))
+        if not quote or quote not in source or quote in seen:
+            continue
+        seen.add(quote)
+        line_number = source.count("\n", 0, source.find(quote)) + 1
+        terms.append({
+            "category": str(item.get("category") or "source_term_candidate")[:80],
+            "value": quote,
+            "confidence": 0.65,
+            "confidence_basis": "LLM suggestion with exact-quote validation; not calibrated",
+            "citation": {
+                "document_id": contract_id, "line_number": line_number,
+                "clause_reference": f"line {line_number}", "quote": quote,
+                "verified": True,
+                "verification_note": "LLM-suggested quote independently matched canonical source text.",
+            },
+            "agent": "Thor", "mode": "llm_quote_validated",
+        })
+    return terms, status
+
+
+def _llm_loki_findings(contract_id: str, source: str, current_findings: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
+    payload, status = _call_llm_json(
+        "You are Loki, an adversarial contract reviewer. Identify plausible risks and ambiguities, not proven breaches. Return JSON only.",
+        "Return JSON {\"findings\":[{\"category\":\"...\",\"claim\":\"potential risk only\",\"severity\":\"low|medium|high\","
+        "\"quote\":\"exact source quote\",\"reasoning\":\"why a reviewer should challenge it\","
+        "\"evidence_gaps\":[\"missing fact\"]}]}. Do not assert a breach. Each quote must be verbatim. "
+        "Existing deterministic candidates: " + json.dumps(current_findings[:8], ensure_ascii=False, default=str)[:5000]
+        + "\nCONTRACT ID: " + contract_id + "\nSOURCE:\n" + source[:40000],
+        1600,
+    )
+    if not payload:
+        return [], status
+    output = []
+    for index, item in enumerate(payload.get("findings", [])[:8], start=1):
+        if not isinstance(item, dict):
+            continue
+        quote = str(item.get("quote", ""))
+        if not quote or quote not in source:
+            continue
+        line_number = source.count("\n", 0, source.find(quote)) + 1
+        citation = _citation(contract_id, line_number, quote, source)
+        severity = str(item.get("severity", "medium")).casefold()
+        if severity not in {"low", "medium", "high"}:
+            severity = "medium"
+        output.append({
+            "id": f"{contract_id}:llm-risk:{index}", "contract_id": contract_id,
+            "category": str(item.get("category") or "llm_review_candidate")[:80],
+            "title": str(item.get("category") or "LLM review candidate")[:120],
+            "severity": severity, "likelihood": "unassessed_not_a_probability",
+            "status": "candidate_requires_review",
+            "claim": str(item.get("claim") or "Potential risk candidate; human review required.")[:1200],
+            "reason": "LLM-suggested risk; exact quotation was validated, but interpretation is not a legal conclusion.",
+            "attack_path": [str(item.get("reasoning") or "Review the cited language in context.")[:1500]],
+            "evidence_gaps": [str(gap)[:300] for gap in item.get("evidence_gaps", [])[:8]],
+            "citations": [citation], "evidence": citation, "agent": "Loki",
+            "mode": "llm_quote_validated",
+        })
+    return output, status
+
+
+def _llm_heimdall_review(contract_id: str, source: str, findings: list[dict[str, Any]],
+                         events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
+    compact_events = [{"event_id": e.get("event_id"), "timestamp": e.get("timestamp"),
+                       "body": str(e.get("body", ""))[:1200]} for e in events[:40]]
+    payload, status = _call_llm_json(
+        "You are Heimdall, an evidence verifier. Distinguish supported facts from missing evidence. Return JSON only; never infer authenticity.",
+        "Return JSON {\"challenges\":[\"...\"],\"evidence_gaps\":[\"...\"],"
+        "\"event_evidence\":[{\"finding_id\":\"...\",\"event_id\":\"...\",\"quote\":\"exact event quote\"}]}. "
+        "Only cite event quotes copied exactly from a supplied event. A matching quote does not authenticate its source. "
+        "CONTRACT ID: " + contract_id + "\nFINDINGS:\n" + json.dumps(findings[:12], ensure_ascii=False, default=str)[:7000]
+        + "\nEVENTS:\n" + json.dumps(compact_events, ensure_ascii=False, default=str)[:18000]
+        + "\nCONTRACT SOURCE:\n" + source[:20000],
+        1200,
+    )
+    if not payload:
+        return None, status
+    event_by_id = {str(e.get("event_id")): e for e in events}
+    validated = []
+    rejected = 0
+    for item in payload.get("event_evidence", [])[:20]:
+        if not isinstance(item, dict):
+            continue
+        event = event_by_id.get(str(item.get("event_id")))
+        quote = str(item.get("quote", ""))
+        if event and quote and quote in str(event.get("body", "")):
+            validated.append({"finding_id": item.get("finding_id"), "event_id": item.get("event_id"),
+                              "quote": quote, "verified": True,
+                              "verification_note": "Exact quote matched supplied event body; event authenticity remains unverified."})
+        else:
+            rejected += 1
+    return {
+        "agent": "Heimdall", "status": "llm_review_with_limitations",
+        "challenges": [str(x)[:1000] for x in payload.get("challenges", [])[:10]],
+        "evidence_gaps": [str(x)[:500] for x in payload.get("evidence_gaps", [])[:15]],
+        "validated_event_evidence": validated, "rejected_event_citations": rejected,
+        "source_authenticity_verified": False,
+    }, status
+
+
+def _llm_tyr_review(contract_id: str, source: str, findings: list[dict[str, Any]],
+                    verification: dict[str, Any], rulings: dict[str, Any],
+                    events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
+    payload, status = _call_llm_json(
+        "You are Tyr, a cautious contract-review arbitrator. Return JSON only. Never declare legal liability or a proven breach from incomplete evidence. Actions must remain drafts requiring human approval.",
+        "Return JSON {\"rulings\":[{\"finding_id\":\"...\",\"rationale\":\"...\",\"unproven_claims\":[\"...\"],"
+        "\"citation_quotes\":[\"exact quote from contract or event\"],\"draft_subject\":\"...\",\"draft_body\":\"...\"}]}. "
+        "Each citation quote must be copied exactly from the contract or supplied event. Do not approve actions or send anything. "
+        "FINDINGS:\n" + json.dumps(findings[:10], ensure_ascii=False, default=str)[:6500]
+        + "\nVERIFICATION:\n" + json.dumps(verification, ensure_ascii=False, default=str)[:5000]
+        + "\nEXISTING RULINGS:\n" + json.dumps(rulings.get("rulings", [])[:10], ensure_ascii=False, default=str)[:5000]
+        + "\nEVENTS:\n" + json.dumps([{"event_id": e.get("event_id"), "body": e.get("body", "")} for e in events[:30]], ensure_ascii=False, default=str)[:12000]
+        + "\nCONTRACT ID: " + contract_id + "\nSOURCE:\n" + source[:30000],
+        1600,
+    )
+    if not payload:
+        return None, status
+    event_bodies = [str(e.get("body", "")) for e in events]
+    existing = {str(r.get("finding_id")): r for r in rulings.get("rulings", [])}
+    accepted = 0
+    for item in payload.get("rulings", [])[:15]:
+        if not isinstance(item, dict):
+            continue
+        quotes = [str(q) for q in item.get("citation_quotes", [])[:5]]
+        valid_quotes = [q for q in quotes if q and (q in source or any(q in body for body in event_bodies))]
+        if not valid_quotes:
+            continue
+        finding_id = str(item.get("finding_id", ""))
+        target = existing.get(finding_id)
+        if not target:
+            continue
+        target["llm_review"] = {
+            "rationale": str(item.get("rationale") or "")[:1500],
+            "unproven_claims": [str(x)[:500] for x in item.get("unproven_claims", [])[:8]],
+            "validated_citation_quotes": valid_quotes,
+            "human_review_required": True,
+        }
+        draft = target.get("action_draft") or {}
+        if item.get("draft_subject"):
+            draft["llm_suggested_subject"] = str(item["draft_subject"])[:240]
+        if item.get("draft_body"):
+            draft["llm_suggested_body"] = str(item["draft_body"])[:3000]
+        draft["human_approval_required"] = True
+        draft["status"] = "draft_only_not_sent"
+        target["action_draft"] = draft
+        accepted += 1
+    return {"agent": "Tyr", "accepted_rulings": accepted, "rejected_or_unmatched_rulings": max(0, len(payload.get("rulings", [])) - accepted),
+            "legal_outcome_resolved": False, "human_approval_required": True}, status
 
 
 def run_bounded_review_cycles(
