@@ -193,3 +193,23 @@ The dashboard has been redesigned around a light, sage-and-neutral visual system
 - **Settings and authority reminders:** save a contact email per contract, select a reminder cadence (30/14/7/1, 14/7/3/1, or 7/3/1 days), and prepare a mailto draft for a selected deadline. Contact settings are browser-local.
 
 **Important limitation:** reminder cadence is currently configuration and draft preparation only. The prototype does not run a background scheduler or automatically email authorities. Before automated delivery is enabled, add a server-side scheduler, verified authority/contract recipient mapping, provider credentials stored as secrets, notice-rule validation, duplicate-send protection, delivery/bounce logs, audit events, and a human approval gate. Do not email an authority based only on a keyword-extracted date or an unverified recipient.
+
+
+## Phase 10 — Configurable portfolio intake and FR8 synthesis
+
+This increment adds a multi-contract intake path and structured report synthesis.
+
+- **Configurable input:** `POST /api/analyze-portfolio` accepts company context, up to 50 contract text records, optional event records, and a simulated date. Combined contract text is limited to 15 MiB. The dashboard can read multiple TXT files and submit them together.
+- **Clause re-extraction:** `POST /api/reextract` accepts a contract ID, source text, optional clause reference, and a shared-state snapshot. It returns targeted terms and the updated state snapshot. The caller must persist the returned snapshot if durable continuity is needed.
+- **Broader Thor categories:** extraction triage includes party labels, duration, renewal, payment schedule, obligations, penalties, compliance, notice, liability, incident, termination, confidentiality, and dispute/law keywords. It adds heuristic ambiguity and missing-category flags.
+- **FR8 contract reports:** the fixed-pack run now returns `synthesis.contract_reports`, one report per extracted contract, with source terms, obligations, timeline candidates, risks, citations, confidence where available, unresolved questions, and recommended actions.
+- **FR8 company report:** `synthesis.company_risk_report` summarizes cross-contract relationships, amendment review items, prioritized actions, timeline projections, references, and unresolved questions.
+- **Evidence graph:** the custom-input path returns contract, clause-candidate, and explicitly labeled party nodes when source labels exist. Edges carry evidence references where available.
+- **Draft actions:** the custom path prepares category-specific review drafts for renewal, termination, penalty, notice, liability, and other candidate clauses. Drafts are not sent automatically.
+- **Audit fingerprint:** custom portfolio source identity is included in run fingerprinting.
+
+### Important acceptance-test boundary
+
+The custom-input endpoint is a deterministic source-triage path, not yet the same full agentic workflow used by the configured Quillhub demo. The A1 timeline/risk path remains scenario-specific; generalized per-contract debate loops, completion gates, robust semantic party extraction, and reconciled portfolio exposure are still open. The graph is canvas-based pseudo-3D, not a WebGL 3D engine. The new code has been committed, but full local tests and browser/API end-to-end verification must be run before claiming every FR is complete.
+
+See [docs/TECHNICAL_IMPLEMENTATION_GUIDE.md](docs/TECHNICAL_IMPLEMENTATION_GUIDE.md) for the stack, architecture, API, FR/NFR status, safety constraints, and remaining work.
