@@ -3,15 +3,16 @@ from backend.config import PACK_DIR,USE_CLAUDE,MAX_AGENT_CALLS,MAX_AGENT_ITERATI
 from backend.services.ingestion import load_pack
 from backend.services.citations import verify_all
 from backend.agents.thor import extract_a1
+from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
 from backend.agents.loki import review
 from backend.agents.heimdall import verify
 from backend.agents.tyr import arbitrate
 def run_demo(as_of='2027-03-15',request_claude=True):
- date.fromisoformat(as_of);pack=load_pack(PACK_DIR);source=pack['contracts'].get('A1')
+ date.fromisoformat(as_of);pack=load_pack(PACK_DIR);portfolio_extraction=extract_portfolio_candidates(pack['contracts']);source=pack['contracts'].get('A1')
  if not source:raise RuntimeError('A1.txt missing from supplied pack')
  use=request_claude and USE_CLAUDE
- state={'run_id':'odin-a1-'+as_of,'as_of_date':as_of,'scope':'A1-only vertical slice; not a complete portfolio analysis','status':'running','workstreams':[{'id':'contract-A1','status':'running','assigned_agents':['Thor','Norns','Loki','Heimdall','Tyr']}],'api_usage':{'max_calls':MAX_AGENT_CALLS,'max_iterations':MAX_AGENT_ITERATIONS},'agent_messages':[]}
+ state={'run_id':'odin-a1-'+as_of,'as_of_date':as_of,'scope':'A1-only vertical slice; not a complete portfolio analysis','status':'running','portfolio_extraction':portfolio_extraction,'workstreams':[{'id':'contract-A1','status':'running','assigned_agents':['Thor','Norns','Loki','Heimdall','Tyr']}],'api_usage':{'max_calls':MAX_AGENT_CALLS,'max_iterations':MAX_AGENT_ITERATIONS},'agent_messages':[]}
  x=extract_a1(source,use);terms=x.get('extracted_terms',[])
  for t in terms:
   if t.get('citation'):t['citation']=verify_all([t['citation']],{'A1':source})[0]
