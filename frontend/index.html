@@ -899,6 +899,32 @@ input[type=file]::file-selector-button:hover{
 @media(prefers-reduced-motion:reduce){.hero-globe-video{display:block!important;opacity:.95!important;transition:none!important}.hero-globe-still{opacity:0!important}}
 
 
+
+/* Final hero/layout corrections: true viewport-wide hero, taller section, white wordmark. */
+header .odin-brand h1{color:#f8f6ff!important}
+header .odin-brand h1 span{color:#b9a0ff!important}
+main>.odin-hero{
+  width:100vw!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  margin-left:calc(50% - 50vw)!important;
+  margin-right:calc(50% - 50vw)!important;
+  min-height:560px!important;
+  padding-left:clamp(22px,3.2vw,56px)!important;
+  padding-right:clamp(22px,3.2vw,56px)!important;
+  border-radius:26px!important;
+}
+main>.odin-hero .hero-globe-stage,
+main>.odin-hero .hero-globe-mask,
+main>.odin-hero .hero-globe-atmosphere{inset:0!important;width:100%!important}
+main>.odin-hero .hero-globe-media{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  max-width:none!important;transform:none!important;object-fit:cover!important;object-position:center center!important;
+}
+@media(max-width:900px){
+  main>.odin-hero{min-height:0!important;padding:38px 22px!important}
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
