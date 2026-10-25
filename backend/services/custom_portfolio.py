@@ -217,6 +217,10 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "timeline_candidates": report.get("timeline", []),
             "risk_findings": report.get("risks", []),
             "open_questions": gaps,
+            "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(gaps),
+                                "human_review_required": bool(gaps or report.get("risks")),
+                                "legal_outcome_resolved": False,
+                                "note": "Workflow stages completed; this gate does not mean the contract is legally resolved."},
             "completion_note": "Source-triage stages ran; unresolved questions and human review remain visible. This is not a legal-completeness guarantee."
         })
     workstreams.append({
@@ -230,6 +234,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         "progress": {"completed_stages": 1, "total_stages": 1, "percentage": 100},
         "relationship_count": len(cross_contract_edges),
         "open_questions": ["Review cross-contract effects and precedence where a sourced relationship exists."] if cross_contract_edges else [],
+        "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(cross_contract_edges),
+                            "human_review_required": bool(cross_contract_edges), "legal_outcome_resolved": False},
         "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
     })
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
