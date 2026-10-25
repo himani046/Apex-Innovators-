@@ -112,7 +112,9 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     contract_reports = []
     agent_messages = []
     execution_budget = ExecutionBudget(MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS)
-    budget_exhausted = False
+    stage_names = ("Thor", "Norns", "Loki", "Heimdall", "Tyr")
+    budget_allows_contracts = execution_budget.max_calls >= len(stage_names) * len(contracts)
+    budget_exhausted = not budget_allows_contracts
     shared_agent_state = SharedAgentState()
     shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})
     debate_traces = []
@@ -125,9 +127,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         if not budget_allows_contracts:
             shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
             continue
-        stage_slots = all(execution_budget.reserve_call(f"{agent_name} {cid}") for agent_name in stage_names)
-        if not stage_slots:
-            budget_exhausted = True
+        for agent_name in stage_names:
+            execution_budget.reserve_call(f"{agent_name} {cid}")
         shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
