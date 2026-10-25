@@ -210,7 +210,7 @@ class AuditStore:
                 (run_id, finding_id, str(action_id), decision, reviewer, note, now),
             )
             db.execute(
-                "INSERT INTO audit_events(run_id,occurred_at,event_type,actor,finding_id,details_json) VALUES(?,?,?,?,?,?,?)",
+                "INSERT INTO audit_events(run_id,occurred_at,event_type,actor,finding_id,details_json) VALUES(?,?,?,?,?,?)",
                 (run_id, now, "human_decision", reviewer, finding_id,
                  _json({"action_id": action_id, "decision": decision, "reviewer": reviewer, "note": note,
                         "consequential_action_executed": False})),
