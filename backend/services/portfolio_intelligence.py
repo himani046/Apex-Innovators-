@@ -730,13 +730,32 @@ def run_bounded_review_cycles(
             "legal_outcome_resolved": False,
         })
 
+    not_run_workstreams = [item for item in workstreams if item.get("status") == "not_run_budget_exhausted"]
+    iteration_limited = any(
+        trace.get("stop_reason") == "iteration_limit_reached"
+        or (trace.get("iterations_used", 0) >= max_iterations and bool(trace.get("final_unresolved_gaps")))
+        for trace in loop_traces
+    )
+    partial_completion = bool(
+        stopped_reason == "agent_call_budget_exhausted"
+        or not_run_workstreams
+        or iteration_limited
+    )
+    final_status = (
+        "partial_budget_exhausted" if stopped_reason == "agent_call_budget_exhausted" or not_run_workstreams
+        else "partial_review_limit_reached" if iteration_limited
+        else "complete_with_review_items" if workstreams
+        else "not_run"
+    )
     return {
         "mode": "bounded_hybrid_llm_multi_agent_workflow" if llm_enabled else "bounded_deterministic_multi_agent_workflow",
-        "status": "complete_with_limitations" if workstreams else "not_run",
+        "status": final_status,
         "as_of_date": as_of, "max_iterations": max_iterations,
         "iterations_used": max((item.get("iterations_used", 0) for item in loop_traces), default=0),
         "agent_calls_used": calls, "agent_call_budget": max_agent_calls,
-        "budget_exhausted": stopped_reason == "agent_call_budget_exhausted",
+        "budget_exhausted": stopped_reason == "agent_call_budget_exhausted" or bool(not_run_workstreams),
+        "partial_completion": partial_completion,
+        "not_run_contract_ids": [item.get("contract_id") for item in not_run_workstreams],
         "stop_reason": stopped_reason,
         "agent_messages": messages, "workstreams": workstreams, "llm_enabled": llm_enabled,
         "llm_provider_status": "enabled" if llm_enabled else "not_configured" if use_llm and not USE_CLAUDE else "not_requested",
@@ -744,7 +763,7 @@ def run_bounded_review_cycles(
         "loop_traces": loop_traces, "risk_findings": all_findings,
         "verification_outcomes": all_verifications, "rulings": all_rulings,
         "timeline_candidates": all_timelines, "event_ingestion": normalized,
-        "human_review_required": any(item.get("human_review_required") for item in workstreams),
+        "human_review_required": any(item.get("human_review_required") for item in workstreams) or partial_completion,
         "legal_outcome_resolved": False,
         "notice": ("Bounded hybrid agent workflow with quote-validated LLM suggestions; still not a legal opinion, breach determination, or event-authenticity check." if llm_enabled else "Bounded deterministic agent collaboration; LLM use was not enabled or no provider key is configured. This is not a legal opinion, breach determination, or external event-authenticity check."),
     }
