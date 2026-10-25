@@ -164,22 +164,30 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 event_category = "payment_event"
             elif re.search(r"\b(renewal|renew|termination|notice|deadline|expiry|expires)\b", event_body, re.I):
                 event_category = "contract_milestone_event"
-            elif re.search(r"\b(outage|incident|breach|disruption|failure|complaint)\b", event_body, re.I):
+            elif re.search(r"\b(outage|incident|breach|disruption|failure|complaint|delay|shipment|delivery)\b", event_body, re.I):
                 event_category = "operational_incident"
+            if event_category is None and mapped.get("matched_clauses"):
+                event_category = "contract_clause_trigger_candidate"
             if event_category:
                 alerts.append({
                     "id": str(mapped.get("event_id") or "event") + ":" + cid,
                     "contract_id": cid, "category": event_category,
-                    "title": "Review supplied " + event_category.replace("_", " "),
+                    "title": "Review event against " + str(len(mapped.get("matched_clauses", []))) + " candidate clause(s)" if mapped.get("matched_clauses") else "Review supplied " + event_category.replace("_", " "),
                     "severity": "medium", "priority": "medium",
-                    "status": "event_candidate_requires_review",
-                    "reason": "Event text explicitly names this contract and contains a relevant operational keyword. Verify the event source and clause applicability before treating it as a breach or financial obligation.",
+                    "status": "event_clause_mapping_candidate_requires_review" if mapped.get("matched_clauses") else "event_candidate_requires_review",
+                    "reason": "Event-to-contract link method: " + str((mapped.get("contract_link") or {}).get("method", "unknown")) + ". Candidate event families: " + ", ".join(mapped.get("event_families", [])) + ". Clause-family mapping is heuristic; verify event authenticity, timing, operative wording, exceptions, amendments, and trigger facts before treating this as a breach or financial obligation.",
                     "date": mapped.get("timestamp"),
+                    "candidate_deadline_dates": mapped.get("candidate_deadline_dates", []),
+                    "contract_link": mapped.get("contract_link", {}),
+                    "event_families": mapped.get("event_families", []),
                     "evidence": {"document_id": str(mapped.get("event_id") or "supplied event"),
                                  "quote": event_body, "verified": False,
                                  "verification_note": "User-supplied event record; source authenticity not independently verified."},
                     "matched_clauses": mapped.get("matched_clauses", []),
-                    "recommended_next_step": "Verify event authenticity, timestamps, and applicable clause trigger."
+                    "recommended_next_step": "Verify the source, determine whether the matched clause applies, check trigger timing and exceptions, then obtain human approval for any action.",
+                    "human_review_required": True,
+                    "source_authenticity_verified": False,
+                    "breach_determined": False,
                 })
         confidence = [float(t["confidence"]) for t in extraction.get("extracted_terms", [])
                       if isinstance(t.get("confidence"), (int, float))]
@@ -188,7 +196,14 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
-                  "mapped_events": mapped_events, "citations": citations,
+                  "mapped_events": mapped_events,
+                  "event_clause_mapping": {
+                      "events_mapped": len(mapped_events),
+                      "events_with_clause_candidates": sum(bool(item.get("matched_clauses")) for item in mapped_events),
+                      "events_linked_by_explicit_id": sum((item.get("contract_link") or {}).get("method") == "explicit_contract_identifier" for item in mapped_events),
+                      "events_linked_by_party_candidate": sum((item.get("contract_link") or {}).get("method") == "contract_party_name_candidate" for item in mapped_events),
+                      "source_authenticity_verified": False,
+                  }, "citations": citations,
                   "citation_validation": {"total": len(citations), "verified": sum(bool(c.get("verified")) for c in citations),
                                           "failed": sum(not c.get("verified", False) for c in citations)},
                   "confidence": round(sum(confidence)/len(confidence), 3) if confidence else None,
