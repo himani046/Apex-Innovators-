@@ -51,6 +51,46 @@ class SharedStateTests(unittest.TestCase):
         self.assertEqual(budget.calls_used, 2)
         self.assertEqual(finding["iteration"], 2)
 
+    def test_follow_up_preserves_gap_when_later_verifier_omits_it(self):
+        budget = ExecutionBudget(max_calls=3, max_iterations=2)
+
+        def follow_up(finding, verification, iteration):
+            # Re-analysis did not receive any new source evidence.
+            return {"claim": "rechecked"}, {
+                "status": "verified_with_limitations",
+                "recommended_follow_up": "Request the missing provider log",
+            }
+
+        _, verification, summary = run_bounded_follow_up(
+            {"claim": "initial"},
+            {"status": "unverified", "evidence_gaps": ["provider awareness timestamp"]},
+            2, budget, follow_up,
+        )
+        self.assertEqual(verification["evidence_gaps"], ["provider awareness timestamp"])
+        self.assertTrue(summary["needs_human_follow_up"])
+        self.assertEqual(summary["remaining_gaps"], ["provider awareness timestamp"])
+        self.assertEqual(summary["stop_reason"], "iteration_limit_reached")
+        self.assertEqual(summary["iterations"][1]["remaining_gaps"], ["provider awareness timestamp"])
+
+    def test_follow_up_closes_gap_only_when_explicitly_resolved(self):
+        budget = ExecutionBudget(max_calls=3, max_iterations=2)
+
+        def follow_up(finding, verification, iteration):
+            return {"claim": "supported"}, {
+                "status": "verified",
+                "evidence_gaps": [],
+                "resolved_evidence_gaps": ["provider awareness timestamp"],
+            }
+
+        _, verification, summary = run_bounded_follow_up(
+            {"claim": "initial"},
+            {"status": "unverified", "evidence_gaps": ["provider awareness timestamp"]},
+            2, budget, follow_up,
+        )
+        self.assertEqual(verification["evidence_gaps"], [])
+        self.assertFalse(summary["needs_human_follow_up"])
+        self.assertEqual(summary["stop_reason"], "verification_satisfied")
+
     def test_follow_up_stops_when_verification_satisfied(self):
         budget = ExecutionBudget(max_calls=4, max_iterations=3)
         calls = []
