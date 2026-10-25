@@ -137,6 +137,7 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
     allowed_run_statuses = {
         "running", "complete", "complete_with_review_items", "complete_with_limitations",
         "source_triage_complete", "partial_budget_exhausted", "partial_review_limit_reached",
+        "partial_quality_review_required",
         "failed", "not_run",
     }
     if run_status not in allowed_run_statuses:
@@ -210,4 +211,6 @@ def build_synthesis(run: dict[str, Any]) -> dict[str, Any]:
         "contract_reports": reports,
         "company_risk_report": company_report,
         "status": run_status,
+        "analysis_quality": run.get("analysis_quality", {}),
+        "agent_architecture": run.get("agent_architecture", {}),
     }
