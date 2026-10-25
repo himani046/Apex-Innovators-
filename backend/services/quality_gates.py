@@ -76,6 +76,34 @@ def apply_analysis_quality(state: dict[str, Any], contracts: dict[str, str]) -> 
                 summary["verified_source_facts"] += 1
             else:
                 summary["unverified_or_uncited_terms"] += 1
+    # The legacy A1 vertical slice is a separate Thor extraction path; gate it too.
+    legacy = state.get("extraction") or {}
+    if isinstance(legacy, dict):
+        for ambiguity in legacy.get("ambiguities") or []:
+            summary["ambiguities"].append({"contract_id": legacy.get("contract_id", "A1"), "description": str(ambiguity)})
+        for term in legacy.get("extracted_terms") or []:
+            summary["terms_checked"] += 1
+            if not isinstance(term, dict):
+                summary["unverified_or_uncited_terms"] += 1
+                continue
+            citation = term.get("citation")
+            quote = str((citation or {}).get("quote") or "") if isinstance(citation, dict) else ""
+            source_id = str((citation or {}).get("document_id") or legacy.get("contract_id") or "A1") if isinstance(citation, dict) else str(legacy.get("contract_id") or "A1")
+            exact = bool(quote.strip()) and quote in str(contracts.get(source_id, ""))
+            if isinstance(citation, dict):
+                citation["verified"] = exact
+                citation["verification_note"] = (
+                    "Exact quote found in canonical source text."
+                    if exact else "Quote missing or not found verbatim in canonical source; not verified."
+                )
+            term["provenance"] = "source_fact" if exact else "unverified"
+            term["source_verified"] = exact
+            term["analysis_note"] = "Agent summary/interpretation is analysis; only the cited exact excerpt is source evidence."
+            if exact:
+                summary["verified_source_facts"] += 1
+            else:
+                summary["unverified_or_uncited_terms"] += 1
+
     if summary["unverified_or_uncited_terms"] or summary["truncated_contracts"] or summary["parse_error_count"]:
         summary["status"] = "partial_review_required"
     summary["truncated_contracts"] = sorted(set(summary["truncated_contracts"]))
