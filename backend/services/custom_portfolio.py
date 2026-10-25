@@ -91,7 +91,8 @@ _rich_graph = build_rich_contract_graph
 
 
 def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str, str]],
-                             events: list[dict[str, Any]] | None, as_of: str) -> dict[str, Any]:
+                             events: list[dict[str, Any]] | None, as_of: str,
+                             use_llm: bool = False) -> dict[str, Any]:
     clock = date.fromisoformat(as_of)
     contracts = {item["id"].strip(): item["text"] for item in contract_items}
     source_fingerprint = hashlib.sha256((company_context + chr(10) + chr(10).join(cid + chr(10) + text for cid, text in sorted(contracts.items())) + chr(10) + json.dumps(events or [], sort_keys=True, ensure_ascii=False, default=str)).encode("utf-8")).hexdigest()
@@ -206,7 +207,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     # evidence-preserving; it never claims an LLM debate or a legal conclusion.
     agent_workflow = run_bounded_review_cycles(
         contracts=contracts, extractions=extractions, events=visible_events,
-        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 9),
+        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 13), use_llm=use_llm,
     )
     financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
