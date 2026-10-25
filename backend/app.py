@@ -18,6 +18,8 @@ from backend.services.upload_analysis import extract_document_terms
 from backend.services.custom_portfolio import analyze_custom_portfolio
 from backend.services.agentic_state import SharedAgentState
 from backend.services.event_store import EventStore
+from backend.config import MAX_LLM_TOKENS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS
+from backend.services.llm_runtime import llm_run_context, usage_snapshot
 
 event_store = EventStore()
 
@@ -348,14 +350,15 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             body_text = str(event.get("body") or event.get("text") or event.get("description") or "")
             key = ("content", timestamp, body_text) if timestamp and body_text else (source_id, event_id or body_text)
             combined_events[key] = event
-        result = analyze_custom_portfolio(
-            company_context=body.company_context,
-            contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
-            events=list(combined_events.values()),
-            as_of=body.as_of.isoformat(),
-            use_llm=body.use_claude,
-            payment_ledger=body.payment_ledger,
-        )
+        with llm_run_context(MAX_LLM_TOKENS) as llm_usage:
+            result = analyze_custom_portfolio(
+                company_context=body.company_context,
+                contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
+                events=list(combined_events.values()),
+                as_of=body.as_of.isoformat(),
+                use_llm=body.use_claude,
+                payment_ledger=body.payment_ledger,
+            )
         result["event_store_context"] = {
             "stored_events_loaded": len(stored_events),
             "request_events_received": len(body.event_records),
@@ -369,6 +372,14 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             "input_fingerprint": audit["input_fingerprint"],
         }
         result["run_id"] = audit["run_id"]
+        result["llm_usage"] = usage_snapshot(llm_usage)
+        result.setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
+        result["reproducibility"]["configuration"] = {
+            "max_portfolio_agent_calls": MAX_PORTFOLIO_AGENT_CALLS,
+            "max_agent_iterations": MAX_AGENT_ITERATIONS,
+            "max_llm_tokens": MAX_LLM_TOKENS,
+            "llm_requested": bool(body.use_claude and USE_CLAUDE),
+        }
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid simulated date or portfolio input") from exc
