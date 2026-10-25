@@ -254,7 +254,7 @@ def build_portfolio_timeline(workstream_analysis: dict[str, Any], portfolio_oper
             fixed_amounts = []
             for match in amount_matches:
                 raw = match.group(0)
-                number = re.search(r"[\\d,]+(?:\\.\\d{2})?", raw)
+                number = re.search(r"[\d,]+(?:\.\d{2})?", raw)
                 if number:
                     try:
                         fixed_amounts.append(float(number.group(0).replace(",", "")))
