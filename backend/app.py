@@ -1,19 +1,47 @@
+from datetime import date
 from pathlib import Path
+from typing import Literal
 
-from fastapi import Body, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import PACK_DIR, USE_CLAUDE
 from backend.orchestrator import run_demo
+from backend.security import require_api_token, security_mode
 from backend.services.audit_store import audit_store
 from backend.services.document_upload import DocumentUploadError, extract_uploaded_document
 from backend.services.ingestion import load_pack
 from backend.services.upload_analysis import extract_document_terms
 
-app = FastAPI(title="Odin | Contract War Room", version="0.1.0")
+app = FastAPI(
+    title="Odin | Contract War Room",
+    version="0.2.0",
+    docs_url=None if security_mode() == "misconfigured_production" else "/docs",
+    redoc_url=None if security_mode() == "misconfigured_production" else "/redoc",
+)
 FRONTEND = Path(__file__).resolve().parents[1] / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND)), name="static")
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else "no-cache"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    return response
+
+
+class HumanDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action_id: str = Field(default="recommended-action", min_length=1, max_length=120)
+    decision: Literal["approved", "rejected"]
+    reviewer: str = Field(min_length=2, max_length=120)
+    note: str = Field(default="", max_length=2000)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -29,6 +57,7 @@ def health():
         "pack_found": PACK_DIR.exists(),
         "claude_configured": USE_CLAUDE,
         "persistent_audit_enabled": True,
+        "security_mode": security_mode(),
     }
 
 
@@ -45,9 +74,9 @@ def pack_summary():
 
 
 @app.get("/api/run")
-def run(as_of: str = Query(default="2027-03-15"), use_claude: bool = Query(default=True)):
+def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query(default=True)):
     try:
-        result = run_demo(as_of, use_claude)
+        result = run_demo(as_of.isoformat(), use_claude)
         audit = audit_store.record_run(result)
         result["audit"] = {
             "run_id": audit["run_id"],
@@ -59,17 +88,18 @@ def run(as_of: str = Query(default="2027-03-15"), use_claude: bool = Query(defau
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="as_of must be an ISO date, e.g. 2027-03-15") from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="Odin run failed safely: " + str(exc)) from exc
+        # Avoid returning internal exception text, paths, or provider details to clients.
+        raise HTTPException(status_code=500, detail="Odin run failed safely; inspect server logs.") from exc
 
 
-@app.get("/api/audit/runs")
+@app.get("/api/audit/runs", dependencies=[Depends(require_api_token)])
 def audit_runs(limit: int = Query(default=25, ge=1, le=100)):
     """List persistent analysis runs for the audit explorer."""
     return {"runs": audit_store.list_runs(limit)}
 
 
-@app.get("/api/audit/runs/{run_id}")
-def audit_run(run_id: str):
+@app.get("/api/audit/runs/{run_id}", dependencies=[Depends(require_api_token)])
+def audit_run(run_id: str = Query(..., min_length=1, max_length=180)):
     """Fetch a saved run snapshot, provenance events, and human decisions."""
     result = audit_store.get_run(run_id)
     if result is None:
@@ -77,16 +107,16 @@ def audit_run(run_id: str):
     return result
 
 
-@app.post("/api/audit/runs/{run_id}/decision")
-def record_human_decision(run_id: str, body: dict = Body(...)):
+@app.post("/api/audit/runs/{run_id}/decision", dependencies=[Depends(require_api_token)])
+def record_human_decision(run_id: str, body: HumanDecisionRequest = Body(...)):
     """Record an explicit review decision. This endpoint never executes the action."""
     try:
         return audit_store.decide(
             run_id=run_id,
-            action_id=body.get("action_id", "recommended-action"),
-            decision=body.get("decision", ""),
-            reviewer=body.get("reviewer", ""),
-            note=body.get("note", ""),
+            action_id=body.action_id,
+            decision=body.decision,
+            reviewer=body.reviewer,
+            note=body.note,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc).strip("'")) from exc
@@ -94,11 +124,13 @@ def record_human_decision(run_id: str, body: dict = Body(...)):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.post("/api/analyze-upload")
+@app.post("/api/analyze-upload", dependencies=[Depends(require_api_token)])
 async def analyze_upload(file: UploadFile = File(...), use_claude: bool = Query(default=True)):
     """Analyze one uploaded PDF/TXT using the evidence-grounded extraction path."""
     try:
-        raw = await file.read()
+        raw = await file.read(15 * 1024 * 1024 + 1)
+        if len(raw) > 15 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Upload exceeds the 15 MB limit")
         document = extract_uploaded_document(file.filename or "contract.txt", raw)
         contract_id = Path(document["filename"]).stem.upper()
         source_id = contract_id if contract_id in {"A1", "A2", "A3", "B1", "B2", "C1", "D1", "STD"} else document["filename"]
