@@ -17,6 +17,8 @@ from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
+from backend.services.agentic_state import ExecutionBudget, SharedAgentState, run_bounded_follow_up
+from backend.config import MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
 
 
 DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
@@ -109,6 +111,9 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     risks = []
     contract_reports = []
     agent_messages = []
+    execution_budget = ExecutionBudget(MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS)
+    shared_agent_state = SharedAgentState()
+    shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})
     debate_traces = []
     verification_records = []
     alerts = []
@@ -116,14 +121,24 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
     for cid, source in contracts.items():
         extraction = extractions[cid]
+        execution_budget.reserve_call(f"Thor extraction {cid}")
+        shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
         timeline.extend(contract_timeline)
+        execution_budget.reserve_call(f"Norns timeline {cid}")
+        shared_agent_state.message("Norns", "Loki", "timeline_candidates", "complete", contract_id=cid, milestones=len(contract_timeline))
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
+        execution_budget.reserve_call(f"Loki review {cid}")
+        shared_agent_state.message("Loki", "Heimdall", "risk_challenge", "submitted", contract_id=cid, findings=len(contract_risks))
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         verification_records.append({"contract_id": cid, **heimdall_result})
+        execution_budget.reserve_call(f"Heimdall verification {cid}")
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
+        execution_budget.reserve_call(f"Tyr ruling {cid}")
+        shared_agent_state.message("Heimdall", "Tyr", "verification_result", heimdall_result.get("status", "unknown"), contract_id=cid, findings=len(heimdall_result.get("findings", [])))
+        shared_agent_state.message("Tyr", "Odin", "rulings", tyr_result.get("status", "unknown"), contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
                               "heimdall_verification": heimdall_result, "tyr_rulings": tyr_result.get("rulings", [])})
         mapped_events = heimdall_result.get("mapped_events", [])
@@ -171,6 +186,17 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                       if isinstance(t.get("confidence"), (int, float))]
         gaps = list(dict.fromkeys(list(extraction.get("ambiguities", []) or []) + [gap for item in heimdall_result.get("findings", []) for gap in (item.get("evidence_gaps", []) or [])]))
         actions = [item.get("action_draft") for item in tyr_result.get("rulings", []) if item.get("action_draft")]
+        shared_agent_state.update("extracted_clauses", shared_agent_state.data["extracted_clauses"] + extraction.get("extracted_terms", []))
+        shared_agent_state.update("timeline_events", shared_agent_state.data["timeline_events"] + contract_timeline)
+        shared_agent_state.update("risk_claims", shared_agent_state.data["risk_claims"] + contract_risks)
+        shared_agent_state.update("evidence_references", shared_agent_state.data["evidence_references"] + citations)
+        shared_agent_state.update("verification_outcomes", shared_agent_state.data["verification_outcomes"] + [heimdall_result])
+        shared_agent_state.update("recommended_actions", shared_agent_state.data["recommended_actions"] + actions)
+        shared_agent_state.record_agent("Thor", "complete_with_review_items", consumes=["contract_source"], produces=["extracted_clauses", "evidence_references"])
+        shared_agent_state.record_agent("Norns", "complete_with_review_items", consumes=["extracted_clauses", "as_of_date"], produces=["timeline_events"])
+        shared_agent_state.record_agent("Loki", "complete_with_review_items", consumes=["extracted_clauses", "timeline_events"], produces=["risk_claims", "unresolved_questions"])
+        shared_agent_state.record_agent("Heimdall", "complete_with_review_items", consumes=["risk_claims", "event_records", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
+        shared_agent_state.record_agent("Tyr", "complete_with_review_items", consumes=["risk_claims", "verification_outcomes"], produces=["recommended_actions"])
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
@@ -212,7 +238,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "responsibility": "Extract source terms, classify date candidates, review risks, verify evidence, and draft review actions.",
             "assigned_agents": ["Thor", "Norns", "Loki", "Heimdall", "Tyr"],
             "status": report["status"],
-            "progress": {"completed_stages": 5, "total_stages": 5, "percentage": 100},
+            "progress": {"completed_stages": 5, "total_stages": 5, "percentage": 100, "note": "Pipeline stages executed; legal outcome may remain unresolved."},
             "extracted_obligations": report.get("obligations", []),
             "timeline_candidates": report.get("timeline", []),
             "risk_findings": report.get("risks", []),
@@ -255,7 +281,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
                                       "Every proposed action requires human review."]}
-    shared_state = {"schema_version": "1.0", "company_context": company_context, "as_of_date": as_of,
+    shared_state = {"schema_version": "1.1", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,
                     "extracted_clauses": [term for item in extractions.values() for term in item.get("extracted_terms", [])],
@@ -266,9 +292,11 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "recommended_actions": [action for report in contract_reports for action in report["recommended_actions"]],
                     "agent_status": {name: {"status": "complete_with_limitations", "mode": "deterministic_source_triage"}
                                      for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]},
-                    "agent_messages": agent_messages,
-                    "execution": {"mode": "bounded_single_pass", "max_iterations": 0, "iterations_used": 0,
-                                  "note": "This custom-input path performs one deterministic pass; iterative LLM debate is not run for arbitrary inputs."}}
+                    "agent_messages": agent_messages + shared_agent_state.data["agent_messages"],
+                    "agent_status": shared_agent_state.data["agent_status"],
+                    "execution": {**execution_budget.as_dict(), "mode": "bounded_deterministic_review",
+                                  "iterations_used": execution_budget.iterations_used,
+                                  "note": "Configured call/iteration ceilings are exposed. The generic custom-input path remains deterministic; a budget limit does not imply omitted stages completed."}}
     return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
@@ -276,4 +304,5 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Structured deterministic challenge/verification/ruling traces; this path does not claim a live LLM debate."},
             "contract_reports": contract_reports, "company_risk_report": company_report,
-            "shared_state": shared_state, "limitations": company_report["limitations"]}
+            "shared_state": shared_state, "limitations": company_report["limitations"],
+            "execution": shared_state["execution"]}
