@@ -27,7 +27,7 @@ def extract_document_terms(text: str, document_id: str, clause_reference: str | 
     lines = text.splitlines()
     if clause_reference:
         needle = clause_reference.strip().casefold()
-        heading_pattern = re.compile(r"^(?:section|article|[0-9]+(?:\\.[0-9]+)*|[A-Z]\\.)\\b", re.I)
+        heading_pattern = re.compile(r"^(?:section|article|[0-9]+(?:\.[0-9]+)*|[A-Z]\.)\b", re.I)
         heading_indexes = [
             index for index, raw in enumerate(lines)
             if raw.strip() and len(raw.strip()) < 120
@@ -39,8 +39,8 @@ def extract_document_terms(text: str, document_id: str, clause_reference: str | 
             if needle in heading.casefold():
                 matched_index = index
                 break
-            requested_numbers = re.findall(r"\\d+(?:\\.\\d+)*", needle)
-            heading_numbers = re.findall(r"\\d+(?:\\.\\d+)*", heading)
+            requested_numbers = re.findall(r"\d+(?:\.\d+)*", needle)
+            heading_numbers = re.findall(r"\d+(?:\.\d+)*", heading)
             if requested_numbers and heading_numbers and requested_numbers[0] == heading_numbers[0]:
                 matched_index = index
                 break

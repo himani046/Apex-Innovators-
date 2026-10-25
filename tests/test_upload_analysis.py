@@ -16,9 +16,9 @@ class UploadAnalysisTests(unittest.TestCase):
 
     def test_targeted_extraction_scans_only_requested_section(self):
         source = (
-            "Section 1. Term\\nThe agreement has a duration of twelve months.\\n"
-            "Section 4. Renewal\\nThe agreement automatically renews for one year.\\n"
-            "Section 8. Payment\\nCustomer shall pay USD 500 monthly.\\n"
+            "Section 1. Term\nThe agreement has a duration of twelve months.\n"
+            "Section 4. Renewal\nThe agreement automatically renews for one year.\n"
+            "Section 8. Payment\nCustomer shall pay USD 500 monthly.\n"
         )
         result = extract_document_terms(source, "VENDOR_X", "Section 4")
         self.assertEqual(result["mode"], "targeted_clause_scan")
@@ -27,7 +27,7 @@ class UploadAnalysisTests(unittest.TestCase):
         self.assertTrue(all("renew" in term["citation"]["quote"].casefold() for term in result["extracted_terms"]))
 
     def test_missing_targeted_section_does_not_fall_back_to_full_document(self):
-        source = "Section 1. Term\\nThe agreement has a duration of twelve months.\\n"
+        source = "Section 1. Term\nThe agreement has a duration of twelve months.\n"
         result = extract_document_terms(source, "VENDOR_X", "Section 99")
         self.assertFalse(result["target_clause_found"])
         self.assertEqual(result["extracted_terms"], [])
