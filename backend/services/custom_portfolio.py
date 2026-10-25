@@ -127,8 +127,15 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         if not budget_allows_contracts:
             shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
             continue
+        stage_budget_ok = True
         for agent_name in stage_names:
-            execution_budget.reserve_call(f"{agent_name} {cid}")
+            if not execution_budget.reserve_call(f"{agent_name} {cid}"):
+                stage_budget_ok = False
+                break
+        if not stage_budget_ok:
+            budget_exhausted = True
+            shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
+            continue
         shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
