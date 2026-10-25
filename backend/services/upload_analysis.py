@@ -25,6 +25,7 @@ def extract_document_terms(text: str, document_id: str, clause_reference: str | 
     falling back to a whole-document scan.
     """
     lines = text.splitlines()
+    line_offset = 0
     if clause_reference:
         needle = clause_reference.strip().casefold()
         heading_pattern = re.compile(r"^(?:section|article|[0-9]+(?:\.[0-9]+)*|[A-Z]\.)\b", re.I)
@@ -58,10 +59,11 @@ def extract_document_terms(text: str, document_id: str, clause_reference: str | 
                 "target_clause_found": False,
             }
         next_heading = next((index for index in heading_indexes if index > matched_index), len(lines))
+        line_offset = matched_index
         lines = lines[matched_index:next_heading]
     records = []
     current_heading = "Unlabelled section"
-    for line_no, raw in enumerate(lines, start=1):
+    for line_no, raw in enumerate(lines, start=line_offset + 1):
         line = raw.strip()
         if not line:
             continue
