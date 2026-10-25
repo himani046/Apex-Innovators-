@@ -11,6 +11,7 @@ from backend.services.decision_engine import build_decision_queue
 from backend.services.evidence_grounding import build_evidence_grounded_finding
 from backend.services.synthesis import build_synthesis
 from backend.services.custom_portfolio import build_rich_contract_graph
+from backend.services.portfolio_intelligence import detect_cross_contract_candidates, run_bounded_review_cycles
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
@@ -331,5 +332,67 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     # FR8: produce one contract report per loaded document and a company-wide synthesis.
     state["contract_graph"] = build_rich_contract_graph(contracts, portfolio_extraction.get("contracts", {}), contract_graph)
     state["shared_state"]["contracts_and_relationships"]["graph"] = state["contract_graph"]
+
+    # Apply the same generalized bounded workflow to the complete supplied pack,
+    # not only the legacy A1 vertical slice.
+    portfolio_events = [event for rows in all_events.values() for event in rows]
+    state["portfolio_agent_workflow"] = run_bounded_review_cycles(
+        contracts=contracts,
+        extractions=portfolio_extraction.get("contracts", {}),
+        events=portfolio_events,
+        as_of=as_of,
+        max_iterations=1,
+        max_agent_calls=MAX_AGENT_CALLS * 10,
+    )
+    state["cross_contract_candidates"] = detect_cross_contract_candidates(contracts)
+    for candidate in state["cross_contract_candidates"]:
+        ids = candidate.get("contract_ids", [])
+        if len(ids) != 2:
+            continue
+        left, right = ids
+        edge = {
+            "source": left, "target": right, "relation": "potential_inconsistency",
+            "status": "candidate_requires_human_review", "candidate_id": candidate.get("id"),
+            "topic": candidate.get("topic"), "classification": candidate.get("classification"),
+            "evidence": candidate.get("evidence", []), "legal_conflict_determined": False,
+        }
+        state["contract_graph"].setdefault("edges", []).append(edge)
+        state["contract_graph"].setdefault("nodes", []).append({
+            "id": candidate.get("id"), "type": "conflict_candidate",
+            "label": "Potential " + str(candidate.get("topic", "term")) + " inconsistency",
+            "contract_ids": ids, "status": candidate.get("status"),
+            "evidence": candidate.get("evidence", []), "human_review_required": True,
+        })
+    state["contract_graph"]["node_count"] = len(state["contract_graph"].get("nodes", []))
+    state["contract_graph"]["edge_count"] = len(state["contract_graph"].get("edges", []))
+    state["shared_state"]["contracts_and_relationships"]["graph"] = state["contract_graph"]
+    state["shared_state"]["agent_messages"].extend(state["portfolio_agent_workflow"].get("agent_messages", []))
+    state["agent_messages"] = state["shared_state"]["agent_messages"]
+    state["collaboration"]["portfolio_workflow"] = {
+        "mode": state["portfolio_agent_workflow"].get("mode"),
+        "iterations_used": state["portfolio_agent_workflow"].get("iterations_used"),
+        "max_iterations": state["portfolio_agent_workflow"].get("max_iterations"),
+        "agent_calls_used": state["portfolio_agent_workflow"].get("agent_calls_used"),
+        "agent_call_budget": state["portfolio_agent_workflow"].get("agent_call_budget"),
+        "stop_reason": state["portfolio_agent_workflow"].get("stop_reason"),
+    }
     state["synthesis"] = build_synthesis(state)
+    state["synthesis"]["cross_contract_candidates"] = state["cross_contract_candidates"]
+    state["synthesis"]["company_risk_report"]["cross_contract_candidates"] = state["cross_contract_candidates"]
+    state["synthesis"]["company_risk_report"]["references"].extend(
+        evidence for item in state["cross_contract_candidates"] for evidence in item.get("evidence", [])
+    )
+    state["synthesis"]["company_risk_report"]["unresolved_questions"].extend(
+        question for item in state["cross_contract_candidates"] for question in item.get("unresolved_questions", [])
+    )
+    state["synthesis"]["company_risk_report"]["prioritized_action_list"].extend(
+        {
+            "id": item.get("id"), "contract_ids": item.get("contract_ids"),
+            "title": "Review potential cross-contract " + str(item.get("topic", "term")) + " difference",
+            "priority": "medium", "severity": item.get("severity", "medium"),
+            "status": item.get("status"), "reason": item.get("explanation"),
+            "evidence": item.get("evidence", []), "human_review_required": True,
+        }
+        for item in state["cross_contract_candidates"]
+    )
     return state
