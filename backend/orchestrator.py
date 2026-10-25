@@ -14,7 +14,7 @@ from backend.services.custom_portfolio import build_rich_contract_graph
 from backend.services.portfolio_intelligence import detect_cross_contract_candidates, run_bounded_review_cycles
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
-from backend.agents.norns import build_timeline
+from backend.agents.norns import build_timeline, build_portfolio_timeline
 from backend.agents.loki import review
 from backend.agents.heimdall import verify
 from backend.agents.tyr import arbitrate
@@ -55,6 +55,11 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     )
     portfolio_operations = build_portfolio_operations(
         multi_contract_analysis, all_events, as_of, pack["ledger"]
+    )
+    # FR3: one normalized, simulated-date timeline combines contractual
+    # milestones and payment-ledger candidates, with evidence-backed projection.
+    portfolio_operations["norns_timeline"] = build_portfolio_timeline(
+        multi_contract_analysis, portfolio_operations, as_of
     )
     decision_queue = build_decision_queue(portfolio_operations, multi_contract_analysis)
     source = contracts.get("A1")
