@@ -657,7 +657,7 @@ def run_bounded_review_cycles(
     from backend.agents.norns import build_contract_timeline
     from backend.agents.tyr import arbitrate_contract_review
     from backend.services.upload_analysis import extract_document_terms
-    from backend.config import USE_CLAUDE
+    from backend.config import USE_CLAUDE, EVIDENCE_CONFIDENCE_THRESHOLD
 
     llm_enabled = bool(use_llm and USE_CLAUDE)
     llm_status: dict[str, str] = {}
@@ -733,7 +733,17 @@ def run_bounded_review_cycles(
                          "findings": len(verification.get("findings", []))})
         trace = {"contract_id": cid, "iterations": [], "stop_reason": "no_clarification_needed"}
         iteration = 0
-        while iteration < max_iterations:
+        # FR7.1: record Loki/Heimdall disagreement explicitly for Tyr.
+        verified_rows = list(verification.get("findings") or [])
+        citation_ratio = (sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)) if verified_rows else 0.0
+        messages.append({
+            "from": "Heimdall", "to": "Tyr", "type": "evidence_disagreement",
+            "status": "disagreement_recorded" if any(str(item.get("claim_assessment", "")).startswith("challenged") or item.get("challenges") for item in verified_rows) else "qualified_support_recorded",
+            "contract_id": cid, "loki_findings": len(findings),
+            "heimdall_challenges": sum(bool(item.get("challenges")) for item in verified_rows),
+            "citation_verification_ratio": round(citation_ratio, 3),
+        })
+        while True:
             gaps = list(dict.fromkeys(
                 [str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or []) if str(gap).strip()]
                 + [str(gap) for gap in (verification.get("evidence_gaps") or []) if str(gap).strip()]
@@ -742,60 +752,65 @@ def run_bounded_review_cycles(
             if not gaps:
                 trace["stop_reason"] = "evidence_threshold_met"
                 break
-            if calls + 5 + (1 if llm_enabled else 0) > max_agent_calls:
+            # A repeated source read cannot resolve missing external event or trigger facts.
+            verified_rows = list(verification.get("findings") or [])
+            citation_ratio = (sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)) if verified_rows else 0.0
+            has_citation_failure = any(not item.get("citation_checks_passed") for item in verified_rows)
+            if verified_rows and citation_ratio >= EVIDENCE_CONFIDENCE_THRESHOLD and not has_citation_failure:
+                trace["stop_reason"] = "evidence_threshold_met_with_open_questions"
+                trace["threshold"] = EVIDENCE_CONFIDENCE_THRESHOLD
+                trace["citation_verification_ratio"] = round(citation_ratio, 3)
+                break
+            if iteration >= max_iterations:
+                trace["stop_reason"] = "iteration_limit_reached"
+                break
+            if calls + 5 > max_agent_calls:
                 trace["stop_reason"] = "agent_call_budget_exhausted"
                 stopped_reason = "agent_call_budget_exhausted"
                 break
             iteration += 1
-            # Thor's targeted pass extracts from the same canonical source and
-            # preserves the original evidence gaps if no new source evidence exists.
+            messages.append({
+                "from": "Loki", "to": "Thor", "type": "targeted_reextraction_request",
+                "status": "issued", "contract_id": cid, "iteration": iteration, "requested_gaps": gaps,
+                "requested_evidence": ["Exact clause quotation and heading", "Surrounding paragraph, definitions, exceptions, amendments, and precedence", "Source-backed trigger facts present in the supplied contract"],
+            })
             targeted = extract_document_terms(source, cid)
             calls += 1
             targeted_quotes = {str((term.get("citation") or {}).get("quote", "")) for term in targeted.get("extracted_terms", [])}
-            messages.append({"from": "Loki", "to": "Thor", "type": "targeted_reextraction_request",
-                             "status": "issued", "contract_id": cid, "iteration": iteration,
-                             "requested_gaps": gaps})
+            messages.append({
+                "from": "Thor", "to": "Loki", "type": "targeted_extraction_result",
+                "status": "complete", "contract_id": cid, "iteration": iteration,
+                "source_quotes_revisited": len(targeted_quotes), "external_evidence_added": False,
+            })
             revised = review_contract_candidates(cid, source, targeted)
             calls += 1
-            # Carry gaps forward: a re-read is not evidence that a missing event occurred.
             revised_findings = list(revised.get("findings", []))[:20]
             for item in revised_findings:
                 if item.get("evidence_gaps"):
                     item["evidence_gaps"] = list(dict.fromkeys(list(item["evidence_gaps"]) + gaps))
-                item["targeted_reextraction"] = {
-                    "iteration": iteration,
-                    "source_quotes_revisited": len(targeted_quotes),
-                    "external_evidence_added": False,
-                }
+                item["targeted_reextraction"] = {"iteration": iteration, "source_quotes_revisited": len(targeted_quotes), "external_evidence_added": False}
             revised_verification = verify_contract_review(cid, source, revised_findings, visible_events)
             calls += 1
             revised_rulings = arbitrate_contract_review(cid, revised_findings, revised_verification)
             calls += 1
-            new_gaps = list(dict.fromkeys(
-                str(gap) for finding in revised_findings for gap in (finding.get("evidence_gaps") or [])
-                if str(gap).strip()
-            ))
+            new_gaps = list(dict.fromkeys(str(gap) for finding in revised_findings for gap in (finding.get("evidence_gaps") or []) if str(gap).strip()))
             trace["iterations"].append({
-                "iteration": iteration, "requested_gaps": gaps,
-                "source_reextraction_completed": True, "external_evidence_added": False,
-                "remaining_gaps": new_gaps, "resolved": not new_gaps,
+                "iteration": iteration, "requested_gaps": gaps, "source_reextraction_completed": True,
+                "external_evidence_added": False, "remaining_gaps": new_gaps, "resolved": not new_gaps,
+                "loki_findings": len(revised_findings),
+                "heimdall_challenges": sum(bool(item.get("challenges")) for item in (revised_verification.get("findings") or [])),
+                "tyr_rulings": len(revised_rulings.get("rulings", [])),
             })
             messages.extend([
-                {"from": "Thor", "to": "Loki", "type": "targeted_extraction_result",
-                 "status": "complete", "contract_id": cid, "iteration": iteration},
-                {"from": "Loki", "to": "Heimdall", "type": "revised_risk_challenge",
-                 "status": "submitted", "contract_id": cid, "iteration": iteration},
-                {"from": "Heimdall", "to": "Tyr", "type": "revised_verification",
-                 "status": revised_verification.get("status", "unknown"),
-                 "contract_id": cid, "iteration": iteration},
+                {"from": "Loki", "to": "Heimdall", "type": "revised_risk_challenge", "status": "submitted", "contract_id": cid, "iteration": iteration},
+                {"from": "Heimdall", "to": "Tyr", "type": "revised_evidence_disagreement", "status": "reviewed", "contract_id": cid, "iteration": iteration, "challenges": sum(bool(item.get("challenges")) for item in (revised_verification.get("findings") or []))},
+                {"from": "Tyr", "to": "Odin", "type": "iterative_dispute_ruling", "status": "complete", "contract_id": cid, "iteration": iteration, "rulings": len(revised_rulings.get("rulings", [])), "human_approval_required": True},
             ])
             findings, verification = revised_findings, revised_verification
             if not new_gaps:
                 trace["stop_reason"] = "evidence_threshold_met"
                 break
             trace["stop_reason"] = "evidence_gap_persists_human_review_required"
-        if iteration == max_iterations and trace["stop_reason"] == "no_clarification_needed":
-            trace["stop_reason"] = "iteration_limit_reached"
         tyr = arbitrate_contract_review(cid, findings, verification)
         calls += 1
         if llm_enabled:
