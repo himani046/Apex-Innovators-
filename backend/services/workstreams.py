@@ -187,10 +187,31 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
     for workstream_id, label, roots, responsibility in specs:
         root = roots[0]
         source = contracts[root]
-        candidates = extract_contract_candidates(root, source, max_terms=80)
+        related = _related_documents(root, graph, all_docs)
+        # A1's workstream includes its actual dependency text, not just graph labels.
+        source_doc_ids = [root]
+        if root == "A1":
+            source_doc_ids.extend(
+                doc_id for doc_id in ("A2", "A3", "STD")
+                if doc_id in all_docs and doc_id not in source_doc_ids
+            )
+        source_doc_ids = list(dict.fromkeys(source_doc_ids))
+        source_candidates = {
+            doc_id: extract_contract_candidates(doc_id, contracts[doc_id], max_terms=80)
+            for doc_id in source_doc_ids
+        }
+        candidates = {
+            "extracted_terms": [
+                term for doc_id in source_doc_ids
+                for term in source_candidates[doc_id].get("extracted_terms", [])
+            ],
+            "ambiguities": [
+                ambiguity for doc_id in source_doc_ids
+                for ambiguity in source_candidates[doc_id].get("ambiguities", [])
+            ],
+        }
         citations = [term.get("citation", {}) for term in candidates.get("extracted_terms", [])]
         verified = sum(bool(c.get("verified")) for c in citations)
-        related = _related_documents(root, graph, all_docs)
         # For B1 and B2, preserve the explicit parent/addendum relationship in both
         # workstreams while each workstream's own obligations remain source-specific.
         related_ids = [item["document_id"] for item in related]
@@ -219,20 +240,42 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
         ids = [root] + [item["document_id"] for item in related]
         explicit_ids = [v for v in ids if v in all_docs]
         event_matches = _events_for_contract(root, customer_terms + explicit_ids, all_events, as_of)
-        deadlines = _extract_dates(root, source, as_of_date)
-        risk_findings = _risk_findings(root, source, candidates)
+        deadlines = [
+            milestone
+            for doc_id in source_doc_ids
+            for milestone in _extract_dates(doc_id, contracts[doc_id], as_of_date)
+        ]
+        risk_findings = [
+            finding
+            for doc_id in source_doc_ids
+            for finding in _risk_findings(
+                doc_id, contracts[doc_id], source_candidates[doc_id]
+            )
+        ]
+        financial_amounts = [
+            amount
+            for doc_id in source_doc_ids
+            for amount in _financial_exposure(doc_id, contracts[doc_id])["amounts_found"]
+        ]
         workstreams.append({
             "id": workstream_id,
             "label": label,
-            "contract_ids": [root],
+            "contract_ids": source_doc_ids,
+            "primary_contract_id": root,
             "related_documents": sorted(related, key=lambda item: (item["document_id"], item["relationship"])),
+            "source_documents_analyzed": source_doc_ids,
             "responsibility": responsibility,
             "status": "complete_with_review_items",
             "agents": {"Thor": "complete", "Norns": "source_dates_extracted", "Loki": "candidate_risks_flagged",
                        "Heimdall": "citation_and_event_evidence_checked", "Tyr": "recommendations_draft_only"},
             "extracted_obligations": candidates.get("extracted_terms", []),
             "deadlines": deadlines,
-            "financial_exposure": _financial_exposure(root, source),
+            "financial_exposure": {
+                "amounts_found": financial_amounts,
+                "calculated_total_usd": None,
+                "calculation_status": "not_calculated_without_invoice_or_trigger_evidence",
+                "note": "Amounts are individually sourced from workstream documents and are not additive exposure estimates.",
+            },
             "evidence_references": citations,
             "citation_verification": {"total": len(citations), "verified": verified, "failed": len(citations) - verified},
             "risk_findings": risk_findings,
