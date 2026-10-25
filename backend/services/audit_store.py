@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -34,8 +35,22 @@ class AuditStore:
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
+    @contextmanager
+    def _connection(self):
+        """Commit/rollback transactions and always close SQLite handles.
+
+        sqlite3.Connection's own context manager does not close the connection,
+        which can lock temporary database files on Windows after a test.
+        """
+        db = self._connect()
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
+
     def _init_db(self):
-        with self._connect() as db:
+        with self._connection() as db:
             db.executescript("""
             CREATE TABLE IF NOT EXISTS audit_runs (
                 run_id TEXT PRIMARY KEY,
@@ -88,7 +103,7 @@ class AuditStore:
         }).encode("utf-8")).hexdigest()
         snapshot = dict(payload)
         snapshot["run_id"] = run_id
-        with self._connect() as db:
+        with self._connection() as db:
             existing = db.execute("SELECT run_id FROM audit_runs WHERE run_id=?", (run_id,)).fetchone()
             if existing:
                 run_id = run_id + "-" + created_at.replace(":", "").replace("-", "")
@@ -160,12 +175,12 @@ class AuditStore:
 
     def list_runs(self, limit=25):
         limit = max(1, min(int(limit), 100))
-        with self._connect() as db:
+        with self._connection() as db:
             rows = db.execute("SELECT run_id,created_at,as_of_date,status,input_fingerprint FROM audit_runs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
         return [dict(row) for row in rows]
 
     def get_run(self, run_id):
-        with self._connect() as db:
+        with self._connection() as db:
             row = db.execute("SELECT * FROM audit_runs WHERE run_id=?", (run_id,)).fetchone()
             if not row:
                 return None
@@ -191,7 +206,7 @@ class AuditStore:
             raise ValueError("decision must be approved or rejected")
         if not reviewer:
             raise ValueError("reviewer is required")
-        with self._connect() as db:
+        with self._connection() as db:
             run = db.execute("SELECT payload_json FROM audit_runs WHERE run_id=?", (run_id,)).fetchone()
             if not run:
                 raise KeyError("run not found")
