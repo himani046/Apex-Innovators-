@@ -39,6 +39,13 @@ class OdinTests(unittest.TestCase):
         self.assertGreater(result["extraction"]["citation_validation"]["verified"], 0)
         self.assertTrue(all(c["verified"] for c in result["risk_finding"]["citations"]))
         self.assertTrue(result["ruling"]["action_draft"]["human_approval_required"])
+        self.assertIn("portfolio_agent_workflow", result)
+        self.assertIn("cross_contract_candidates", result)
+        self.assertLessEqual(
+            result["portfolio_agent_workflow"]["agent_calls_used"],
+            result["portfolio_agent_workflow"]["agent_call_budget"],
+        )
+        self.assertEqual(result["synthesis"]["cross_contract_candidates"], result["cross_contract_candidates"])
 
 
 if __name__ == "__main__":
