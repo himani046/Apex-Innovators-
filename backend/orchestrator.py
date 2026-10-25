@@ -182,6 +182,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     finding = review(x, events, use)
     finding["citations"] = verify_all(finding.get("citations", []), {"A1": source})
     state["risk_finding"] = finding
+    shared.record_agent("Loki", "complete", consumes=["extracted_clauses", "timeline_events", "evidence_references"], produces=["risk_claims", "unresolved_questions"])
     shared.update("risk_claims", [finding])
     shared.update("unresolved_questions", finding.get("evidence_gaps", []))
     shared.record_agent("Loki", "complete", consumes=["extracted_clauses", "timeline_events", "evidence_references"], produces=["risk_claims", "unresolved_questions"])
@@ -287,6 +288,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     state["shared_state"] = shared.snapshot()
     state["shared_state"]["status"] = state["status"]
     state["api_usage"] = budget.as_dict()
+    state["shared_state"]["api_usage"] = budget.as_dict()
+    state["shared_state"]["iteration"] = {"current": budget.iterations_used, "max": budget.max_iterations, "stop_reason": loop_summary["stop_reason"]}
     state["api_usage"]["note"] = "Counts orchestrated agent/task invocations, including each bounded follow-up task; provider-internal retries are not observable here."
     # Merge handoffs emitted by the legacy pipeline into the canonical shared log.
     known = {
