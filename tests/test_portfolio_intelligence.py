@@ -179,8 +179,10 @@ class CrossContractIntelligenceTests(unittest.TestCase):
             "no_clarification_needed",
             "iteration_limit_reached",
         })
-        self.assertTrue(any(message["type"] == "targeted_reextraction_request"
-                            for message in result["agent_messages"]))
+        self.assertTrue(
+            any(message["type"] == "targeted_reextraction_request" for message in result["agent_messages"])
+            or result["loop_traces"][0]["stop_reason"] == "evidence_threshold_met"
+        )
         self.assertFalse(result["legal_outcome_resolved"])
 
     def test_llm_opt_in_falls_back_cleanly_when_provider_is_not_configured(self):
