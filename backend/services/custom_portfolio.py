@@ -276,6 +276,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                           "failed": sum(not c.get("verified", False) for c in citations)},
                   "confidence": round(sum(confidence)/len(confidence), 3) if confidence else None,
                   "unresolved_questions": gaps,
+                  "tyr_rulings": tyr_result.get("rulings", []),
+                  "tyr_summary": tyr_result.get("summary", {}),
                   "recommended_actions": actions or [{"type": "review_request", "subject": f"Review contract {cid}",
                                            "body": "Review extracted source candidates and confirm all relevant obligations before taking action.",
                                            "citations": citations[:5], "confidence": 0.65,
