@@ -1585,6 +1585,47 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   background: rgba(155,126,229,.16) !important;
 }
 
+
+/* FR9 Risk & Review: keep the outer dashboard panel and all its text readable on hover.
+   The relationship graph's canvas rendering and dark graph viewport are left intact. */
+#dash .fr9-panel,
+#dash .fr9-panel:hover,
+#dash .fr9-panel:focus-within {
+  color: #171b15 !important;
+  background: #fff !important;
+  border-color: #e0e3da !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#dash .fr9-panel *,
+#dash .fr9-panel:hover *,
+#dash .fr9-panel:focus-within * {
+  color: #343a30 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+#dash .fr9-panel :is(h1,h2,h3,h4,h5,h6,.fr9-title,.fr9-section-head),
+#dash .fr9-panel:hover :is(h1,h2,h3,h4,h5,h6,.fr9-title,.fr9-section-head) {
+  color: #171b15 !important;
+  -webkit-text-fill-color: #171b15 !important;
+}
+#dash .fr9-panel :is(.tag,.badge,.pill),
+#dash .fr9-panel:hover :is(.tag,.badge,.pill) {
+  color: #51456e !important;
+  -webkit-text-fill-color: #51456e !important;
+  background: #eee8fb !important;
+  border-color: #e0d6f7 !important;
+}
+#dash .fr9-panel .fr9-graph-shell,
+#dash .fr9-panel:hover .fr9-graph-shell {
+  background: radial-gradient(ellipse at center,#fff,#f4f6ef) !important;
+  color: #343a30 !important;
+}
+#dash .fr9-panel .fr9-graph-shell *,
+#dash .fr9-panel:hover .fr9-graph-shell * {
+  -webkit-text-fill-color: currentColor !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
