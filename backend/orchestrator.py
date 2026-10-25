@@ -288,6 +288,16 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     state["shared_state"]["status"] = state["status"]
     state["api_usage"] = budget.as_dict()
     state["api_usage"]["note"] = "Counts orchestrated agent/task invocations, including each bounded follow-up task; provider-internal retries are not observable here."
+    # Merge handoffs emitted by the legacy pipeline into the canonical shared log.
+    known = {
+        (item.get("from"), item.get("to"), item.get("type"), item.get("status"))
+        for item in state["shared_state"]["agent_messages"]
+    }
+    for message in state.get("agent_messages", []):
+        key = (message.get("from"), message.get("to"), message.get("type"), message.get("status"))
+        if key not in known:
+            state["shared_state"]["agent_messages"].append(message)
+            known.add(key)
     state["collaboration"]["agents"] = state["shared_state"]["agent_status"]
     state["collaboration"]["handoff_count"] = len(state["shared_state"]["agent_messages"])
     state["collaboration"]["unresolved_questions"] = state["shared_state"]["unresolved_questions"]
