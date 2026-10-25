@@ -37,6 +37,14 @@ class EventAPIIntegrationTests(unittest.TestCase):
                     "run_id": "reextract-run",
                     "as_of_date": "2027-03-15",
                     "status": "complete_with_limitations",
+                    "shared_state": {
+                        "schema_version": "1.0",
+                        "extracted_clauses": [{"category": "parties", "citation": {
+                            "document_id": "VENDOR_X", "clause_reference": "Section 1",
+                            "quote": "Customer: Existing Buyer", "verified": True,
+                        }}],
+                        "evidence_references": [],
+                    },
                     "ruling": {"action_draft": {"subject": "Review", "body": "Draft only"}},
                 })
                 source = (
@@ -46,6 +54,7 @@ class EventAPIIntegrationTests(unittest.TestCase):
                 )
                 result = app_module.reextract_clause(app_module.ReExtractionRequest(
                     contract_id="VENDOR_X", text=source, clause_reference="Section 4",
+                    shared_state={"iteration": {"current": 1, "max": 2, "stop_reason": None}},
                     run_id=saved["run_id"],
                 ))
                 self.assertTrue(result["persistence"]["persisted"])
@@ -54,7 +63,11 @@ class EventAPIIntegrationTests(unittest.TestCase):
                                     for term in result["extracted_terms"]))
                 record = store.get_run(saved["run_id"])
                 self.assertEqual(len(record["payload"]["reextraction_history"]), 1)
-                self.assertEqual(record["payload"]["shared_state"]["extracted_clauses"][0]["category"], "renewal")
+                self.assertEqual(
+                    [term["category"] for term in record["payload"]["shared_state"]["extracted_clauses"]],
+                    ["parties", "renewal"],
+                )
+                self.assertEqual(record["payload"]["shared_state"]["iteration"]["current"], 1)
                 self.assertTrue(any(event["event_type"] == "targeted_reextraction" for event in record["events"]))
             finally:
                 app_module.audit_store = previous
