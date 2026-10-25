@@ -169,23 +169,26 @@ async function runOdin() {
     const financeCounts = finance.counts || {};
     $('operationsStatus').textContent = finance.status || 'Unavailable';
     $('opsTimelineCount').textContent = opsCounts.total ?? 0;
-    $('opsTimelineSummary').textContent = (opsCounts.overdue || 0) + ' overdue · ' +
-      (opsCounts.due_today || 0) + ' due today · ' + (opsCounts.upcoming || 0) + ' upcoming';
+    $('opsTimelineSummary').textContent = (opsCounts.overdue || 0) + ' actionable deadlines overdue · ' +
+      (opsCounts.due_today || 0) + ' due today · ' + (opsCounts.upcoming || 0) + ' upcoming deadlines · ' +
+      (opsCounts.historical_references || 0) + ' historical/reference dates · ' +
+      (opsCounts.contract_milestones || 0) + ' contract-term milestones';
     $('opsLedgerCount').textContent = financeCounts.transaction_candidates ?? 0;
     $('opsLedgerSummary').textContent = (financeCounts.contract_linked_candidates || 0) +
       ' contract-linked · ' + (financeCounts.unlinked_candidates || 0) + ' unlinked';
     $('opsMilestones').innerHTML = (opsTimeline.milestones || []).slice(0, 30).map(item =>
       '<div class="milestone"><span class="date">' + esc(item.date || '') +
       '</span><b>' + esc(item.contract_id || '') + ' · ' + esc(item.title || '') +
-      '</b><span class="tag">' + esc(item.status || '') + '</span></div>'
+      '<div class="meta">' + esc(item.date_type || '') + ' · ' + esc(item.classification_note || '') + '</div></b><span class="tag">' + esc(item.status || '') + '</span></div>'
     ).join('') || '<p class="small">No explicit calendar dates were found in the in-scope source documents.</p>';
     $('opsLedger').innerHTML = (finance.payment_ledger_candidates || []).slice(0, 30).map(item =>
       '<div class="agent"><b>' + esc(item.transaction_signal || 'Transaction signal') +
       ' · ' + esc(item.contract_id || 'Contract not resolved') + '</b><p>' +
-      esc(item.timestamp || 'No timestamp') + ' · ' + esc(item.amounts_found.join(', ') || 'No explicit amount') +
+      esc(item.timestamp || 'No timestamp') + ' · ' + esc((item.amounts_found || []).join(', ') || 'No explicit amount') +
       '</p><p>' + esc(item.summary || item.evidence_text || '') + '</p><div class="meta">' +
-      esc(item.reconciliation_status || '') + ' · Human review required</div></div>'
-    ).join('') || '<p class="small">No invoice/payment event candidates found in the loaded event drops as of this date.</p>';
+      esc(item.event_source || '') + ' · ' + esc(item.payment_status || item.contract_match_status || '') +
+      ' · ' + esc(item.reconciliation_status || '') + ' · Human review required</div></div>'
+    ).join('') || '<p class="small">No payment ledger or invoice/payment event candidates found as of this date.</p>';
     $('opsNotice').textContent = finance.reconciliation_rule || ops.notice || '';
 
     const draft = r.action_draft || {};
