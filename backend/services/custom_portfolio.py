@@ -257,6 +257,49 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     financial_reconciliation["payment_ledger_rows_received"] = len(payment_ledger or [])
     financial_reconciliation["payment_ledger_rows_normalized"] = len(ledger_events)
     financial_reconciliation["source_authenticity_verified"] = False
+
+    # Promote reconciliation outcomes into the shared action feed so the
+    # dashboard, company report, and decision queue expose the same financial
+    # blockers. These are review actions, never confirmed liabilities.
+    for group in financial_reconciliation.get("invoice_groups", []):
+        balance = group.get("candidate_ledger_balance")
+        balance_status = str(group.get("candidate_balance_status") or "insufficient_reconciliation_evidence")
+        if balance_status == "candidate_fully_offset_requires_verification":
+            priority = "low"
+            title = "Verify invoice appears fully offset"
+        elif balance_status == "candidate_outstanding_balance_requires_verification":
+            priority = "high"
+            title = "Verify candidate outstanding invoice balance"
+        elif balance_status == "candidate_overpayment_or_excess_credit_requires_review":
+            priority = "high"
+            title = "Review possible overpayment or excess credit"
+        else:
+            priority = "medium"
+            title = "Resolve invoice reconciliation blocker"
+        alerts.append({
+            "id": f"invoice-reconciliation:{group.get('contract_id')}:{group.get('invoice_id')}",
+            "contract_id": group.get("contract_id"),
+            "category": "invoice_payment_reconciliation",
+            "title": title,
+            "severity": priority,
+            "priority": priority,
+            "status": balance_status,
+            "candidate_balance": balance,
+            "candidate_balance_currency": group.get("candidate_balance_currency"),
+            "invoice_id": group.get("invoice_id"),
+            "evidence": {
+                "event_ids": group.get("event_ids", []),
+                "invoice_amount_candidate": group.get("invoice_amount_candidate"),
+                "payment_amount_candidates": group.get("payment_amount_candidates", []),
+                "credit_amount_candidates": group.get("credit_amount_candidates", []),
+                "due_date_candidates": group.get("due_date_candidates", []),
+                "source_verified": False,
+            },
+            "reason": "Arithmetic candidate from supplied invoice/payment/credit rows; it is not confirmed exposure or a legal conclusion.",
+            "recommended_next_step": "Match the original invoice and payment/credit confirmations to the contractual billing trigger, period, currency, and due date.",
+            "human_review_required": True,
+            "confirmed_liability": False,
+        })
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
     cross_review_budget = max(
         0, portfolio_call_budget - int(agent_workflow.get("agent_calls_used", 0))
