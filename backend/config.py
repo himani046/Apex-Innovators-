@@ -7,6 +7,7 @@ load_dotenv(ROOT_DIR/'.env')
 MODEL=os.getenv('CLAUDE_MODEL','claude-haiku-4-5')
 MAX_AGENT_CALLS=int(os.getenv('MAX_AGENT_CALLS','12'))
 MAX_AGENT_ITERATIONS=min(3, max(0, int(os.getenv('MAX_AGENT_ITERATIONS','2'))))
+MAX_LLM_TOKENS=max(0, int(os.getenv('MAX_LLM_TOKENS', '12000')))
 USE_CLAUDE=bool(os.getenv('ANTHROPIC_API_KEY','').strip())
 
 # Separate hard cap for the generalized portfolio workflow; never derive an unlimited budget from pack size.
