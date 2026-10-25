@@ -10,8 +10,8 @@ import re
 from datetime import date
 from typing import Any
 
-MONEY_RE = re.compile(r"(?i)(?:USD\\s*)?\\$\\s?[\\d,]+(?:\\.\\d{2})?|\\b(?:\\d[\\d,]*\\.\\d{2})\\s*(?:U\\.S\\.\\s*)?Dollars?\\b")
-TRANSACTION_RE = re.compile(r"\\b(invoice|invoiced|payment|paid|remittance|refund|reimburse|service credit|credit memo|billing|past due|overdue)\\b", re.I)
+MONEY_RE = re.compile(r"(?i)(?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?|\b(?:\d[\d,]*\.\d{2})\s*(?:U\.S\.\s*)?Dollars?\b")
+TRANSACTION_RE = re.compile(r"\b(invoice|invoiced|payment|paid|remittance|refund|reimburse|service credit|credit memo|billing|past due|overdue)\b", re.I)
 CONTRACT_IDS = ("A1", "A2", "A3", "B1", "B2", "C1", "D1", "STD")
 
 
@@ -69,7 +69,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
                 continue
             body = str(event.get("body", ""))
             summary = str(event.get("summary", ""))
-            text = (summary + "\\n" + body).strip()
+            text = (summary + "\n" + body).strip()
             if not TRANSACTION_RE.search(text):
                 continue
             ids = [cid for cid in CONTRACT_IDS if re.search(rf"(?<![A-Za-z0-9]){re.escape(cid)}(?![A-Za-z0-9])", text)]
