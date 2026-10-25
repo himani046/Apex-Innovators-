@@ -84,9 +84,11 @@ main{max-width:1600px;padding:28px 0}
 .intro .eyebrow{font-size:11px;letter-spacing:2px;font-weight:800}
 .intro h2{font-size:clamp(36px,4vw,58px);line-height:1.06;letter-spacing:-2px;margin:14px 0}
 .intro p{max-width:760px;font-size:16px;line-height:1.7}
-#dash{display:block}
+#dash:not(.hidden){display:block}
 .page-view{display:none}
 .page-view.active{display:block}
+#dash.hidden{display:none!important}
+#loading.hidden,#error.hidden{display:none!important}
 .page-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:stretch}
 .page-grid>.card{grid-column:span 6;min-width:0}
 .page-grid>.card.full{grid-column:1/-1}
@@ -110,6 +112,19 @@ main{max-width:1600px;padding:28px 0}
 .section-actions{display:flex;justify-content:flex-end;gap:8px;margin:0 0 14px}.section-actions button{background:#151813;color:white;border:0;border-radius:999px;padding:11px 16px}
 @media(max-width:1050px){header{grid-template-columns:1fr auto}.top-tabs{grid-column:1/-1;grid-row:2;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}#health{grid-column:2;grid-row:1}.page-grid>.card.metric{grid-column:span 6}.quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){body{padding:0 14px 22px}header{margin:0 -14px;padding:14px;grid-template-columns:1fr auto}header h1{font-size:18px}.top-tabs button{padding:10px 13px}.intro{display:block;padding:18px 0}.intro .controls{margin-top:18px}.page-grid{grid-template-columns:1fr}.page-grid>.card,.page-grid>.card.full,.page-grid>.card.wide,.page-grid>.card.side,.page-grid>.card.half,.page-grid>.card.metric{grid-column:1/-1}#overviewMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-links{grid-template-columns:1fr 1fr}.card{padding:16px}}
+
+/* Ensure the initial loading state wins over ID selectors, and keep the overview hero close to the reference. */
+.intro{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.7fr);gap:32px;align-items:center;min-height:245px;padding:34px 0 28px}
+.intro .eyebrow{color:#81916f;text-transform:uppercase;letter-spacing:2.5px;font-size:11px;font-weight:800}
+.intro h2{font-size:clamp(42px,4.4vw,66px);line-height:1.02;letter-spacing:-2.8px;margin:16px 0}
+.intro p{font-size:16px;line-height:1.65;color:#777d6e;max-width:780px}
+.intro .controls{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.intro .controls label{font-size:14px;color:#151813}
+#run{padding:15px 22px;background:#151813;color:#fff;border:0;border-radius:999px;font-weight:700}
+#date{padding:12px 14px;border:1px solid #c9ccbf;border-radius:12px;background:#fff;color:#151813}
+#loading{margin:10px 0 26px;background:#fff;border:1px solid #d7d9cf;border-radius:22px;padding:26px;font-size:17px;color:#596052}
+#health{font-size:12px;color:#596052;background:#f1f2eb;border:1px solid #d7d9cf;padding:8px 12px;border-radius:999px}
+@media(max-width:850px){.intro{grid-template-columns:1fr;gap:12px}.intro .controls{justify-content:flex-start}}
 </style></head><body>
 <header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
