@@ -34,12 +34,16 @@ def _citation(doc_id: str, source: str, quote: str | None = None, contains: str 
 def _document_identifiers(contracts: dict[str, str]) -> dict[str, str]:
     """Map explicit identifiers and bundle aliases to canonical contract keys."""
     identifiers: dict[str, str] = {}
-    for key, source in contracts.items():
+    # Process canonical contract keys in stable order and never overwrite an
+    # identifier already assigned to its primary document. Amendments often
+    # repeat the base agreement's Contract ID; that reference must not reassign
+    # the base ID to the amendment document.
+    for key, source in sorted(contracts.items()):
         identifiers[key.casefold()] = key
         identifiers[(key + ".txt").casefold()] = key
         for pattern in DOC_ID_PATTERNS:
             for match in pattern.finditer(source):
-                identifiers[match.group(1).casefold()] = key
+                identifiers.setdefault(match.group(1).casefold(), key)
         # Add restrained title aliases so references such as "the SLA" resolve
         # to the document whose own title explicitly identifies it as an SLA.
         opening = "\n".join(_lines(source)[:4]).casefold()
