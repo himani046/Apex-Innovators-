@@ -45,6 +45,7 @@ def review_contract_candidates(contract_id, source, extraction):
                 "severity": severity, "likelihood": "unassessed_not_a_probability",
                 "confidence": term.get("confidence", 0.65), "status": "candidate_requires_review",
                 "claim": "A potentially relevant contractual provision was identified; applicability and legal effect require review.",
+                "reason": "Keyword-based source triage; this is not a finding of breach.",
                 "attack_path": [
                     f"The source at line {line_no} contains language associated with {category.replace('_', ' ')}.",
                     "Confirm the clause context, exceptions, amendments, trigger facts, and counterparty position before drawing a conclusion.",
