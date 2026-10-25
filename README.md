@@ -45,7 +45,7 @@ The supplied `.txt` files are canonical citation anchors. A citation must includ
 1. Complete Thor extraction and quote validation across every contract, including incorporated STD terms.
 2. Add Norns' full obligation/payment ledger reconciliation and checkpoint recalculation.
 3. Add Loki/Heimdall cross-contract claims and event mapping across both drops.
-4. Add Tyr dispute workflow and action approvals with explicit state transitions and bounded iterations.
+4. Expand Tyr dispute workflow and approval transitions across all contract workstreams.
 5. Persist run state and event ingestion IDs, then implement an exposure heatmap and richer time-slider updates.
 6. Reconcile invoices, payment ledger, event drops, and contract-specific trigger dates before calculating realized exposure.
 7. Expand tests for malformed inputs, failed API calls, citation mismatch, date calculations, and budget exhaustion.
@@ -87,14 +87,18 @@ Phase 3 adds an explicit-date portfolio timeline and an evidence-led payment-eve
 **Limitations:** These are operational triage candidates, not accounting entries, confirmed liabilities, or legal conclusions. Reconciliation requires a contract-linked invoice/credit, applicable trigger and period, and payment/dispute status. Relative deadlines are not converted into dates without a supported trigger date. Human review remains required.
 
 
-## Phase 4 — Evidence-grounded decision queue
+## Phase 4 — Agentic collaboration and shared state
 
-Phase 4 adds a deterministic review queue on top of the normalized timeline and payment-ledger candidates.
+Phase 4 now adds structured collaboration around the existing portfolio workflow, alongside the evidence-grounded decision queue.
 
-- Prioritizes explicitly overdue action deadlines, due-today/upcoming deadlines, ledger rows marked overdue, and transaction rows whose contract linkage remains unresolved.
-- Shows the priority, date, contract match, evidence source/strength, reason for review, and recommended next step.
-- Keeps paid, contract-linked ledger rows in reconciliation rather than cluttering the action queue.
-- Does not infer breach, damages, or aggregate exposure; every queue item requires human review.
+- **Shared state:** each run emits a JSON-serializable `shared_state` with schema version and sections for contract relationships, extracted clauses, timeline events, financial candidates/calculations, risk claims, evidence references, verification outcomes, unresolved questions, recommended actions, agent status, and handoff messages.
+- **Agent handoffs:** Odin coordinates the run; Thor's evidence is consumed downstream by Norns/Loki; Loki's claims and citations are passed to Heimdall; Heimdall's verification outcome and gaps are passed to Tyr; Odin returns the consolidated state, decision queue, ruling, and unresolved questions.
+- **Bounded follow-up:** missing proof or failed verification can trigger targeted deterministic re-analysis. The loop stops when verification no longer requests follow-up or when `MAX_AGENT_ITERATIONS` is reached. A missing external record remains unresolved; retries never manufacture evidence.
+- **Execution budget:** `MAX_AGENT_CALLS` limits orchestrated agent/task invocation slots, and `MAX_AGENT_ITERATIONS` caps feedback iterations. The API response reports configured and used budgets plus the stop reason. Provider-internal retries are not observable by this counter.
+- **Auditability:** `collaboration` exposes loop status, agent status/read/write metadata, handoff count, unresolved questions, and recommended actions. The dashboard renders these fields.
+- **Safety:** recommendations remain drafts requiring human approval. No legal breach, damages, or aggregate financial exposure is inferred without supporting evidence.
+
+The run's shared state is in-memory and returned with the API response; it is not a persistent database across runs. The current A1 risk workflow demonstrates the verification-feedback pattern, while broader cross-contract legal interpretation and fully reconciled financial exposure remain staged work.
 
 Run the test suite after pulling updates:
 
