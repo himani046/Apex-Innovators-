@@ -610,6 +610,49 @@ header #health{justify-self:end}
   border-left-color:#dce8d0!important;
 }
 
+
+/* Contract page evidence readability fix: keep nested source cards readable at rest and hover.
+   Covers Contract explorer, multi-contract workstreams, and Thor portfolio scan. */
+.page-view[data-view="contracts"] .card:has(.agent:hover),
+.page-view[data-view="contracts"] .card:has(.evidence:hover),
+.page-view[data-view="contracts"] .card.full:has(.agent:hover),
+.page-view[data-view="contracts"] .card.full:has(.evidence:hover) {
+  color:#20251d!important;background:#fff!important;border-color:#e0e3da!important;
+  box-shadow:0 8px 24px rgba(30,36,25,.04)!important;
+}
+.page-view[data-view="contracts"] .agentlist .agent,
+.page-view[data-view="contracts"] .agentlist .evidence,
+.page-view[data-view="contracts"] .agentlist .agent:hover,
+.page-view[data-view="contracts"] .agentlist .evidence:hover {
+  color:#20251d!important;background:#fbfcf8!important;border:1px solid #dfe4d8!important;
+  box-shadow:0 4px 14px rgba(30,36,25,.045)!important;transform:none!important;
+}
+.page-view[data-view="contracts"] .agentlist .agent *,
+.page-view[data-view="contracts"] .agentlist .evidence *,
+.page-view[data-view="contracts"] .agentlist .agent:hover *,
+.page-view[data-view="contracts"] .agentlist .evidence:hover * {color:#20251d!important}
+.page-view[data-view="contracts"] .agentlist .agent blockquote,
+.page-view[data-view="contracts"] .agentlist .evidence blockquote,
+.page-view[data-view="contracts"] .agentlist .agent:hover blockquote,
+.page-view[data-view="contracts"] .agentlist .evidence:hover blockquote {
+  color:#20251d!important;background:#fff!important;border-left:3px solid #8a9a78!important;
+  border-radius:0 8px 8px 0!important;padding:10px 12px!important;line-height:1.7!important;
+  overflow-wrap:anywhere!important;white-space:pre-wrap!important;
+}
+.page-view[data-view="contracts"] .agentlist details>summary {
+  color:#596b49!important;background:#f4f6ef!important;border-radius:9px!important;padding:9px 11px!important;
+}
+.page-view[data-view="contracts"] .agentlist details>summary:hover {color:#34402b!important;background:#eaf0e2!important}
+.page-view[data-view="contracts"] .agentlist .agent p,
+.page-view[data-view="contracts"] .agentlist .evidence p {font-size:13px!important;line-height:1.7!important;overflow-wrap:anywhere}
+.page-view[data-view="contracts"] .agentlist .meta,
+.page-view[data-view="contracts"] .agentlist .small {color:#687163!important;font-size:12px!important;line-height:1.6!important}
+@media(max-width:650px) {
+  .page-view[data-view="contracts"] .agentlist {grid-template-columns:minmax(0,1fr)!important}
+  .page-view[data-view="contracts"] .agentlist .agent,
+  .page-view[data-view="contracts"] .agentlist .evidence {min-width:0;padding:14px!important}
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
