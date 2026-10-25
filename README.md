@@ -8,13 +8,16 @@ A hackathon prototype for evidence-grounded multi-agent contract intelligence, b
 - Preserves malformed JSONL records as parse errors rather than aborting a whole drop.
 - Runs an A1-focused vertical slice through Odin, Norns, Loki, Heimdall, and Tyr.
 - Runs Thor's first portfolio-wide triage pass across every loaded contract, extracting potentially relevant source lines with exact-quote citations and review flags.
-- Shows portfolio-scan counts and sample evidence in the dashboard; this is keyword-based triage, not yet cross-contract legal reconciliation.
-- Verifies every displayed citation against the exact source text.
+- Shows portfolio-scan counts and sample evidence in the dashboard; this is keyword-based triage, not final legal interpretation.
+- Builds independent workstreams for A1 and its dependencies, B1, B2, C1, and D1, plus a portfolio-wide shared-risk review.
+- Extracts explicit calendar dates and source-stated financial amounts per workstream, with verbatim evidence; relative deadlines and aggregate exposure are not guessed.
+- Surfaces potential cross-contract exclusivity overlap as a human-review signal, not a proven legal conflict.
+- Verifies workstream candidate citations against the exact source text.
 - Produces a simulated timeline, a bounded risk finding, event verification, a reasoned ruling, and a human-approval-only draft action.
 - Includes a responsive dashboard, health endpoint, pack summary endpoint, and selected simulated date.
 - Uses deterministic fallback behavior without an API key. Thor and Loki can call Claude when configured.
 
-**Phase 1 is implemented as an evidence-grounded reconciliation layer, not as a claim of complete legal analysis.** The graph links documents using explicit identifiers and relationship language. The reconciliation layer resolves only the specifically detected non-renewal amendment; other amendment sections are flagged for human review. The downstream timeline, incident review, verification, and ruling still operate on A1, and multi-contract workstreams remain future work.
+**Phase 1 and Phase 2 are implemented as evidence-grounded triage, not complete legal analysis.** The graph links documents using explicit identifiers and relationship language. The reconciliation layer resolves only the specifically detected non-renewal amendment; other amendment sections are flagged for human review. Phase 2 creates source-specific workstreams for A1 (including dependency documents A2/A3/STD), B1, B2, C1, and D1, plus a portfolio-wide workstream. Candidate terms and risks require human review; financial amounts are not summed without invoice and trigger evidence.
 
 ## Quick start (macOS)
 
@@ -43,8 +46,9 @@ The supplied `.txt` files are canonical citation anchors. A citation must includ
 2. Add Norns' full obligation/payment ledger reconciliation and checkpoint recalculation.
 3. Add Loki/Heimdall cross-contract claims and event mapping across both drops.
 4. Add Tyr dispute workflow and action approvals with explicit state transitions and bounded iterations.
-5. Persist run state and event ingestion IDs, then implement portfolio graph, exposure heatmap, and time-slider updates.
-6. Expand tests for malformed inputs, failed API calls, citation mismatch, date calculations, and budget exhaustion.
+5. Persist run state and event ingestion IDs, then implement an exposure heatmap and richer time-slider updates.
+6. Reconcile invoices, payment ledger, event drops, and contract-specific trigger dates before calculating realized exposure.
+7. Expand tests for malformed inputs, failed API calls, citation mismatch, date calculations, and budget exhaustion.
 
 ## Project layout
 
