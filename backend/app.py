@@ -99,7 +99,7 @@ def audit_runs(limit: int = Query(default=25, ge=1, le=100)):
 
 
 @app.get("/api/audit/runs/{run_id}", dependencies=[Depends(require_api_token)])
-def audit_run(run_id: str = Query(..., min_length=1, max_length=180)):
+def audit_run(run_id: str):
     """Fetch a saved run snapshot, provenance events, and human decisions."""
     result = audit_store.get_run(run_id)
     if result is None:
