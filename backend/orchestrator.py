@@ -193,6 +193,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     if not budget.reserve_call("Heimdall evidence verification"):
         raise RuntimeError("Agent call budget exhausted before Heimdall verification")
     state["verification"] = verify(finding, events, finding.get("citations", []))
+    state["verification"]["evidence_gaps"] = finding.get("evidence_gaps", [])
     shared.update("verification_outcomes", [state["verification"]])
     shared.record_agent("Heimdall", "complete", consumes=["risk_claims", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
     state["agent_messages"].append({
