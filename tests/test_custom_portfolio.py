@@ -33,6 +33,8 @@ class CustomPortfolioTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "complete_with_limitations")
         self.assertEqual(len(result["contract_reports"]), 2)
+        self.assertEqual(len(result["workstreams"]), 3)
+        self.assertEqual(result["workstreams"][-1]["id"], "portfolio-cross-contract")
         self.assertEqual(result["company_risk_report"]["contract_count"], 2)
         self.assertEqual(result["company_risk_report"]["total_financial_exposure"], None)
 
