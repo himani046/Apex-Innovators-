@@ -387,6 +387,10 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             "max_llm_tokens": MAX_LLM_TOKENS,
             "llm_requested": bool(body.use_claude and USE_CLAUDE),
         }
+        audit_store.update_run_payload(
+            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+            details={"input_fingerprint": audit["input_fingerprint"]},
+        )
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid simulated date or portfolio input") from exc
