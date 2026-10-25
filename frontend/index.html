@@ -363,6 +363,30 @@ header #health{justify-self:end}
   filter:brightness(0) invert(1);
 }
 
+
+/* Final contrast override for nested metric cards: include div-based values
+   and every text-bearing descendant (e.g. the "Not calculated" value). */
+.card.full .agent:hover *,
+.card.full .card:hover *,
+.card.full .overview-metric:hover *,
+.card.full .metric:hover *,
+.card.full .evidence:hover *,
+.card.full .action:hover *,
+.card.full .milestone:hover *,
+.page-grid > .card:not(.full):hover * {
+  color:#fff!important;
+}
+.card.full .agent:hover button,
+.card.full .card:hover button,
+.card.full .overview-metric:hover button,
+.card.full .metric:hover button,
+.card.full .evidence:hover button,
+.card.full .action:hover button,
+.card.full .milestone:hover button,
+.page-grid > .card:not(.full):hover button {
+  color:#171b15!important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
