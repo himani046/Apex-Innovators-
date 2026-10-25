@@ -643,6 +643,13 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         "candidate_count": len(candidate_exposure_items),
         "reason": "Arithmetic from supplied invoice/payment/credit rows only; not verified liabilities. Different currencies are not combined.",
     }
+    exposure = {
+        "status": candidate_exposure["status"],
+        "value": None,
+        "candidate_count": candidate_exposure["candidate_count"],
+        "candidate_by_currency": candidate_exposure_by_currency,
+        "reason": candidate_exposure["reason"],
+    }
     worst_case_projection = {
         "status": "bounded_candidate_projection_only" if candidate_exposure_items else "not_calculable_from_available_evidence",
         "candidate_exposure_by_currency": candidate_exposure_by_currency,
