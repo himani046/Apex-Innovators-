@@ -176,11 +176,11 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
 
 @app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])
 def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
-    """Analyze a user-supplied company context and multiple contract texts.
+    """Analyze a portfolio with bounded agents, optional Claude review, and sourced reports.
 
-    The custom-input path performs conservative deterministic source triage. It
-    does not claim to run a live multi-agent LLM debate or calculate unsupported
-    financial exposure.
+    Claude use is opt-in and requires a configured provider key. Model suggestions
+    are quote-validated; event authenticity and legal outcomes are never inferred
+    solely from a model response.
     """
     contract_ids = [item.id.strip() for item in body.contracts]
     if len(set(cid.casefold() for cid in contract_ids)) != len(contract_ids):
