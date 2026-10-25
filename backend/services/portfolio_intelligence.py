@@ -925,21 +925,55 @@ def review_cross_contract_candidates(
                 ),
             })
         calls_used += 1
+        all_quotes_verified = bool(verified_evidence) and all(item.get("verified") for item in verified_evidence)
+        classification = str(candidate.get("classification", ""))
+        severity = str(candidate.get("severity", "medium")).lower()
+        if severity not in {"low", "medium", "high", "critical"}:
+            severity = "medium"
+        if not all_quotes_verified:
+            likelihood = "indeterminate"
+            likelihood_rationale = "At least one clause citation did not match canonical source text."
+        elif classification in {"numeric_term_difference", "modality_conflict", "exclusivity_conflict"}:
+            likelihood = "elevated"
+            likelihood_rationale = "Both excerpts are source-verified and a same-topic numeric/modality difference was detected; party scope, trigger facts, and precedence remain unresolved."
+        else:
+            likelihood = "moderate"
+            likelihood_rationale = "Verified excerpts indicate a possible same-topic inconsistency, but semantic scope and precedence are not established."
+        clarification_requests = []
+        if not all_quotes_verified or amendment_context.get("questions_to_resolve"):
+            clarification_requests.append({
+                "from": "Loki", "to": "Thor", "type": "targeted_reextraction_request",
+                "candidate_id": candidate_id, "contract_ids": contract_ids,
+                "reason": "Evidence is unverified or amendment/scope context is unresolved.",
+                "requested_evidence": [
+                    "Exact full clauses and surrounding definitions",
+                    "Executed amendments, order forms, and precedence language",
+                    "Party, service, territory, and effective-date scope",
+                ],
+            })
         loki = {
             "agent": "Loki",
             "status": "challenge_submitted",
             "candidate_id": candidate_id,
             "claim_challenged": candidate.get("explanation", "Potential cross-contract inconsistency."),
+            "severity": severity,
+            "severity_rationale": "Potential commercial/operational impact is material enough to review; actual magnitude depends on scope and facts.",
+            "likelihood": likelihood,
+            "likelihood_rationale": likelihood_rationale,
             "alternative_explanations": [
                 "The clauses may govern different parties, services, territories, transactions, or periods.",
                 "An amendment, order form, precedence clause, exception, or incorporated term may control.",
                 "Amendment lineage status: " + str(amendment_context.get("status", "not assessed")) + ".",
             ],
             "attack_path": [
-                "Check whether the compared clauses have the same parties and scope.",
-                "Check amendment history and document precedence before treating different wording as inconsistent.",
+                "Compare exact operative language, including negation, numeric thresholds, defined terms, exceptions, and remedies.",
+                "Confirm the clauses apply to the same parties, service, territory, transaction, and effective period.",
+                "Trace amendments, incorporation by reference, and precedence; test whether a later or controlling document resolves the difference.",
+                "Ask each counterparty's strongest defense and identify the missing fact that would prove or defeat the alleged conflict.",
             ],
             "evidence": verified_evidence,
+            "clarification_requests": clarification_requests,
+            "requires_clarification": bool(clarification_requests),
             "legal_conflict_determined": False,
         }
         messages.append({
