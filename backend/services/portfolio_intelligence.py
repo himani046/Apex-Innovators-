@@ -65,7 +65,10 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
     """
     rows: list[dict[str, Any]] = []
     for cid, source in sorted(contracts.items()):
+        contract_rows = 0
         for line_number, raw in enumerate(source.splitlines(), start=1):
+            if len(rows) >= 1200 or contract_rows >= 100:
+                break
             line = raw.strip()
             topic = _topic(line)
             if not topic or len(line) < 12:
@@ -82,11 +85,16 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "party_label": bool(PARTY_LABEL.search(line)),
                 "tokens": set(re.findall(r"[a-z]{4,}", line.casefold())),
             })
+            contract_rows += 1
 
     candidates: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str, str]] = set()
     for index, left in enumerate(rows):
+        if len(candidates) >= 250:
+            break
         for right in rows[index + 1:]:
+            if len(candidates) >= 250:
+                break
             if left["contract_id"] == right["contract_id"] or left["topic"] != right["topic"]:
                 continue
             shared = left["tokens"] & right["tokens"]
@@ -199,7 +207,6 @@ def run_bounded_review_cycles(
     from backend.agents.heimdall import verify_contract_review
     from backend.agents.loki import review_contract_candidates
     from backend.agents.norns import build_contract_timeline
-    from backend.agents.thor import extract_a1
     from backend.agents.tyr import arbitrate_contract_review
     from backend.services.upload_analysis import extract_document_terms
 
@@ -218,7 +225,7 @@ def run_bounded_review_cycles(
     stopped_reason = "all_workstreams_processed"
 
     for cid, source in sorted(contracts.items()):
-        if calls + 4 > max_agent_calls:
+        if calls + 5 > max_agent_calls:
             stopped_reason = "agent_call_budget_exhausted"
             workstreams.append({"contract_id": cid, "status": "not_run_budget_exhausted"})
             continue
@@ -252,7 +259,7 @@ def run_bounded_review_cycles(
             if not gaps:
                 trace["stop_reason"] = "evidence_threshold_met"
                 break
-            if calls + 4 > max_agent_calls:
+            if calls + 5 > max_agent_calls:
                 trace["stop_reason"] = "agent_call_budget_exhausted"
                 stopped_reason = "agent_call_budget_exhausted"
                 break
