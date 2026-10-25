@@ -1806,6 +1806,37 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
   box-shadow: none !important;
 }
 
+
+/* FR9 final contrast fix: keep all cockpit copy white on its dark surfaces, including hover. */
+html body #dash #fr9Dashboard,
+html body #dash #fr9Dashboard:hover,
+html body #dash #fr9Dashboard:focus-within {
+  color: #f8f6ff !important;
+  background: #11101a !important;
+}
+html body #dash #fr9Dashboard :is(.fr9-title,.fr9-section,.fr9-section-head,.fr9-subcard,.fr9-debate,.fr9-alert-action),
+html body #dash #fr9Dashboard :is(.fr9-title,.fr9-section,.fr9-section-head,.fr9-subcard,.fr9-debate,.fr9-alert-action):hover {
+  color: #f8f6ff !important;
+  background-color: #151320 !important;
+}
+html body #dash #fr9Dashboard :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
+html body #dash #fr9Dashboard:hover :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale),
+html body #dash #fr9Dashboard :is(h1,h2,h3,h4,h5,h6,p,span,small,div,li,summary,b,strong,label,.muted,.small,.meta,.fr9-time-status,.fr9-scale):hover {
+  color: #f8f6ff !important;
+  -webkit-text-fill-color: #f8f6ff !important;
+  text-shadow: none !important;
+}
+html body #dash #fr9Dashboard :is(.tag,.badge,.pill),
+html body #dash #fr9Dashboard :is(.tag,.badge,.pill):hover {
+  color: #e3d8ff !important;
+  -webkit-text-fill-color: #e3d8ff !important;
+  background: rgba(155,126,229,.16) !important;
+}
+html body #dash #fr9Dashboard .fr9-graph-shell,
+html body #dash #fr9Dashboard .fr9-graph-shell:hover {
+  background: #090910 !important;
+  color: #f8f6ff !important;
+}
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
