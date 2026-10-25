@@ -1,9 +1,8 @@
-"""Per-run LLM accounting, response caching, and hard token budget enforcement."""
+"""Per-run LLM accounting, response caching, and hard token/provider-call budgets."""
 from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from copy import deepcopy
 import hashlib
 import json
 from typing import Any
@@ -17,11 +16,23 @@ def _key(system: str, prompt: str, max_tokens: int, model: str) -> str:
 
 
 @contextmanager
-def llm_run_context(max_tokens: int):
+def llm_run_context(max_tokens: int, max_calls: int | None = None):
+    # Import lazily to avoid a module-import cycle and to use the same configured
+    # provider-call limit in every API route unless a caller explicitly overrides it.
+    if max_calls is None:
+        from backend.config import MAX_LLM_CALLS
+        max_calls = MAX_LLM_CALLS
     state = {
-        "max_tokens": max(0, int(max_tokens)), "tokens_used": 0,
-        "input_tokens": 0, "output_tokens": 0, "provider_calls": 0,
-        "cache_hits": 0, "budget_blocked": 0, "cache": {},
+        "max_tokens": max(0, int(max_tokens)),
+        "max_provider_calls": max(0, int(max_calls)),
+        "tokens_used": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "provider_calls": 0,
+        "provider_calls_attempted": 0,
+        "cache_hits": 0,
+        "budget_blocked": 0,
+        "cache": {},
     }
     token = _ACTIVE.set(state)
     try:
@@ -39,6 +50,17 @@ def cached_response(system: str, prompt: str, max_tokens: int, model: str):
         state["cache_hits"] += 1
         return state["cache"][key]
     return None
+
+
+def reserve_provider_call() -> None:
+    """Reserve one real provider attempt before the network request is made."""
+    state = _ACTIVE.get()
+    if state is None:
+        return
+    if state["provider_calls_attempted"] >= state["max_provider_calls"]:
+        state["budget_blocked"] += 1
+        raise RuntimeError("Odin per-run Claude provider-call budget exhausted")
+    state["provider_calls_attempted"] += 1
 
 
 def store_response(system: str, prompt: str, max_tokens: int, model: str, text: str, usage: dict):
@@ -66,6 +88,9 @@ def ensure_token_budget():
 
 def usage_snapshot(state: dict | None) -> dict:
     if not state:
-        return {"max_tokens": 0, "tokens_used": 0, "input_tokens": 0, "output_tokens": 0,
-                "provider_calls": 0, "cache_hits": 0, "budget_blocked": 0}
+        return {
+            "max_tokens": 0, "max_provider_calls": 0, "tokens_used": 0,
+            "input_tokens": 0, "output_tokens": 0, "provider_calls": 0,
+            "provider_calls_attempted": 0, "cache_hits": 0, "budget_blocked": 0,
+        }
     return {key: value for key, value in state.items() if key != "cache"}
