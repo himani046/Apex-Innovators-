@@ -6,7 +6,7 @@ from backend.config import PACK_DIR,USE_CLAUDE
 from backend.orchestrator import run_demo
 from backend.services.ingestion import load_pack
 from backend.services.document_upload import DocumentUploadError, extract_uploaded_document
-from backend.agents.thor import extract_a1
+from backend.services.upload_analysis import extract_document_terms
 from backend.config import USE_CLAUDE
 from pathlib import Path
 app=FastAPI(title='Odin | Contract War Room',version='0.1.0')
@@ -33,7 +33,7 @@ async def analyze_upload(file: UploadFile = File(...), use_claude: bool = Query(
         document = extract_uploaded_document(file.filename or "contract.txt", raw)
         contract_id = Path(document["filename"]).stem.upper()
         source_id = contract_id if contract_id in {"A1", "A2", "A3", "B1", "B2", "C1", "D1", "STD"} else document["filename"]
-        extraction = extract_a1(document["text"], use_claude=bool(use_claude and USE_CLAUDE))
+        extraction = extract_document_terms(document["text"], source_id)
         citations = []
         for term in extraction.get("extracted_terms", []):
             citation = term.get("citation") or {}
