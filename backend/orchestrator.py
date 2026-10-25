@@ -10,6 +10,7 @@ from backend.services.portfolio_operations import build_portfolio_operations
 from backend.services.decision_engine import build_decision_queue
 from backend.services.evidence_grounding import build_evidence_grounded_finding
 from backend.services.synthesis import build_synthesis
+from backend.services.quality_gates import apply_analysis_quality
 from backend.services.custom_portfolio import build_rich_contract_graph
 from backend.services.portfolio_intelligence import detect_cross_contract_candidates, run_bounded_review_cycles
 from backend.agents.thor import extract_a1
@@ -468,6 +469,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         state["limitations"].append(
             "At least one bounded review loop reached its iteration limit with work or evidence gaps remaining."
         )
+    # NFR2/NFR3: source-verify extracted candidates and downgrade status if evidence/input is incomplete.
+    apply_analysis_quality(state, contracts)
     state["shared_state"]["status"] = state["status"]
     state["synthesis"] = build_synthesis(state)
     state["synthesis"]["cross_contract_candidates"] = state["cross_contract_candidates"]
