@@ -25,10 +25,9 @@ class PortfolioOperationsTests(unittest.TestCase):
         timeline = self.result["timeline"]
         counts = timeline["counts"]
         self.assertEqual(counts["total"], len(timeline["milestones"]))
-        self.assertEqual(counts["total"], len(timeline["milestones"]))
         self.assertEqual(counts["total"], counts["overdue"] + counts["due_today"] + counts["upcoming"] +
                          counts["historical_references"] + counts["contract_milestones"] +
-                         counts["unclassified_dates"])
+                         counts["unclassified_dates"] + counts["relative_or_notice_terms"])
         self.assertTrue(all("date_type" in item and "action_required_by_date" in item
                             for item in timeline["milestones"]))
         self.assertTrue(all(item["status"] not in {"overdue", "due_today"} or item["action_required_by_date"]
