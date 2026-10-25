@@ -19,8 +19,10 @@ def test_simulated_clock_reclassifies_deadline_and_payment_history():
     }]}}
     earlier = build_portfolio_timeline(workstreams, operations, "2027-03-09")
     later = build_portfolio_timeline(workstreams, operations, "2027-03-11")
-    assert earlier["items"][0]["status"] == "upcoming"
-    assert later["items"][0]["status"] == "overdue"
+    earlier_deadline = next(item for item in earlier["items"] if item["date_type"] == "action_deadline")
+    later_deadline = next(item for item in later["items"] if item["date_type"] == "action_deadline")
+    assert earlier_deadline["status"] == "upcoming"
+    assert later_deadline["status"] == "overdue"
     payment = next(item for item in later["items"] if item["date_type"] == "payment_record")
     assert payment["status"] == "recorded_paid"
     assert later["clock"]["recomputed"] is True
