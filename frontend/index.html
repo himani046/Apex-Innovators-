@@ -1780,19 +1780,30 @@ html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.met
 }
 
 
-/* Agents page: make the orchestration flow labels readable in black. */
-#flow .step,
-#flow .step:hover,
-#flow .step:focus,
-#flow .step:focus-visible {
+/* Agents workflow: lock label colors so global card-hover styles cannot wash them out. */
+#dash #flow .step,
+#dash #flow .step:hover,
+#dash #flow .step:active,
+#dash #flow .step:focus,
+#dash #flow .step:focus-visible,
+#dash #flow .step:hover *,
+#dash #flow .step:active *,
+#dash #flow .step:focus *,
+#dash #flow .step:focus-visible * {
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
-  background: #fff !important;
+  background-color: #fff !important;
+  background-image: none !important;
   text-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
-#flow .step * {
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
+#dash #flow .step:hover,
+#dash #flow .step:active,
+#dash #flow .step:focus,
+#dash #flow .step:focus-visible {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 </style></head><body>
