@@ -41,6 +41,30 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertEqual(result["company_risk_report"]["contract_count"], 2)
         self.assertEqual(result["company_risk_report"]["total_financial_exposure"], None)
 
+    def test_uploaded_payment_ledger_reconciles_invoice_candidates_without_confirming_liability(self):
+        result = analyze_custom_portfolio(
+            company_context="Example Buyer manages vendor agreements and payment obligations.",
+            contract_items=self.contracts,
+            events=[],
+            as_of="2027-03-15",
+            payment_ledger=[
+                {"date": "2027-03-01", "contract_id": "VENDOR_A",
+                 "reference": "Invoice INV-42", "amount": "500.00",
+                 "currency": "USD", "status": "overdue"},
+                {"date": "2027-03-05", "contract_id": "VENDOR_A",
+                 "reference": "Invoice INV-42", "amount": "500.00",
+                 "currency": "USD", "status": "paid"},
+            ],
+        )
+        finance = result["financial_reconciliation"]
+        self.assertEqual(finance["payment_ledger_rows_received"], 2)
+        self.assertEqual(len(finance["invoice_groups"]), 1)
+        group = finance["invoice_groups"][0]
+        self.assertEqual(group["invoice_id"], "INV-42")
+        self.assertTrue(group["structurally_matched"])
+        self.assertIsNone(finance["verified_financial_exposure"])
+        self.assertIsNone(result["company_risk_report"]["total_financial_exposure"])
+
     def test_contract_actions_have_stable_ids_and_require_human_approval(self):
         result = analyze_custom_portfolio(
             company_context="Example Buyer manages vendor agreements and renewal obligations.",
