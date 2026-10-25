@@ -109,6 +109,18 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     graph = build_rich_contract_graph(contracts, extractions, base_graph)
     cross_contract_edges = [edge for edge in graph.get("edges", []) if str(edge.get("source", "")) in contracts and str(edge.get("target", "")) in contracts]
     cross_contract_conflicts = detect_cross_contract_candidates(contracts)
+    if cross_contract_conflicts:
+        graph["nodes"].extend([{"id": conflict["id"], "type": "conflict_candidate",
+                                "label": conflict["topic"].replace("_", " ").title(),
+                                "status": conflict["status"], "contract_ids": conflict["contract_ids"]}
+                               for conflict in cross_contract_conflicts])
+        for conflict in cross_contract_conflicts:
+            for citation in conflict["citations"]:
+                graph["edges"].append({"source": citation["document_id"], "target": conflict["id"],
+                                       "relation": "potential_inconsistency", "status": "requires_human_review",
+                                       "evidence": citation})
+        graph["node_count"] = len(graph["nodes"])
+        graph["edge_count"] = len(graph["edges"])
     timeline = []
     risks = []
     contract_reports = []
@@ -295,10 +307,10 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         "contract_ids": sorted(contracts),
         "responsibility": "Inspect explicit document references and possible shared-risk signals across the supplied set.",
         "assigned_agents": ["Odin", "Thor", "Loki", "Heimdall", "Tyr"],
-        "status": "complete_with_review_items" if cross_contract_edges else "complete_no_evidenced_relationships",
+        "status": "complete_with_review_items" if cross_contract_edges or cross_contract_conflicts else "complete_no_evidenced_relationships",
         "progress": {"completed_stages": 1, "total_stages": 1, "percentage": 100},
-        "relationship_count": len(cross_contract_edges),
-        "open_questions": ["Review cross-contract effects and precedence where a sourced relationship exists."] if cross_contract_edges else [],
+        "relationship_count": len(cross_contract_edges),\n        "conflict_candidate_count": len(cross_contract_conflicts),
+        "open_questions": (["Review cross-contract effects and precedence where a sourced relationship exists."] if cross_contract_edges else []) + (["Resolve candidate inconsistencies between clauses in different contracts."] if cross_contract_conflicts else []),
         "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(cross_contract_edges),
                             "human_review_required": bool(cross_contract_edges), "legal_outcome_resolved": False},
         "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
