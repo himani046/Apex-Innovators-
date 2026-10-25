@@ -8,3 +8,7 @@ MODEL=os.getenv('CLAUDE_MODEL','claude-haiku-4-5')
 MAX_AGENT_CALLS=int(os.getenv('MAX_AGENT_CALLS','12'))
 MAX_AGENT_ITERATIONS=int(os.getenv('MAX_AGENT_ITERATIONS','2'))
 USE_CLAUDE=bool(os.getenv('ANTHROPIC_API_KEY','').strip())
+
+# Separate hard cap for the generalized portfolio workflow; never derive an unlimited budget from pack size.
+MAX_PORTFOLIO_AGENT_CALLS = max(1, int(os.getenv('MAX_PORTFOLIO_AGENT_CALLS', '300')))
+EVIDENCE_CONFIDENCE_THRESHOLD = min(0.99, max(0.0, float(os.getenv('EVIDENCE_CONFIDENCE_THRESHOLD', '0.75'))))
