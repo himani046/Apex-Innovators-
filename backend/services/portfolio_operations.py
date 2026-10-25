@@ -29,10 +29,10 @@ def _amounts(text: str) -> list[str]:
 def _classify_date(title: str) -> tuple[str, str]:
     """Return (date_type, explanation) using only local source wording."""
     text = title.casefold()
-    if re.search(r"\b(effective date|dated\s+|signature date|incident start|incident end|submission date)\b|date\s*:", text):
-        return "historical_reference", "Source date is contextual or historical; it is not an action deadline by itself."
     if re.search(r"\b(due date|deadline|no later than|must be received by|submit by|pay by|notify by|renewal instructions by)\b", text):
         return "action_deadline", "Source explicitly describes a due date or action deadline."
+    if re.search(r"\b(effective date|dated\s+|signature date|incident start|incident end|submission date)\b|date\s*:", text):
+        return "historical_reference", "Source date is contextual or historical; it is not an action deadline by itself."
     if re.search(r"\b(expir(?:y|ation)|term ends?|ending|through\s+[a-z]+\s+\d{1,2})\b", text):
         return "contract_milestone", "Contract term or expiry milestone; verify applicable notice/trigger requirements separately."
     if re.search(r"\b(non-renewal notice period|notice period|within\s+\d+)\b", text):
