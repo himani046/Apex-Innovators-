@@ -86,15 +86,6 @@ class MultiContractWorkstreamTests(unittest.TestCase):
         self.assertIsNone(result["synthesis"]["company_risk_report"]["total_financial_exposure"])
         self.assertEqual(result["synthesis"]["status"], result["status"])
 
-        # Acceptance checks: every loaded document gets its own report, the
-        # company report does not invent an aggregate liability, and partial
-        # agent work is not relabeled as a complete run by synthesis.
-        report_ids = {
-            report["contract_id"] for report in result["synthesis"]["contract_reports"]
-        }
-        self.assertEqual(report_ids, set(result["portfolio_extraction"]["contracts"]))
-        self.assertIsNone(result["synthesis"]["company_risk_report"]["total_financial_exposure"])
-        self.assertEqual(result["synthesis"]["status"], result["status"])
 
 
 if __name__ == "__main__":
