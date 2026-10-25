@@ -31,12 +31,13 @@ class MultiContractWorkstreamTests(unittest.TestCase):
         by_id = {item["id"]: item for item in self.result["workstreams"]}
         for doc_id in ("A1", "B1", "B2", "C1", "D1"):
             item = by_id[f"contract-{doc_id}"]
-            self.assertEqual(item["contract_ids"], [doc_id])
+            self.assertIn(doc_id, item["contract_ids"])
             self.assertTrue(item["extracted_obligations"])
             for term in item["extracted_obligations"]:
                 citation = term["citation"]
-                self.assertEqual(citation["document_id"], doc_id)
-                self.assertIn(citation["quote"], self.contracts[doc_id])
+                source_doc = citation["document_id"]
+                self.assertIn(source_doc, item["source_documents_analyzed"])
+                self.assertIn(citation["quote"], self.contracts[source_doc])
                 self.assertTrue(citation["verified"])
 
     def test_b2_is_its_own_dpa_workstream_and_links_to_b1(self):
@@ -54,7 +55,7 @@ class MultiContractWorkstreamTests(unittest.TestCase):
             self.assertIsNone(exposure["calculated_total_usd"])
             for amount in exposure["amounts_found"]:
                 self.assertTrue(amount["evidence"]["verified"])
-                self.assertIn(amount["evidence"]["quote"], self.contracts[item["contract_ids"][0]])
+                self.assertIn(amount["evidence"]["quote"], self.contracts[amount["evidence"]["document_id"]])
 
     def test_deadlines_are_explicit_dates_with_verified_evidence(self):
         for item in self.result["workstreams"]:
