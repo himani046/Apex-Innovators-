@@ -2,6 +2,7 @@ import unittest
 
 from backend.agents.heimdall import verify_contract_review
 from backend.services.portfolio_operations import build_portfolio_operations
+from backend.services.decision_engine import build_decision_queue
 from backend.services.synthesis import build_synthesis
 from backend.services.portfolio_intelligence import run_bounded_review_cycles
 from backend.agents.cross_contract import detect_cross_contract_candidates
@@ -121,6 +122,11 @@ class NextSixRegressionTests(unittest.TestCase):
         self.assertEqual(candidate["invoice_reference"], "INV-42")
         self.assertFalse(candidate["confirmed_liability"])
         self.assertIsNone(finance["portfolio_total_usd"])
+        queue = build_decision_queue(
+            {"financial_reconciliation": finance, "timeline": {"milestones": []}, "as_of_date": "2027-03-15"},
+            {"workstreams": []},
+        )
+        self.assertTrue(any(item["category"] == "invoice_payment_reconciliation" for item in queue["issues"]))
 
     def test_budget_exhaustion_marks_generalized_workflow_partial(self):
         result = run_bounded_review_cycles(
