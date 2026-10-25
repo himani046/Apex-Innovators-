@@ -11,6 +11,7 @@ import json
 import os
 import sqlite3
 from datetime import date, datetime, timezone
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -27,8 +28,17 @@ class EventStore:
         connection.row_factory = sqlite3.Row
         return connection
 
+    @contextmanager
+    def _connection(self):
+        db = self._connect()
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
+
     def _init_db(self):
-        with self._connect() as db:
+        with self._connection() as db:
             db.execute("""
                 CREATE TABLE IF NOT EXISTS ingested_events (
                     source TEXT NOT NULL,
