@@ -763,6 +763,10 @@ def run_bounded_review_cycles(
             # loop stops on a later no-gap pass or when its configured limit hits.
             trace["citation_verification_ratio"] = round(citation_ratio, 3)
             trace["citation_verification_threshold"] = CITATION_VERIFICATION_THRESHOLD
+            has_citation_failure = any(not item.get("citation_checks_passed") for item in verified_rows)
+            if verified_rows and citation_ratio >= CITATION_VERIFICATION_THRESHOLD and not has_citation_failure:
+                trace["stop_reason"] = "evidence_threshold_met"
+                break
             if iteration >= max_iterations:
                 trace["stop_reason"] = "iteration_limit_reached"
                 break
