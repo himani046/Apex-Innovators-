@@ -1670,6 +1670,27 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   -webkit-text-fill-color: currentColor !important;
 }
 
+
+
+/* Global readability guard: hover must never recolor card text independently
+   of its surface. Applies to Overview, Contracts, Time machine, Agents,
+   Risk & review, Audit, and the nested FR9 dashboard cards. */
+:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within) {
+  color: inherit !important;
+  background: inherit !important;
+  border-color: inherit !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within) * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: none !important;
+}
+:is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within)::before {
+  opacity: 0 !important;
+}
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
