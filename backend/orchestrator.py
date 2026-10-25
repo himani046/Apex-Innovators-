@@ -61,6 +61,11 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     portfolio_operations["norns_timeline"] = build_portfolio_timeline(
         multi_contract_analysis, portfolio_operations, as_of
     )
+    shared.update("timeline_events", portfolio_operations["norns_timeline"]["items"])
+    shared.message("Norns", "Odin", "fr3_timeline_recomputed", "complete",
+                   as_of_date=as_of,
+                   counts=portfolio_operations["norns_timeline"]["counts"],
+                   projection_status=portfolio_operations["norns_timeline"]["worst_case_projection"]["status"])
     decision_queue = build_decision_queue(portfolio_operations, multi_contract_analysis)
     source = contracts.get("A1")
     if not source:
