@@ -39,14 +39,14 @@ def extract_uploaded_document(filename: str, content: bytes) -> dict[str, Any]:
                     raise DocumentUploadError("This PDF is encrypted. Upload an unlocked copy.") from exc
             pages_text = [(page.extract_text() or "") for page in reader.pages]
             pages = len(pages_text)
-            text = "\\n\\n".join(f"[PDF page {i + 1}]\\n{value}" for i, value in enumerate(pages_text) if value.strip())
+            text = "\n\n".join(f"[PDF page {i + 1}]\n{value}" for i, value in enumerate(pages_text) if value.strip())
         except DocumentUploadError:
             raise
         except Exception as exc:
             raise DocumentUploadError(f"PDF could not be parsed: {exc.__class__.__name__}") from exc
         if not text.strip():
             raise DocumentUploadError("No selectable text was found in this PDF. It may be scanned; run OCR first or upload the matching TXT copy.")
-    text = text.replace("\\x00", "").strip()
+    text = text.replace("\x00", "").strip()
     if not text:
         raise DocumentUploadError("No readable text was found in the uploaded document.")
     return {"filename": Path(filename).name, "format": suffix[1:].upper(), "text": text, "characters": len(text), "pages": pages, "sha256": hashlib.sha256(content).hexdigest()}
