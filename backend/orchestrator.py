@@ -432,11 +432,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         or budget.stop_reason == "api_call_limit_reached"
         or bool(portfolio_workflow.get("budget_exhausted"))
     )
-    iteration_incomplete = (
-        bool(portfolio_workflow.get("partial_completion"))
-        or (loop_summary.get("needs_human_follow_up")
-            and loop_summary.get("stop_reason") == "iteration_limit_reached")
-    )
+    iteration_incomplete = bool(portfolio_workflow.get("partial_completion"))
     if budget_incomplete:
         state["status"] = "partial_budget_exhausted"
         state["collaboration"]["loop_status"] = "partial_budget_exhausted"
