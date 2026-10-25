@@ -401,6 +401,13 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
                                       "Every proposed action requires human review."]}
+    # Stable action IDs let reviewers approve/reject one contract action at a time.
+    for report in contract_reports:
+        for index, action in enumerate(report.get("recommended_actions", []) or [], start=1):
+            action.setdefault("action_id", f"{report['contract_id']}:action:{index}")
+            action.setdefault("human_approval_required", True)
+            action.setdefault("status", "draft_only_not_sent")
+
     shared_state = {"schema_version": "1.0", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,

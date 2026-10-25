@@ -74,6 +74,7 @@ class ReExtractionRequest(BaseModel):
     text: str = Field(min_length=20, max_length=2_000_000)
     clause_reference: str | None = Field(default=None, max_length=200)
     shared_state: dict = Field(default_factory=dict)
+    run_id: str | None = Field(default=None, min_length=1, max_length=160)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -148,7 +149,7 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
     """Re-extract one requested clause and return the updated structured shared state."""
     from backend.services.upload_analysis import extract_document_terms
 
-    extraction = extract_document_terms(body.text, body.contract_id)
+    extraction = extract_document_terms(body.text, body.contract_id, body.clause_reference)
     terms = extraction.get("extracted_terms", [])
     for term in terms:
         citation = term.get("citation") or {}
@@ -159,7 +160,15 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
         needle = body.clause_reference.casefold()
         terms = [term for term in terms if needle in str((term.get("citation") or {}).get("clause_reference", "")).casefold()
                  or needle in str((term.get("citation") or {}).get("quote", "")).casefold()]
-    shared = SharedAgentState(body.shared_state)
+    saved_run = None
+    initial_state = body.shared_state
+    if body.run_id:
+        saved_run = audit_store.get_run(body.run_id)
+        if saved_run is None:
+            raise HTTPException(status_code=404, detail="Audit run not found")
+        if not initial_state:
+            initial_state = (saved_run.get("payload") or {}).get("shared_state") or {}
+    shared = SharedAgentState(initial_state)
     existing_terms = shared.data.get("extracted_clauses", []) or []
     existing_refs = shared.data.get("evidence_references", []) or []
     shared.update("extracted_clauses", existing_terms + terms)
@@ -168,10 +177,26 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
                    contract_id=body.contract_id, clause_reference=body.clause_reference)
     shared.message("Thor", "Odin", "targeted_reextraction_result", "complete" if terms else "no_matching_terms",
                    contract_id=body.contract_id, terms_returned=len(terms))
+    snapshot = shared.snapshot()
+    persistence = {"persisted": False, "run_id": None}
+    if saved_run is not None:
+        saved_payload = dict(saved_run.get("payload") or {})
+        saved_payload["shared_state"] = snapshot
+        history = list(saved_payload.get("reextraction_history") or [])
+        history.append({"contract_id": body.contract_id, "clause_reference": body.clause_reference,
+                        "terms_returned": len(terms), "status": "complete" if terms else "no_matching_terms"})
+        saved_payload["reextraction_history"] = history
+        updated = audit_store.update_run_payload(
+            body.run_id, saved_payload, actor="Thor", event_type="targeted_reextraction",
+            details={"contract_id": body.contract_id, "clause_reference": body.clause_reference,
+                     "terms_returned": len(terms), "status": "complete" if terms else "no_matching_terms"},
+        )
+        persistence = {"persisted": True, "run_id": updated["run_id"], "updated_at": updated["updated_at"]}
     return {"status": "complete" if terms else "no_matching_terms", "contract_id": body.contract_id,
             "clause_reference": body.clause_reference, "extracted_terms": terms,
-            "shared_state": shared.snapshot(),
-            "notice": "Returned terms are source-grounded candidates. Shared state is updated in this response; persist the returned snapshot with the run record if durable history is required."}
+            "shared_state": snapshot, "persistence": persistence,
+            "notice": ("Targeted extraction was saved to the selected audit run." if persistence["persisted"]
+                       else "This response contains an updated state snapshot but is not durable. Supply run_id to persist it to an existing audit run.")}
 
 
 @app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])

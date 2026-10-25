@@ -5,7 +5,7 @@ from typing import Any
 RULES = [
     ("parties", r"\b(between the parties|customer:|client:|buyer:|supplier:|provider:|vendor:|landlord:|tenant:|party a|party b)\b"),
     ("duration_and_term", r"\b(term of (?:this )?agreement|initial term|for a period of|commences on|expires on|effective date|duration)\b"),
-    ("renewal", r"\b(auto(?:matic)?[- ]renew|renewal|renew|non[- ]renewal|renewal date)\b"),
+    ("renewal", r"\b(automatic(?:ally)?\s+renew(?:s|ed|ing)?|auto[- ]renew(?:s|ed|ing)?|renewal|renew(?:s|ed|ing)?|non[- ]renewal|renewal date)\b"),
     ("payment_schedule", r"\b(fee|payment|invoice|price|cost|interest|usd|\$|payable|payment period|monthly|quarterly|annually|net \d+)\b"),
     ("obligations", r"\b(shall|must|required to|will provide|undertakes to|is obligated to)\b"),
     ("penalty_and_liquidated_damages", r"\b(penalty|liquidated damages|late fee|interest rate|service credit|damages)\b"),
@@ -18,12 +18,52 @@ RULES = [
     ("governing_law_and_disputes", r"\b(governing law|jurisdiction|arbitration|dispute|venue)\b"),
 ]
 
-def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
-    """Return source-grounded excerpts only; do not invent a legal interpretation."""
+def extract_document_terms(text: str, document_id: str, clause_reference: str | None = None) -> dict[str, Any]:
+    """Return source-grounded excerpts, optionally restricted to one named section.
+
+    If the requested section cannot be located, return no terms rather than silently
+    falling back to a whole-document scan.
+    """
     lines = text.splitlines()
+    line_offset = 0
+    if clause_reference:
+        needle = clause_reference.strip().casefold()
+        heading_pattern = re.compile(r"^(?:section|article|[0-9]+(?:\.[0-9]+)*|[A-Z]\.)\b", re.I)
+        heading_indexes = [
+            index for index, raw in enumerate(lines)
+            if raw.strip() and len(raw.strip()) < 120
+            and (heading_pattern.match(raw.strip()) or raw.strip().isupper())
+        ]
+        matched_index = None
+        for index in heading_indexes:
+            heading = lines[index].strip()
+            if needle in heading.casefold():
+                matched_index = index
+                break
+            requested_numbers = re.findall(r"\d+(?:\.\d+)*", needle)
+            heading_numbers = re.findall(r"\d+(?:\.\d+)*", heading)
+            if requested_numbers and heading_numbers and requested_numbers[0] == heading_numbers[0]:
+                matched_index = index
+                break
+        if matched_index is None:
+            return {
+                "contract_id": document_id,
+                "summary": "Requested clause or section was not located; no whole-document fallback was performed.",
+                "extracted_terms": [],
+                "ambiguities": [f"Requested clause reference '{clause_reference}' was not found as a section heading."],
+                "missing_category_candidates": ["parties", "duration_and_term", "renewal", "payment_schedule",
+                    "obligations", "penalty_and_liquidated_damages", "compliance_and_regulatory", "termination"],
+                "agent": "Thor",
+                "mode": "targeted_clause_scan",
+                "target_clause_reference": clause_reference,
+                "target_clause_found": False,
+            }
+        next_heading = next((index for index in heading_indexes if index > matched_index), len(lines))
+        line_offset = matched_index
+        lines = lines[matched_index:next_heading]
     records = []
     current_heading = "Unlabelled section"
-    for line_no, raw in enumerate(lines, start=1):
+    for line_no, raw in enumerate(lines, start=line_offset + 1):
         line = raw.strip()
         if not line:
             continue
@@ -81,5 +121,7 @@ def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
         "ambiguities": ambiguity_flags,
         "missing_category_candidates": missing_categories,
         "agent": "Thor",
-        "mode": "deterministic_upload_scan",
+        "mode": "targeted_clause_scan" if clause_reference else "deterministic_upload_scan",
+        "target_clause_reference": clause_reference,
+        "target_clause_found": True if clause_reference else None,
     }

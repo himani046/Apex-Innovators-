@@ -14,5 +14,25 @@ class UploadAnalysisTests(unittest.TestCase):
         result = extract_document_terms("The sky is blue. A quiet garden.", "other.txt")
         self.assertEqual(result["extracted_terms"], [])
 
+    def test_targeted_extraction_scans_only_requested_section(self):
+        source = (
+            "Section 1. Term\nThe agreement has a duration of twelve months.\n"
+            "Section 4. Renewal\nThe agreement automatically renews for one year.\n"
+            "Section 8. Payment\nCustomer shall pay USD 500 monthly.\n"
+        )
+        result = extract_document_terms(source, "VENDOR_X", "Section 4")
+        self.assertEqual(result["mode"], "targeted_clause_scan")
+        self.assertTrue(result["target_clause_found"])
+        self.assertTrue(result["extracted_terms"])
+        self.assertTrue(all("renew" in term["citation"]["quote"].casefold() for term in result["extracted_terms"]))
+        self.assertTrue(all(term["citation"]["line_number"] == 4 for term in result["extracted_terms"]))
+
+    def test_missing_targeted_section_does_not_fall_back_to_full_document(self):
+        source = "Section 1. Term\nThe agreement has a duration of twelve months.\n"
+        result = extract_document_terms(source, "VENDOR_X", "Section 99")
+        self.assertFalse(result["target_clause_found"])
+        self.assertEqual(result["extracted_terms"], [])
+        self.assertIn("no whole-document fallback", result["summary"])
+
 if __name__ == "__main__":
     unittest.main()
