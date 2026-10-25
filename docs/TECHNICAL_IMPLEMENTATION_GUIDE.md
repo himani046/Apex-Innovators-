@@ -109,7 +109,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 ## 6. Functional requirements status
 
 ### FR1 — Odin Orchestrator
-- FR1.1 Input: The configured Quillhub pack is supported. POST /api/analyze-portfolio now accepts company context plus multiple contract text records, and the dashboard includes a multi-file TXT intake form. This custom path is separate from the full fixed-pack event/payment-aware orchestrator. Partial.
+- FR1.1 Input: The configured Quillhub pack is supported. POST /api/analyze-portfolio accepts company context, multiple contract text records, optional event records, and an optional payment_ledger array; the dashboard exposes all four inputs. The custom path runs generalized bounded review and conservative invoice/payment reconciliation. Partial.
 - FR1.2 Planning: The fixed pack creates source-specific workstreams and a portfolio-wide review stream. General configurable-input planning remains partial.
 - FR1.3 Delegation/tracking: Shared state records statuses, handoffs, and call/iteration usage. Some statuses are summary-level rather than a complete task lifecycle. Partial to substantial.
 - FR1.4 Coordination: The fixed A1 scenario has bounded targeted follow-up and final ruling. Explicit clarification/debate and completion gates for every arbitrary contract are not yet complete. Partial.
@@ -122,7 +122,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: broad source-grounded triage and targeted re-extraction exist; semantic completeness and calibrated confidence are not established.
 
 ### FR3 — Norns Timeline Agent
-- FR3.1: The fixed demo provides a timeline and portfolio operations view for explicit dates and transaction candidates.
+- FR3.1: The fixed demo provides a timeline and portfolio operations view for explicit dates and transaction candidates. Invoice-reference groups can include source-grounded payment and penalty/credit trigger candidates; trigger occurrence, applicability, credits, settlement, and exposure remain unverified unless supported by reconciled evidence.
 - FR3.2: The date selector and FR9 slider rerun analysis with the selected simulated date.
 - FR3.3: The A1 scenario has a worst-case note; synthesis reports timelines and states when a defensible financial projection is unavailable.
 - Status: partial. The current A1 timeline still contains scenario-specific dates/fee information; a generic obligation calculator for arbitrary clauses and penalty triggers remains unfinished.
@@ -135,7 +135,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: bounded review handoffs are implemented; deeper semantic analysis of arbitrary contracts, precedence resolution, and legally equivalent scope remain unfinished.
 
 ### FR5 — Heimdall Event Monitoring
-- FR5.1: The fixed pack loads JSONL event drops and retains parse errors. Custom intake accepts supplied events; `POST /api/events/ingest` stores source-labeled event records in SQLite and `GET /api/events?as_of=YYYY-MM-DD` filters future-dated events for a simulated date.
+- FR5.1: The fixed pack loads JSONL event drops and retains parse errors. Custom intake accepts supplied events; `POST /api/events/ingest` stores source-labeled event records in SQLite, deduplicates unchanged records, and retains before/after payload snapshots when an existing event changes. `GET /api/events?as_of=YYYY-MM-DD` filters future-dated events for a simulated date and exposes revision counts.
 - FR5.2: Event records are normalized; missing bodies and invalid timestamps are rejected, and event-to-contract mapping remains evidence-led. Explicit IDs and lexical clause overlap are candidates, not proof of causation.
 - FR5.3: The verifier preserves missing awareness/notification timestamps. Event source authenticity is never accepted from a user-supplied flag; a trusted external-source connector and signature/provenance validation are still required.
 - Status: substantial ingestion and normalization foundation; authenticated external integrations and causal event-to-clause verification remain partial.
@@ -164,7 +164,7 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - FR9.3: Exposure is unavailable when unsupported; heatmap levels are risk-signal counts, not calibrated probabilities or dollar amounts.
 - FR9.4: The panel displays Loki, Heimdall, and Tyr outputs returned by the current run. A three-column panel alone is not proof of a live debate.
 - FR9.5: Alert and action panels display decision-queue items and draft notices with citations where returned. Actions remain draft-only.
-- Status: UI components exist; end-to-end response mapping and acceptance tests are still required.
+- Status: UI components and backend regression/acceptance tests exist. The CI workflow compiles Python, validates inline dashboard JavaScript, and runs unittest. Full browser interaction checks and a real Claude-provider smoke test remain outstanding.
 
 ## 7. Main API endpoints
 
@@ -172,9 +172,10 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - GET /api/health — health/configuration.
 - GET /api/pack — configured pack summary.
 - GET /api/run?as_of=2027-03-15&use_claude=false — fixed-pack orchestration.
-- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates, and shared state.
+- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, optional payment_ledger rows, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates, and shared state.
 - POST /api/events/ingest — persist source-labeled event records with deduplication; records remain unverified.
-- GET /api/events?as_of=YYYY-MM-DD — list stored events and exclude future-dated records for the selected simulated date.
+- GET /api/events?as_of=YYYY-MM-DD — list stored events and exclude future-dated records for the selected simulated date; changed records include revision metadata.
+- GET /api/events/history?source=...&event_id=... — retrieve before/after payload snapshots for a changed event.
 - POST /api/reextract — targeted extraction from supplied contract text and optional clause reference.
 - POST /api/analyze-upload — document-level PDF/TXT extraction and quote checks; not full portfolio reconciliation.
 - GET /api/audit/runs?limit=20 — list saved runs.
@@ -185,7 +186,7 @@ Protected endpoints use the optional bearer-token control. /api/health remains p
 
 ### Custom portfolio request example
 
-Send JSON with company_context, as_of, contracts, and optional event_records. The contracts field is an array of objects with id and text. Each contract should contain the complete text, not a summary. Event records are an array of objects with timestamps and bodies. The example endpoint enforces contract count, per-contract text length, total input size, and event-count limits.
+Send JSON with company_context, as_of, contracts, and optional event_records and payment_ledger. The contracts field is an array of objects with id and text. Each contract should contain the complete text, not a summary. Event records are objects with timestamps and bodies. Payment-ledger rows may include date/timestamp, contract_id, reference or invoice_id, amount, currency, status, and counterparty fields. Invoice links and source clause matches remain candidates; totals are not inferred from unverified rows. The endpoint enforces contract count, per-contract text length, total contract input size, and event/ledger row limits.
 
 ## 8. Reliability, safety and security
 
