@@ -1694,5 +1694,13 @@ function initNewOdinPanels(){
  renderRecoveryScenario('payment');renderDeadlineCalendar();
 }
 initNewOdinPanels();
+const odinRenderObserver=new MutationObserver(()=>{
+ const dash=$('dash');
+ if(dash&&!dash.classList.contains('hidden')){
+   const esign=$('esignPanel');if(esign&&!esign.dataset.ready){esign.dataset.ready='1';}
+   renderDeadlineCalendar();
+ }
+});
+const odinDash=$('dash');if(odinDash)odinRenderObserver.observe(odinDash,{attributes:true,attributeFilter:['class']});
 </script>
 </body></html>
