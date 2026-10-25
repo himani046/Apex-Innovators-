@@ -123,6 +123,8 @@ The Phase 5 finding is a review artifact, not a legal conclusion. The A1 scenari
 
 Regression tests: `python -m unittest tests.test_evidence_grounding -v` and the full suite with `python -m unittest discover -s tests -v`.
 
+Phase 7 regression test: `python -m unittest tests.test_audit_store -v`.
+
 
 ## Phase 6 — Executive dashboard and portfolio command center
 
