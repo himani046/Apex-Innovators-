@@ -619,22 +619,83 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
                                   str(item.get("contract_id", "")), str(item.get("id", ""))))
     contract_reports.sort(key=lambda item: item["contract_id"])
-    exposure = {"status": "not_calculated", "value": None,
-                "candidate_count": financial_reconciliation.get("counts", {}).get("payment_candidates", 0),
-                "reason": "Custom portfolio intake does not aggregate exposure from unverified invoice/payment candidates."}
+    # Aggregate numeric candidate balances only, keeping currencies separate.
+    # User-supplied ledger rows are not verified liabilities.
+    candidate_exposure_by_currency = {}
+    candidate_exposure_items = []
+    for group in financial_reconciliation.get("invoice_groups", []):
+        balance = group.get("candidate_ledger_balance")
+        currency = str(group.get("candidate_balance_currency") or "").strip().upper()
+        if isinstance(balance, (int, float)) and not isinstance(balance, bool) and balance > 0:
+            item = {
+                "contract_id": group.get("contract_id"), "invoice_id": group.get("invoice_id"),
+                "candidate_amount": round(float(balance), 2), "currency": currency or None,
+                "reconciliation_status": group.get("candidate_balance_status"),
+                "source_verified": False, "confirmed_liability": False,
+            }
+            candidate_exposure_items.append(item)
+            if currency:
+                candidate_exposure_by_currency[currency] = round(candidate_exposure_by_currency.get(currency, 0.0) + float(balance), 2)
+    candidate_exposure = {
+        "status": "candidate_estimate_requires_verification" if candidate_exposure_items else "not_calculated",
+        "by_currency": candidate_exposure_by_currency,
+        "items": candidate_exposure_items,
+        "candidate_count": len(candidate_exposure_items),
+        "reason": "Arithmetic from supplied invoice/payment/credit rows only; not verified liabilities. Different currencies are not combined.",
+    }
+    worst_case_projection = {
+        "status": "bounded_candidate_projection_only" if candidate_exposure_items else "not_calculable_from_available_evidence",
+        "candidate_exposure_by_currency": candidate_exposure_by_currency,
+        "candidate_items": candidate_exposure_items,
+        "timeline": timeline,
+        "assumptions": [
+            "Only positive candidate invoice balances returned by reconciliation are included.",
+            "No exchange rates or unsupported penalties are invented.",
+            "Unverified events, triggers, currencies, periods, and contractual exceptions may change the outcome.",
+        ],
+        "excluded_unquantified_risks": [
+            {"contract_id": report["contract_id"], "risk_id": risk.get("id"), "title": risk.get("title"),
+             "reason": "No verified monetary amount and applicable trigger are available."}
+            for report in contract_reports for risk in report.get("risks", [])
+            if not isinstance(risk.get("amount"), (int, float))
+        ],
+        "note": "This is a candidate projection, not a confirmed worst-case liability. A defensible legal/financial worst case cannot be quantified where amounts, triggers, periods, or currencies are missing.",
+    }
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "amendment_resolution": amendment_resolution,
                       "amendment_resolution_summary": amendment_resolution.get("summary", {}),
                       "status": "complete_with_limitations", "contract_count": len(contracts),
-                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges, "cross_contract_candidates": cross_contract_candidates,
-                      "total_financial_exposure": None, "financial_exposure_status": exposure["status"], "financial_reconciliation": financial_reconciliation,
-                      "prioritized_action_list": alerts, "worst_case_projection": {
-                          "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
-                      "references": [c for report in contract_reports for c in report["citations"]] + [e for item in cross_contract_candidates for e in item.get("evidence", [])],
-                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]] + [q for item in cross_contract_candidates for q in item.get("unresolved_questions", [])] + [item.get("reason", "Missing referenced source document.") for item in amendment_resolution.get("missing_document_requests", [])],
+                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges,
+                      "cross_contract_candidates": cross_contract_candidates,
+                      "total_financial_exposure": None,
+                      "total_financial_exposure_status": "not_confirmed_no_verified_liability_amounts",
+                      "candidate_financial_exposure": candidate_exposure,
+                      "financial_exposure_status": candidate_exposure["status"],
+                      "financial_reconciliation": financial_reconciliation,
+                      "prioritized_action_list": alerts, "worst_case_projection": worst_case_projection,
+                      "references": (
+                          [{"contract_id": report["contract_id"], **citation}
+                           for report in contract_reports for citation in report.get("citations", [])]
+                          + [{"candidate_id": item.get("id"), **evidence}
+                             for item in cross_contract_candidates for evidence in item.get("evidence", [])]
+                      ),
+                      "cross_contract_conflicts": [
+                          {"candidate_id": item.get("id"), "topic": item.get("topic"),
+                           "contract_ids": item.get("contract_ids", []), "status": item.get("status"),
+                           "explanation": item.get("explanation"), "evidence": item.get("evidence", []),
+                           "unresolved_questions": item.get("unresolved_questions", []),
+                           "legal_conflict_determined": False, "human_review_required": True}
+                          for item in cross_contract_candidates
+                      ],
+                      "unresolved_questions": list(dict.fromkeys(
+                          [q for report in contract_reports for q in report["unresolved_questions"]]
+                          + [q for item in cross_contract_candidates for q in item.get("unresolved_questions", [])]
+                          + [item.get("reason", "Missing referenced source document.")
+                             for item in amendment_resolution.get("missing_document_requests", [])]
+                      )),
                       "limitations": ["Keyword-based extraction is triage, not complete semantic interpretation.",
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
-                                      "Financial exposure is not calculated without reconciliation evidence.",
+                                      "Confirmed financial exposure remains unknown until source authenticity, currency, invoice/payment matching, and contractual triggers are verified.",
                                       "Every proposed action requires human review."]}
     # Stable action IDs let reviewers approve/reject one contract action at a time.
     for report in contract_reports:
