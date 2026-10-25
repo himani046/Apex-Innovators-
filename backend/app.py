@@ -59,6 +59,7 @@ class PortfolioAnalysisRequest(BaseModel):
     company_context: str = Field(min_length=10, max_length=100_000)
     contracts: list[ContractTextInput] = Field(min_length=1, max_length=50)
     event_records: list[dict] = Field(default_factory=list, max_length=1000)
+    payment_ledger: list[dict] = Field(default_factory=list, max_length=5000)
     as_of: date = Field(default=date(2027, 3, 15))
     use_claude: bool = False
 
@@ -272,10 +273,12 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             events=list(combined_events.values()),
             as_of=body.as_of.isoformat(),
             use_llm=body.use_claude,
+            payment_ledger=body.payment_ledger,
         )
         result["event_store_context"] = {
             "stored_events_loaded": len(stored_events),
             "request_events_received": len(body.event_records),
+            "payment_ledger_rows_received": len(body.payment_ledger),
             "event_source_authenticity_verified": False,
         }
         audit = audit_store.record_run(result)
