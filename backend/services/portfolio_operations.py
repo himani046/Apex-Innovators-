@@ -26,6 +26,49 @@ def _amounts(text: str) -> list[str]:
     return list(dict.fromkeys(match.group(0).strip() for match in MONEY_RE.finditer(text)))
 
 
+def _valid_iso_date(value: Any) -> bool:
+    raw = str(value or "").strip()
+    try:
+        date.fromisoformat(raw[:10])
+        return bool(raw)
+    except ValueError:
+        return False
+
+
+def _date_is_after_as_of(value: Any, as_of_date: date) -> bool:
+    raw = str(value or "").strip()
+    if not raw:
+        return False
+    try:
+        return date.fromisoformat(raw[:10]) > as_of_date
+    except ValueError:
+        return False
+
+
+def _numeric_amount(value: Any) -> float | None:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    match = re.search(r"-?\d[\d,]*(?:\.\d{1,2})?", str(value or ""))
+    if not match:
+        return None
+    try:
+        return float(match.group(0).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def _explicit_invoice_reference(text: str) -> str | None:
+    patterns = (
+        re.compile(r"\b(?:invoice|inv)\s*(?:id|no\.?|number|#)\s*[:#-]?\s*([A-Z0-9][A-Z0-9-]{1,40})\b", re.I),
+        re.compile(r"\b(INV[- ][A-Z0-9][A-Z0-9-]{1,40})\b", re.I),
+    )
+    for pattern in patterns:
+        match = pattern.search(text or "")
+        if match:
+            return match.group(1).upper().replace(" ", "-")
+    return None
+
+
 def _classify_date(title: str) -> tuple[str, str]:
     """Return (date_type, explanation) using only local source wording."""
     text = title.casefold()
@@ -126,7 +169,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
     # date, counterparty, reference and status instead of relying on event keywords.
     for index, row in enumerate(payment_ledger or []):
         row_date = str(row.get("date", ""))
-        if row_date[:10] and row_date[:10] > as_of:
+        if _date_is_after_as_of(row_date, as_of_date):
             continue
         reference = str(row.get("reference", ""))
         combined = " ".join(str(row.get(key, "")) for key in ("from", "to", "reference", "status", "amount"))
@@ -137,15 +180,19 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
         except (TypeError, ValueError):
             amount_text = amount
         event_id = f"payment-ledger:{row_date}:{index + 1}"
+        invoice_ref = _explicit_invoice_reference(" ".join((reference, combined)))
         ledger.append({
             "event_id": event_id,
             "event_source": "payments_ledger.csv",
+            "source_date_valid": not bool(row_date) or _valid_iso_date(row_date),
             "timestamp": row_date,
             "transaction_signal": str(row.get("status", "transaction")).lower(),
             "amounts_found": [amount_text] if amount_text else [],
             "contract_id": contract_id,
             "contract_match_status": match_status,
             "summary": reference,
+            "invoice_reference_candidate": invoice_ref,
+            "amount_numeric_candidate": _numeric_amount(amount),
             "counterparty_from": str(row.get("from", "")),
             "counterparty_to": str(row.get("to", "")),
             "payment_status": str(row.get("status", "unknown")).lower(),
@@ -164,7 +211,7 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
                 continue
             seen_events.add(event_id)
             timestamp = str(event.get("timestamp", ""))
-            if timestamp[:10] and timestamp[:10] > as_of:
+            if _date_is_after_as_of(timestamp, as_of_date):
                 continue
             fields = ("subject", "summary", "body", "from", "to", "channel")
             text = "\n".join(str(event.get(key, "")) for key in fields).strip()
@@ -173,15 +220,19 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             contract_id, match_status = _contract_link(text, known_contract_ids)
             amounts = _amounts(text)
             signal = TRANSACTION_RE.search(text)
+            invoice_ref = _explicit_invoice_reference(text)
             ledger.append({
                 "event_id": event_id,
                 "event_source": drop_name,
+                "source_date_valid": not bool(timestamp) or _valid_iso_date(timestamp),
                 "timestamp": timestamp,
                 "transaction_signal": signal.group(0).lower() if signal else "transaction",
                 "amounts_found": amounts,
                 "contract_id": contract_id,
                 "contract_match_status": match_status,
                 "summary": str(event.get("subject") or event.get("summary") or ""),
+                "invoice_reference_candidate": invoice_ref,
+                "amount_numeric_candidate": _numeric_amount(amounts[0]) if amounts else None,
                 "evidence_text": text[:1200],
                 "reconciliation_status": "event_candidate_needs_ledger_reconciliation" if amounts else "transaction_signal_without_explicit_amount",
                 "human_review_required": True,
