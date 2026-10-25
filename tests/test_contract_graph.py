@@ -34,6 +34,15 @@ class ContractGraphTests(unittest.TestCase):
             for edge in self.graph["edges"]
         ))
 
+    def test_cover_page_precedence_links_to_standard_terms_and_sla(self):
+        precedence = [
+            (edge["source"], edge["target"])
+            for edge in self.graph["edges"]
+            if edge["relation"] == "precedence_rule"
+        ]
+        self.assertIn(("A1", "STD"), precedence)
+        self.assertIn(("A1", "A2"), precedence)
+
     def test_explicit_a1_notice_period_amendment_is_reconciled(self):
         matches = [
             item for item in self.reconciliation["resolved_changes"]
