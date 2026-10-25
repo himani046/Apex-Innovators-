@@ -138,6 +138,14 @@ def run_demo(as_of="2027-03-15", request_claude=True):
 
     if not budget.reserve_call("Thor A1 extraction"):
         raise RuntimeError("Agent call budget exhausted before Thor extraction")
+    for message in state["agent_messages"]:
+        shared.message(
+            message.get("from", "Odin"), message.get("to", "Odin"),
+            message.get("type", "handoff"), message.get("status", "recorded"),
+            **{key: value for key, value in message.items()
+               if key not in {"from", "to", "type", "status"}}
+        )
+
     x = extract_a1(source, use)
     terms = x.get("extracted_terms", [])
     for term in terms:
