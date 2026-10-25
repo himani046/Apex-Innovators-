@@ -20,7 +20,7 @@ TOPIC_PATTERNS = {
     "incorporated_documents": re.compile(r"\b(incorporat|attached|attachment|exhibit|schedule|standard terms|STD|subject to)\b", re.I),
 }
 
-HEADING_PATTERN = re.compile(r"^\s*(?:(?:section|article|clause)\s+[A-Z0-9.IVX-]+|[A-Z][A-Z0-9 .,/()&'-]{3,})\s*[:—–.-]?\s*$", re.I)
+SECTION_HEADING_PATTERN = re.compile(r"^\s*(?:section|article|clause)\s+[A-Z0-9.IVX-]+", re.I)
 
 
 def extract_contract_candidates(contract_id: str, source: str, max_terms: int = 40) -> dict:
@@ -45,7 +45,7 @@ def extract_contract_candidates(contract_id: str, source: str, max_terms: int = 
         line = raw_line.strip()
         if not line:
             continue
-        if HEADING_PATTERN.match(line) and len(line) < 160:
+        if len(line) < 160 and (SECTION_HEADING_PATTERN.match(line) or (line == line.upper() and any(ch.isalpha() for ch in line) and len(line) >= 4)):
             current_heading = line
         matched_topics = [category for category, pattern in TOPIC_PATTERNS.items() if pattern.search(line)]
         if not matched_topics:
