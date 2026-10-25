@@ -63,6 +63,7 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertTrue(result["risk_signals"])
         self.assertTrue(all(item["status"] == "candidate_requires_review" for item in result["risk_signals"]))
         self.assertTrue(all("not a finding of breach" in item["reason"] for item in result["risk_signals"]))
+        self.assertTrue(any(item.get("category") == "payment_event" for item in result["alert_feed"]))
 
 
 if __name__ == "__main__":
