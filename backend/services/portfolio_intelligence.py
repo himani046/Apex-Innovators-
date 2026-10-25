@@ -495,19 +495,22 @@ def run_bounded_review_cycles(
     as_of: str,
     max_iterations: int = 1,
     max_agent_calls: int = 300,
+    use_llm: bool = False,
 ) -> dict[str, Any]:
-    """Run bounded Thor→Loki→Heimdall→Tyr cycles and preserve unresolved gaps.
+    """Run bounded agent cycles; optional LLM suggestions are accepted only with exact-quote validation.
 
-    This is a real bounded deterministic feedback workflow, not an LLM debate.
-    A repeated pass can refine source citations but cannot manufacture absent
-    external evidence or independently authenticate user-provided events.
+    Without explicit opt-in and a configured provider this remains deterministic. LLM output never
+    authenticates events, establishes breach, or bypasses human approval.
     """
     from backend.agents.heimdall import verify_contract_review
     from backend.agents.loki import review_contract_candidates
     from backend.agents.norns import build_contract_timeline
     from backend.agents.tyr import arbitrate_contract_review
     from backend.services.upload_analysis import extract_document_terms
+    from backend.config import USE_CLAUDE
 
+    llm_enabled = bool(use_llm and USE_CLAUDE)
+    llm_status: dict[str, str] = {}
     if max_iterations < 0 or max_iterations > 3:
         raise ValueError("max_iterations must be between 0 and 3")
     normalized = normalize_event_records(events, as_of)
@@ -523,12 +526,24 @@ def run_bounded_review_cycles(
     stopped_reason = "all_workstreams_processed"
 
     for cid, source in sorted(contracts.items()):
-        if calls + 5 > max_agent_calls:
+        required_initial_calls = 5 + (4 if llm_enabled else 0)
+        if calls + required_initial_calls > max_agent_calls:
             stopped_reason = "agent_call_budget_exhausted"
             workstreams.append({"contract_id": cid, "status": "not_run_budget_exhausted"})
             continue
         extraction = extractions.get(cid) or extract_document_terms(source, cid)
         calls += 1
+        if llm_enabled:
+            extra_terms, llm_status["Thor"] = _llm_thor_terms(cid, source)
+            calls += 1
+            existing_quotes = {str((term.get("citation") or {}).get("quote", "")) for term in extraction.get("extracted_terms", [])}
+            for term in extra_terms:
+                if term.get("citation", {}).get("quote") not in existing_quotes:
+                    extraction.setdefault("extracted_terms", []).append(term)
+                    existing_quotes.add(term.get("citation", {}).get("quote"))
+            messages.append({"from": "Thor", "to": "Odin", "type": "llm_extraction_review",
+                             "status": llm_status["Thor"], "contract_id": cid,
+                             "validated_terms_added": len(extra_terms)})
         messages.append({"from": "Thor", "to": "Norns", "type": "extraction_handoff",
                          "status": "complete", "contract_id": cid,
                          "terms": len(extraction.get("extracted_terms", []))})
@@ -540,10 +555,29 @@ def run_bounded_review_cycles(
         loki = review_contract_candidates(cid, source, extraction)
         findings = list(loki.get("findings", []))[:20]
         calls += 1
+        if llm_enabled:
+            llm_findings, llm_status["Loki"] = _llm_loki_findings(cid, source, findings)
+            calls += 1
+            known_ids = {item.get("id") for item in findings}
+            findings.extend(item for item in llm_findings if item.get("id") not in known_ids)
+            findings = findings[:28]
+            messages.append({"from": "Loki", "to": "Heimdall", "type": "llm_risk_challenge",
+                             "status": llm_status["Loki"], "contract_id": cid,
+                             "validated_findings_added": len(llm_findings)})
         messages.append({"from": "Loki", "to": "Heimdall", "type": "risk_challenge",
                          "status": "submitted", "contract_id": cid, "findings": len(findings)})
         verification = verify_contract_review(cid, source, findings, visible_events)
         calls += 1
+        if llm_enabled:
+            llm_verification, llm_status["Heimdall"] = _llm_heimdall_review(cid, source, findings, visible_events)
+            calls += 1
+            if llm_verification:
+                verification["llm_review"] = llm_verification
+                verification.setdefault("evidence_gaps", []).extend(llm_verification.get("evidence_gaps", []))
+                verification["evidence_gaps"] = list(dict.fromkeys(verification["evidence_gaps"]))
+            messages.append({"from": "Heimdall", "to": "Tyr", "type": "llm_evidence_review",
+                             "status": llm_status["Heimdall"], "contract_id": cid,
+                             "validated_event_quotes": len((llm_verification or {}).get("validated_event_evidence", []))})
         messages.append({"from": "Heimdall", "to": "Tyr", "type": "evidence_verification",
                          "status": verification.get("status", "unknown"), "contract_id": cid,
                          "findings": len(verification.get("findings", []))})
@@ -557,7 +591,7 @@ def run_bounded_review_cycles(
             if not gaps:
                 trace["stop_reason"] = "evidence_threshold_met"
                 break
-            if calls + 5 > max_agent_calls:
+            if calls + 5 + (1 if llm_enabled else 0) > max_agent_calls:
                 trace["stop_reason"] = "agent_call_budget_exhausted"
                 stopped_reason = "agent_call_budget_exhausted"
                 break
@@ -613,6 +647,15 @@ def run_bounded_review_cycles(
             trace["stop_reason"] = "iteration_limit_reached"
         tyr = arbitrate_contract_review(cid, findings, verification)
         calls += 1
+        if llm_enabled:
+            llm_ruling, llm_status["Tyr"] = _llm_tyr_review(cid, source, findings, verification, tyr, visible_events)
+            calls += 1
+            if llm_ruling:
+                tyr["llm_review"] = llm_ruling
+            messages.append({"from": "Tyr", "to": "Odin", "type": "llm_qualified_ruling",
+                             "status": llm_status["Tyr"], "contract_id": cid,
+                             "accepted_rulings": (llm_ruling or {}).get("accepted_rulings", 0),
+                             "human_approval_required": True})
         trace["iterations_used"] = iteration
         trace["final_unresolved_gaps"] = list(dict.fromkeys(
             str(gap) for finding in findings for gap in (finding.get("evidence_gaps") or [])
@@ -638,18 +681,20 @@ def run_bounded_review_cycles(
         })
 
     return {
-        "mode": "bounded_deterministic_multi_agent_workflow",
+        "mode": "bounded_hybrid_llm_multi_agent_workflow" if llm_enabled else "bounded_deterministic_multi_agent_workflow",
         "status": "complete_with_limitations" if workstreams else "not_run",
         "as_of_date": as_of, "max_iterations": max_iterations,
         "iterations_used": max((item.get("iterations_used", 0) for item in loop_traces), default=0),
         "agent_calls_used": calls, "agent_call_budget": max_agent_calls,
         "budget_exhausted": stopped_reason == "agent_call_budget_exhausted",
         "stop_reason": stopped_reason,
-        "agent_messages": messages, "workstreams": workstreams,
+        "agent_messages": messages, "workstreams": workstreams, "llm_enabled": llm_enabled,
+        "llm_provider_status": "enabled" if llm_enabled else "not_configured" if use_llm and not USE_CLAUDE else "not_requested",
+        "llm_agent_status": llm_status,
         "loop_traces": loop_traces, "risk_findings": all_findings,
         "verification_outcomes": all_verifications, "rulings": all_rulings,
         "timeline_candidates": all_timelines, "event_ingestion": normalized,
         "human_review_required": any(item.get("human_review_required") for item in workstreams),
         "legal_outcome_resolved": False,
-        "notice": "Bounded deterministic agent collaboration; not an LLM debate, legal opinion, breach determination, or external event authenticity check.",
+        "notice": ("Bounded hybrid agent workflow with quote-validated LLM suggestions; still not a legal opinion, breach determination, or event-authenticity check." if llm_enabled else "Bounded deterministic agent collaboration; LLM use was not enabled or no provider key is configured. This is not a legal opinion, breach determination, or external event-authenticity check."),
     }
