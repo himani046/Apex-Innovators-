@@ -657,7 +657,7 @@ def run_bounded_review_cycles(
     from backend.agents.norns import build_contract_timeline
     from backend.agents.tyr import arbitrate_contract_review
     from backend.services.upload_analysis import extract_document_terms
-    from backend.config import USE_CLAUDE, EVIDENCE_CONFIDENCE_THRESHOLD
+    from backend.config import USE_CLAUDE, CITATION_VERIFICATION_THRESHOLD
 
     llm_enabled = bool(use_llm and USE_CLAUDE)
     llm_status: dict[str, str] = {}
@@ -756,9 +756,9 @@ def run_bounded_review_cycles(
             verified_rows = list(verification.get("findings") or [])
             citation_ratio = (sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)) if verified_rows else 0.0
             has_citation_failure = any(not item.get("citation_checks_passed") for item in verified_rows)
-            if verified_rows and citation_ratio >= EVIDENCE_CONFIDENCE_THRESHOLD and not has_citation_failure:
+            if verified_rows and citation_ratio >= CITATION_VERIFICATION_THRESHOLD and not has_citation_failure:
                 trace["stop_reason"] = "evidence_threshold_met_with_open_questions"
-                trace["threshold"] = EVIDENCE_CONFIDENCE_THRESHOLD
+                trace["threshold"] = CITATION_VERIFICATION_THRESHOLD
                 trace["citation_verification_ratio"] = round(citation_ratio, 3)
                 break
             if iteration >= max_iterations:
