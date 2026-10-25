@@ -38,6 +38,30 @@ def build_decision_queue(portfolio_operations: dict[str, Any],
             "human_review_required": True,
         })
 
+    for group in finance.get("invoice_reconciliation_candidates", []) or []:
+        disagreement = not bool(group.get("amounts_consistent", True))
+        issues.append({
+            "issue_id": f"invoice-reconciliation:{group.get('contract_id')}:{group.get('invoice_reference')}",
+            "category": "invoice_payment_reconciliation",
+            "title": "Reconcile invoice " + str(group.get("invoice_reference") or "reference"),
+            "contract_id": group.get("contract_id"),
+            "priority": "high" if disagreement else "medium",
+            "status": "amount_disagreement_requires_review" if disagreement else group.get("status", "linked_candidate_requires_human_review"),
+            "date": None,
+            "amounts_found": group.get("amount_candidates", []),
+            "evidence_strength": "explicit_invoice_reference_candidate",
+            "evidence": {
+                "invoice_reference": group.get("invoice_reference"),
+                "source_event_ids": group.get("source_event_ids", []),
+                "candidate_kinds": group.get("candidate_kinds", []),
+                "amounts_consistent": group.get("amounts_consistent"),
+                "confirmed_liability": False,
+            },
+            "reason": group.get("note", "Invoice linkage is a candidate and does not establish a confirmed liability."),
+            "recommended_next_step": "Compare the invoice, contract billing trigger and period, payment confirmation, and credits before calculating exposure.",
+            "human_review_required": True,
+        })
+
     for item in ledger:
         payment_status = str(item.get("payment_status") or item.get("transaction_signal") or "").casefold()
         match_status = item.get("contract_match_status", "")
@@ -76,7 +100,7 @@ def build_decision_queue(portfolio_operations: dict[str, Any],
         })
 
     priority_order = {"high": 0, "medium": 1, "low": 2}
-    category_order = {"contract_deadline": 0, "financial_reconciliation": 1}
+    category_order = {"contract_deadline": 0, "financial_reconciliation": 1, "invoice_payment_reconciliation": 2}
     issues.sort(key=lambda item: (
         priority_order.get(item["priority"], 9),
         item.get("date") or "",
@@ -89,7 +113,7 @@ def build_decision_queue(portfolio_operations: dict[str, Any],
         "medium": sum(item["priority"] == "medium" for item in issues),
         "low": sum(item["priority"] == "low" for item in issues),
         "deadline_issues": sum(item["category"] == "contract_deadline" for item in issues),
-        "financial_issues": sum(item["category"] == "financial_reconciliation" for item in issues),
+        "financial_issues": sum(item["category"] in {"financial_reconciliation", "invoice_payment_reconciliation"} for item in issues),
     }
     return {
         "status": "prioritized_for_human_review",
@@ -100,6 +124,7 @@ def build_decision_queue(portfolio_operations: dict[str, Any],
             "Only explicitly worded due dates can be marked overdue.",
             "Effective dates, historical references, and term milestones are not overdue action items by themselves.",
             "Financial status comes from source ledger/event evidence and must be reconciled to invoice and trigger evidence.",
+            "Invoice-reference groups are review candidates only; inconsistent amounts are escalated without calculating a liability or exposure total.",
             "No breach, damages, or aggregate exposure is inferred by this queue.",
         ],
         "notice": "Deterministic triage queue for human review; not legal, accounting, or breach determinations.",
