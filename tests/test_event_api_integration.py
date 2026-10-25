@@ -1,8 +1,11 @@
+import asyncio
+import io
 import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
+from fastapi import UploadFile
 
 from backend import app as app_module
 from backend.services.event_store import EventStore
@@ -87,6 +90,39 @@ class EventAPIIntegrationTests(unittest.TestCase):
                 self.assertEqual(getattr(raised.exception, "status_code", None), 404)
             finally:
                 app_module.audit_store = previous
+
+    def test_portfolio_upload_accepts_pdf_and_txt_and_preserves_pdf_page_markers(self):
+        from pathlib import Path
+
+        pdf_path = Path(__file__).resolve().parents[1] / "odin_dev_pack" / "bundle" / "contracts" / "A1.pdf"
+        self.assertTrue(pdf_path.exists(), "PDF fixture should be present in the repository")
+        pdf_bytes = pdf_path.read_bytes()
+        text_bytes = b"Section 1. The agreement term is twelve months and renews automatically."
+
+        files = [
+            UploadFile(filename="A1.pdf", file=io.BytesIO(pdf_bytes)),
+            UploadFile(filename="A2.txt", file=io.BytesIO(text_bytes)),
+        ]
+        with patch.object(app_module, "analyze_portfolio", side_effect=lambda body: {
+            "contract_ids": [contract.id for contract in body.contracts],
+            "contract_texts": [contract.text for contract in body.contracts],
+        }):
+            result = asyncio.run(app_module.analyze_portfolio_upload(
+                company_context="A company manages supplier contracts and renewal obligations.",
+                files=files,
+                event_records="[]",
+                payment_ledger="[]",
+                as_of="2027-03-15",
+                use_claude=False,
+            ))
+
+        self.assertEqual(result["uploaded_documents"][0]["format"], "PDF")
+        self.assertGreater(result["uploaded_documents"][0]["pages"], 0)
+        self.assertEqual(result["uploaded_documents"][1]["format"], "TXT")
+        self.assertIn("A1", result["contract_ids"])
+        self.assertIn("A2", result["contract_ids"])
+        self.assertIn("[PDF page 1]", result["contract_texts"][0])
+        self.assertIn("automatically", result["contract_texts"][1])
 
     def test_portfolio_analysis_includes_durable_events_without_trusting_them(self):
         with tempfile.TemporaryDirectory() as directory:
