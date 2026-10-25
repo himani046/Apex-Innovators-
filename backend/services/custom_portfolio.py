@@ -326,8 +326,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                       "total_financial_exposure": None, "financial_exposure_status": exposure["status"],
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
-                      "references": [c for report in contract_reports for c in report["citations"]],
-                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]],
+                      "references": [c for report in contract_reports for c in report["citations"]] + [c for conflict in cross_contract_conflicts for c in conflict["citations"]],
+                      "unresolved_questions": [q for report in contract_reports for q in report["unresolved_questions"]] + [gap for conflict in cross_contract_conflicts for gap in conflict["evidence_gaps"]],
                       "limitations": ["Keyword-based extraction is triage, not complete semantic interpretation.",
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
