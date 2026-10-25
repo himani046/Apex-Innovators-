@@ -3,14 +3,14 @@ import re
 from typing import Any
 
 RULES = [
-    ("payment", r"\\b(fee|payment|invoice|price|cost|interest|usd|\\$|payable|payment period)\\b"),
-    ("term_and_renewal", r"\\b(term|renew|renewal|effective date|subscription period|expiration|expiry)\\b"),
-    ("notice_and_communications", r"\\b(notice|notify|notification|written notice|business days|calendar days)\\b"),
-    ("liability_and_indemnity", r"\\b(liability|liable|indemnif|limitation of liability|damages|cap amount)\\b"),
-    ("service_levels_and_incidents", r"\\b(sla|service level|outage|disruption|incident|response time|resolution time)\\b"),
-    ("termination", r"\\b(terminat|suspend|cure period|breach|default)\\b"),
-    ("confidentiality_and_data", r"\\b(confidential|personal data|security|privacy|data protection)\\b"),
-    ("governing_law_and_disputes", r"\\b(governing law|jurisdiction|arbitration|dispute|venue)\\b"),
+    ("payment", r"\b(fee|payment|invoice|price|cost|interest|usd|\$|payable|payment period)\b"),
+    ("term_and_renewal", r"\b(term|renew|renewal|effective date|subscription period|expiration|expiry)\b"),
+    ("notice_and_communications", r"\b(notice|notify|notification|written notice|business days|calendar days)\b"),
+    ("liability_and_indemnity", r"\b(liability|liable|indemnif|limitation of liability|damages|cap amount)\b"),
+    ("service_levels_and_incidents", r"\b(sla|service level|outage|disruption|incident|response time|resolution time)\b"),
+    ("termination", r"\b(terminat|suspend|cure period|breach|default)\b"),
+    ("confidentiality_and_data", r"\b(confidential|personal data|security|privacy|data protection)\b"),
+    ("governing_law_and_disputes", r"\b(governing law|jurisdiction|arbitration|dispute|venue)\b"),
 ]
 
 def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
@@ -22,10 +22,10 @@ def extract_document_terms(text: str, document_id: str) -> dict[str, Any]:
         line = raw.strip()
         if not line:
             continue
-        if len(line) < 120 and (re.match(r"^(section|article|[0-9]+(?:\\.[0-9]+)*|[A-Z]\\.)\\b", line, re.I) or line.isupper()):
+        if len(line) < 120 and (re.match(r"^(section|article|[0-9]+(?:\.[0-9]+)*|[A-Z]\.)\b", line, re.I) or line.isupper()):
             current_heading = line[:100]
         # Split on sentence boundaries while keeping source snippets verbatim.
-        for part in re.split(r"(?<=[.!?])\\s+(?=[A-Z0-9$])", line):
+        for part in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9$])", line):
             quote = part.strip()
             if len(quote) < 18:
                 continue
