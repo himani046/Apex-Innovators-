@@ -312,8 +312,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         "relationship_count": len(cross_contract_edges),
         "conflict_candidate_count": len(cross_contract_conflicts),
         "open_questions": (["Review cross-contract effects and precedence where a sourced relationship exists."] if cross_contract_edges else []) + (["Resolve candidate inconsistencies between clauses in different contracts."] if cross_contract_conflicts else []),
-        "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(cross_contract_edges),
-                            "human_review_required": bool(cross_contract_edges), "legal_outcome_resolved": False},
+        "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(cross_contract_edges or cross_contract_conflicts),
+                            "human_review_required": bool(cross_contract_edges or cross_contract_conflicts), "legal_outcome_resolved": False},
         "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
     })
     alerts.sort(key=lambda item: ({"critical": 0, "high": 1, "medium": 2, "low": 3}.get(str(item.get("severity", "")).lower(), 4),
