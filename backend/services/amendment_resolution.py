@@ -141,17 +141,20 @@ def analyze_amendment_lineage(contracts: dict[str, str],
                         "source": contract_id, "target": target,
                         "relation": "explicit_amendment_reference_candidate",
                         "status": "source_linked_requires_effective_version_review",
-                        "evidence": _citation(contract_id, 1, header.splitlines()[0].strip(), source) if header.splitlines() else {},
+                        "evidence": {},
                         "explicit_reference_found": True,
                         "amendment_validity_confirmed": False,
                     }
-                    # Prefer the exact line containing the target reference.
+                    # Prefer an exact amendment-target line; otherwise cite the
+                    # exact line naming the target rather than an unrelated header.
+                    target_line = None
                     for line_number, raw in enumerate(source.splitlines(), 1):
-                        if re.search(r"\b(amendment|addendum|amends|amended|supplements?)\b", raw, re.I) and re.search(
-                            r"(?<![A-Za-z0-9])" + re.escape(target) + r"(?![A-Za-z0-9])", raw, re.I
-                        ):
-                            edge["evidence"] = _citation(contract_id, line_number, raw.strip(), source)
-                            break
+                        if re.search(r"(?<![A-Za-z0-9])" + re.escape(target) + r"(?![A-Za-z0-9])", raw, re.I):
+                            target_line = (line_number, raw.strip())
+                            if re.search(r"\b(amendment|addendum|amends|amended|supplements?)\b", raw, re.I):
+                                break
+                    if target_line:
+                        edge["evidence"] = _citation(contract_id, target_line[0], target_line[1], source)
                     lineage_edges.append(edge)
             else:
                 missing_documents.append({
