@@ -4,6 +4,7 @@ from backend.services.llm_runtime import (
     cached_response,
     ensure_token_budget,
     llm_run_context,
+    reserve_provider_call,
     store_response,
     usage_snapshot,
 )
@@ -36,6 +37,22 @@ class LLMRuntimeTests(unittest.TestCase):
         with llm_run_context(100) as state:
             self.assertIsNone(cached_response("system", "prompt", 20, "model"))
             self.assertEqual(usage_snapshot(state)["cache_hits"], 0)
+
+    def test_provider_call_budget_blocks_before_network_attempt(self):
+        with llm_run_context(100, max_calls=1) as state:
+            reserve_provider_call()
+            with self.assertRaisesRegex(RuntimeError, "provider-call budget exhausted"):
+                reserve_provider_call()
+            usage = usage_snapshot(state)
+            self.assertEqual(usage["provider_calls_attempted"], 1)
+            self.assertEqual(usage["budget_blocked"], 1)
+
+    def test_provider_call_attempt_is_visible_even_if_request_fails(self):
+        with llm_run_context(100, max_calls=2) as state:
+            reserve_provider_call()
+            usage = usage_snapshot(state)
+            self.assertEqual(usage["provider_calls_attempted"], 1)
+            self.assertEqual(usage["provider_calls"], 0)
 
 
 if __name__ == "__main__":
