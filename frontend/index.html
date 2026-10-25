@@ -447,6 +447,52 @@ header #health{justify-self:end}
   #customPortfolioInput .controls{align-items:stretch}
 }
 
+
+/* Keep contract source-term evidence readable while the parent card is focused/open. */
+.contract-explorer-card details[open] .evidence,
+.contract-explorer-card details[open] .evidence blockquote,
+.contract-explorer-card details[open] .evidence .meta,
+.contract-explorer-card details[open] .evidence p,
+.contract-explorer-card details[open] .evidence b{
+  color:#252a22!important;
+}
+.contract-explorer-card details[open] .evidence{
+  background:linear-gradient(145deg,#fbfcf8,#f0f3eb)!important;
+  border:1px solid #dce2d5!important;
+  border-radius:14px;
+  padding:16px;
+  margin:12px 0;
+  box-shadow:0 4px 14px rgba(30,36,25,.045);
+}
+.contract-explorer-card details[open] .evidence blockquote{
+  margin:10px 0;
+  padding:10px 12px;
+  background:#fff;
+  border-left:3px solid #8a9a78;
+  border-radius:0 8px 8px 0;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+.contract-explorer-card details[open] .evidence:hover{
+  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%)!important;
+  border-color:#6d7770!important;
+}
+.contract-explorer-card details[open] .evidence:hover,
+.contract-explorer-card details[open] .evidence:hover *{
+  color:#fff!important;
+}
+.contract-explorer-card details[open] summary{
+  color:#657653!important;
+  padding:10px 12px;
+  background:#f4f6ef;
+  border:1px solid #e0e5d8;
+  border-radius:10px;
+  line-height:1.5;
+}
+.contract-explorer-card details[open] summary:hover{
+  background:#eaf0e2;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
