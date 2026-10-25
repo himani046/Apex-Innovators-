@@ -115,7 +115,18 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     verification_records = []
     alerts = []
     events = events or []
-    visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
+    def event_is_visible(event: dict[str, Any]) -> bool:
+        timestamp = str(event.get("timestamp", event.get("date", ""))).strip()
+        if not timestamp:
+            return True
+        try:
+            return date.fromisoformat(timestamp[:10]) <= clock
+        except ValueError:
+            # Keep malformed timestamps visible to the ingestion validator so they
+            # are reported as rejected instead of disappearing silently.
+            return True
+
+    visible_events = [event for event in events if isinstance(event, dict) and event_is_visible(event)]
     for cid, source in contracts.items():
         extraction = extractions[cid]
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
