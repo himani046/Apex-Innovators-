@@ -55,17 +55,32 @@ class SharedAgentState:
 
     def message(self, sender: str, recipient: str, message_type: str,
                 status: str, **payload: Any) -> None:
+        """Append a versioned handoff while preserving legacy top-level fields."""
+        required = {
+            "from": str(sender or "").strip(),
+            "to": str(recipient or "").strip(),
+            "type": str(message_type or "").strip(),
+            "status": str(status or "").strip(),
+        }
+        if any(not value for value in required.values()):
+            raise ValueError("Agent messages require non-empty from, to, type, and status fields")
+        safe_payload = deepcopy(payload)
         self.data["agent_messages"].append({
-            "from": sender, "to": recipient, "type": message_type,
-            "status": status, **deepcopy(payload),
+            "schema_version": "1.1",
+            **required,
+            "payload": safe_payload,
+            **safe_payload,
         })
 
     def record_agent(self, agent: str, status: str, iteration: int = 0,
                      consumes: list[str] | None = None,
                      produces: list[str] | None = None) -> None:
-        self.data["agent_status"][agent] = {
-            "status": status, "iteration": iteration,
-            "consumes": consumes or [], "produces": produces or [],
+        agent_name, agent_status = str(agent or "").strip(), str(status or "").strip()
+        if not agent_name or not agent_status:
+            raise ValueError("Agent status records require agent and status")
+        self.data["agent_status"][agent_name] = {
+            "status": agent_status, "iteration": max(0, int(iteration)),
+            "consumes": list(consumes or []), "produces": list(produces or []),
         }
 
     def snapshot(self) -> dict[str, Any]:
