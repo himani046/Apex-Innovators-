@@ -84,6 +84,10 @@ def _likelihood_assessment(category, quote, confidence, verified):
 def review_contract_candidates(contract_id, source, extraction):
     """Source-grounded adversarial triage with clause evidence, attack path, scoring and Thor requests."""
     rules = [
+        ("ambiguity", r"\b(sole discretion|as determined by|reasonable efforts|commercially reasonable|promptly|material adverse|from time to time|including but not limited to|as applicable)\b", "medium"),
+        ("unilateral_discretion", r"\b(at its sole discretion|without cause|without notice|may unilaterally|sole and absolute discretion)\b", "high"),
+        ("one_sided_remedy", r"\b(exclusive remedy|sole remedy|without limitation|regardless of fault|waives? any and all claims)\b", "high"),
+        ("broad_indemnity", r"\b(indemnif\\w*|defend and hold harmless|any and all claims|third[- ]party claims)\\b", "high"),
         ("renewal", r"\b(auto(?:matic)?[- ]renew|renewal|renew|non[- ]renewal)\b", "medium"),
         ("termination", r"\b(termination|terminate|cure period|default)\b", "medium"),
         ("penalty_or_interest", r"\b(penalty|liquidated damages|interest rate|late fee)\b", "high"),
