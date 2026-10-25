@@ -64,7 +64,7 @@ def detect_cross_contract_candidates(contracts):
                     # Compatibility aliases used by graph, queue, and synthesis consumers.
                     "evidence": [
                         {"document_id": a[0], "clause_reference": f"line {a[1]}", "line_number": a[1], "quote": a[2], "verified": a[2] in contracts[a[0]]},
-                        {"document_id": b[0], "clause_reference": f"line {b[1]}", "line_number": b[1], "quote": b[2], "verified": b[2] in contracts[b[1]] if b[1] in contracts else b[2] in contracts[b[0]]},
+                        {"document_id": b[0], "clause_reference": f"line {b[1]}", "line_number": b[1], "quote": b[2], "verified": b[2] in contracts[b[0]]},
                     ],
                     "explanation": f"Potentially inconsistent {topic.replace('_', ' ')} language appears across two contracts; review scope and precedence before drawing a conclusion.",
                     "unresolved_questions": ["Confirm parties, scope, effective versions, amendments, exceptions, incorporated terms and precedence clauses."],
