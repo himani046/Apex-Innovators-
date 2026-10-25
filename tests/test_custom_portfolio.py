@@ -77,6 +77,19 @@ class CustomPortfolioTests(unittest.TestCase):
                             for node in result["contract_graph"]["nodes"]))
         self.assertTrue(result["company_risk_report"]["cross_contract_candidates"])
         self.assertFalse(candidate["legal_conflict_determined"])
+        self.assertIn("agent_review", candidate)
+        self.assertEqual(candidate["agent_review"]["loki_challenge"]["agent"], "Loki")
+        self.assertEqual(candidate["agent_review"]["heimdall_verification"]["agent"], "Heimdall")
+        self.assertEqual(candidate["agent_review"]["tyr_ruling"]["agent"], "Tyr")
+        self.assertTrue(candidate["agent_review"]["tyr_ruling"]["human_approval_required"])
+        self.assertIn("cross_contract_review", result)
+        self.assertEqual(result["cross_contract_review"]["status"], "complete_with_review_items")
+        self.assertTrue(any(message.get("type") == "cross_contract_review_ruling"
+                            for message in result["agent_debate"]["messages"]))
+        self.assertLessEqual(
+            result["agent_workflow"]["agent_calls_used"],
+            result["agent_workflow"]["agent_call_budget"],
+        )
 
     def test_alerts_are_triage_not_breach_conclusions(self):
         result = analyze_custom_portfolio(
