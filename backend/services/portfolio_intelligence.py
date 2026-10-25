@@ -324,6 +324,21 @@ def reconcile_payment_events(
             unlinked.append(item)
     groups = []
     for (cid, invoice_id), rows in sorted(grouped.items()):
+        source = contracts.get(cid, "")
+        payment_trigger_candidates = []
+        penalty_trigger_candidates = []
+        for line_number, line in enumerate(source.splitlines(), start=1):
+            quote = line.strip()
+            if not quote:
+                continue
+            evidence = {
+                "document_id": cid, "clause_reference": f"line {line_number}",
+                "line_number": line_number, "quote": quote, "verified": quote in source,
+            }
+            if re.search(r"\b(invoice|billing|payment|payable|pay within|net\s+\d+|due within|monthly fee|installment|milestone payment|upon acceptance|following acceptance)\b", quote, re.I):
+                payment_trigger_candidates.append(evidence)
+            if re.search(r"\b(late fee|late charge|interest|penalty|service credit|credit cap|liquidated damages|chargeback)\b", quote, re.I):
+                penalty_trigger_candidates.append(evidence)
         kinds = {str(row.get("event_kind", "")).casefold() for row in rows}
         amounts = {row.get("amount_candidate") for row in rows if row.get("amount_candidate") is not None}
         currencies = {row.get("currency_candidate") for row in rows if row.get("currency_candidate")}
@@ -341,7 +356,15 @@ def reconcile_payment_events(
                 else "unmatched_invoice_payment_candidate"
             ),
             "verified_financial_exposure": None,
-            "reason": "A structural match is not proof of authenticity, contractual trigger, payment settlement, or outstanding liability.",
+            "contractual_payment_trigger_candidates": payment_trigger_candidates[:20],
+            "penalty_or_credit_trigger_candidates": penalty_trigger_candidates[:20],
+            "trigger_evidence_status": {
+                "payment_trigger_candidate_found": bool(payment_trigger_candidates),
+                "penalty_or_credit_trigger_candidate_found": bool(penalty_trigger_candidates),
+                "trigger_occurrence_verified": False,
+                "applicability_verified": False,
+            },
+            "reason": "Source lines are candidate contractual triggers only. Invoice linkage, trigger occurrence, applicability, settlement, credits, period, and penalty calculation remain unverified.",
             "human_review_required": True,
         })
     return {
