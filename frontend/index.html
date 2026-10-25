@@ -1247,7 +1247,7 @@ async function runOdin() {
     $('error').classList.add('hidden');
     renderOdinDashboardFR9(d);
     renderOdinSynthesis(d);
-    $('fr9HeatmapMode')?.addEventListener('change',()=>renderOdinDashboardFR9(d));
+    if($('fr9HeatmapMode'))$('fr9HeatmapMode').onchange=()=>renderOdinDashboardFR9(d);
   } catch (error) {
     $('loading').textContent = 'Run failed safely: ' + error.message;
     $('error').textContent = 'The run could not be completed. Check the backend logs; no action was sent automatically.';
