@@ -1899,7 +1899,48 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   border-color: #d7d9cf !important;
   opacity: 1 !important;
 }
+
+/* Claude-powered contract Q&A drawer */
+#odinChatLauncher{position:fixed;right:26px;bottom:24px;z-index:80;background:#151813;color:#fff;border:1px solid #151813;border-radius:999px;padding:15px 21px;box-shadow:0 12px 35px #1518132b;font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px}
+#odinChatLauncher .chat-spark{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#d9e0ce;color:#151813;font-size:16px}
+#odinChatPanel{position:fixed;right:24px;bottom:88px;z-index:81;width:min(460px,calc(100vw - 28px));height:min(720px,calc(100dvh - 125px));background:#fbfcf8;border:1px solid #d7d9cf;border-radius:24px;box-shadow:0 24px 80px #15181335;display:flex;flex-direction:column;overflow:hidden}
+#odinChatPanel[hidden],#odinChatLauncher[hidden]{display:none!important}
+.odin-chat-head{display:flex;justify-content:space-between;align-items:center;padding:17px 18px;background:#151813;color:#fff;gap:12px}
+.odin-chat-head b{font-size:16px;display:block}.odin-chat-head small{display:block;color:#c5cbbd;font-size:11px;margin-top:3px}
+.odin-chat-head button{background:#30352b;color:#fff;border:1px solid #4d5346;border-radius:50%;width:34px;height:34px;padding:0;font-size:19px}
+.odin-chat-controls{padding:12px 15px;border-bottom:1px solid #e1e4d9;background:#f4f5ef}
+.odin-chat-controls label{font-size:11px;font-weight:800;color:#596052;display:block;margin-bottom:7px}
+.odin-chat-controls input[type=file]{font-size:11px;width:100%;padding:8px;background:#fff;border-radius:10px}
+.odin-chat-controls p{font-size:11px;line-height:1.45;color:#777d6e;margin:7px 0 0}
+#odinChatMessages{padding:16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.odin-chat-welcome{background:#f0f2e9;border:1px solid #e1e4d9;border-radius:16px;padding:14px;font-size:13px;color:#4e5547;line-height:1.6}
+.odin-chat-msg{max-width:94%;border-radius:16px;padding:12px 14px;font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.odin-chat-msg.user{align-self:flex-end;background:#20241c;color:#fff;border-bottom-right-radius:5px}
+.odin-chat-msg.assistant{align-self:flex-start;background:#fff;border:1px solid #e1e4d9;color:#20241c;border-bottom-left-radius:5px}
+.odin-chat-msg.error{background:#fff0ed;border-color:#e9c7bf;color:#923f35}
+.odin-chat-sources{align-self:stretch;display:grid;gap:7px}
+.odin-chat-source{background:#fff;border:1px solid #e1e4d9;border-radius:12px;padding:10px 12px}
+.odin-chat-source b{font-size:11px;color:#596b49}.odin-chat-source p{font-size:11px;line-height:1.5;color:#596052;margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.odin-chat-composer{padding:12px;border-top:1px solid #e1e4d9;background:#fff}
+.odin-chat-composer textarea{width:100%;resize:vertical;min-height:65px;max-height:140px;border:1px solid #d7d9cf;border-radius:13px;padding:12px;font:13px/1.5 system-ui,sans-serif;outline:none}
+.odin-chat-composer textarea:focus{border-color:#81916f;box-shadow:0 0 0 3px #81916f22}
+.odin-chat-composer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.odin-chat-composer-row span{font-size:10px;color:#777d6e}
+#odinChatSend{background:#151813;color:#fff;border:0;border-radius:999px;padding:11px 17px}
+#odinChatSend:disabled{opacity:.5}
+.odin-chat-prompts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.odin-chat-prompts button{font-size:10px;padding:7px 9px;border-radius:999px;background:#fff;border:1px solid #d7d9cf;color:#596052}
+@media(max-width:560px){#odinChatLauncher{right:14px;bottom:14px;padding:12px 16px}#odinChatPanel{right:7px;bottom:72px;width:calc(100vw - 14px);height:calc(100dvh - 90px);border-radius:19px}.odin-chat-head{padding:14px}.odin-chat-controls{padding:10px 12px}}
 </style></head><body class="page-is-overview">
+<button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
+<section id="odinChatPanel" aria-label="Odin AI chat" hidden>
+  <div class="odin-chat-head"><div><b>Ask Odin</b><small>Claude · Contract-aware assistant</small></div><button type="button" id="odinChatClose" aria-label="Close chat">×</button></div>
+  <div class="odin-chat-controls"><label for="odinChatFiles">OPTIONAL · ADD YOUR CONTRACTS (PDF / TXT)</label><input id="odinChatFiles" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple><p id="odinChatCorpusNote">No files selected: questions use the bundled demo contracts. Select files to ask about your own documents. Files are sent to your configured Odin backend for this chat request.</p></div>
+  <div id="odinChatMessages" role="log" aria-live="polite"><div class="odin-chat-welcome"><b>Ask anything.</b><br>Ask about clauses, termination, renewal, penalties, payment terms, conflicting provisions, or general questions. Contract answers include source excerpts when available. Follow-up questions use this chat's recent context.</div>
+    <div class="odin-chat-prompts"><button type="button" data-chat-prompt="Summarize the key obligations and deadlines.">Key obligations</button><button type="button" data-chat-prompt="What are the termination and renewal terms?">Termination & renewal</button><button type="button" data-chat-prompt="Identify ambiguous clauses and explain why they need review.">Ambiguities</button></div>
+  </div>
+  <form id="odinChatForm" class="odin-chat-composer"><textarea id="odinChatQuestion" maxlength="4000" placeholder="Ask a question about the contracts or anything else…" required></textarea><div class="odin-chat-composer-row"><span>Enter to send · Shift+Enter for a new line</span><button id="odinChatSend" type="submit">Send ↗</button></div></form>
+</section>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
   <div class="hero-globe-stage" aria-hidden="true">
@@ -2875,6 +2916,56 @@ async function initOdinApp(){
 
 if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}
 setupOdinPages();initFR9TimeSlider();initOdinApp();$('customAnalyzeButton')?.addEventListener('click',runCustomPortfolio);$('customIngestEvents')?.addEventListener('click',ingestCustomEvents);$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
+
+/* Odin contract chat UI — uses the existing API token field and keeps chat history in memory only. */
+(function initOdinContractChat(){
+ const launcher=document.getElementById('odinChatLauncher'),panel=document.getElementById('odinChatPanel');
+ const close=document.getElementById('odinChatClose'),form=document.getElementById('odinChatForm');
+ const input=document.getElementById('odinChatQuestion'),messages=document.getElementById('odinChatMessages');
+ const files=document.getElementById('odinChatFiles'),send=document.getElementById('odinChatSend'),note=document.getElementById('odinChatCorpusNote');
+ if(!launcher||!panel||!form)return;
+ let history=[];
+ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const openChat=()=>{panel.hidden=false;launcher.hidden=true;launcher.setAttribute('aria-expanded','true');input.focus();};
+ const closeChat=()=>{panel.hidden=true;launcher.hidden=false;launcher.setAttribute('aria-expanded','false');launcher.focus();};
+ launcher.addEventListener('click',openChat);close.addEventListener('click',closeChat);
+ files.addEventListener('change',()=>{const selected=[...files.files];note.textContent=selected.length?selected.length+' file(s) selected: '+selected.map(f=>f.name).join(', ')+'. These files will be used for each question until you remove them.':'No files selected: questions use the bundled demo contracts.';});
+ document.querySelectorAll('[data-chat-prompt]').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.chatPrompt||'';input.focus();}));
+ function appendMessage(role,text,kind=''){
+   const el=document.createElement('div');el.className='odin-chat-msg '+role+(kind?' '+kind:'');el.textContent=text;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;return el;
+ }
+ function appendSources(sources){
+   if(!Array.isArray(sources)||!sources.length)return;
+   const wrap=document.createElement('div');wrap.className='odin-chat-sources';
+   const title=document.createElement('div');title.className='meta';title.textContent='SOURCE EXCERPTS · verify wording in the original contract';wrap.appendChild(title);
+   sources.forEach(src=>{const card=document.createElement('article');card.className='odin-chat-source';
+     const head=document.createElement('b');head.textContent='['+(src.source_id||'?')+'] '+(src.document_id||'Contract')+' · excerpt '+(src.excerpt_number||'');card.appendChild(head);
+     const quote=document.createElement('p');quote.textContent=src.quote||'';card.appendChild(quote);wrap.appendChild(card);
+   });
+   messages.appendChild(wrap);messages.scrollTop=messages.scrollHeight;
+ }
+ form.addEventListener('submit',async event=>{
+   event.preventDefault();const question=input.value.trim();if(!question||send.disabled)return;
+   const prior=history.slice(-10);appendMessage('user',question);input.value='';send.disabled=true;send.textContent='Thinking…';
+   const pending=appendMessage('assistant','Searching contract excerpts and asking Claude…');
+   try{
+     const body=new FormData();body.append('question',question);body.append('history',JSON.stringify(prior));
+     [...files.files].forEach(file=>body.append('files',file,file.name));
+     const token=document.getElementById('apiToken')?.value?.trim();
+     const response=await fetch('/api/chat',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body});
+     const data=await response.json();if(!response.ok)throw new Error(data.detail||('Request failed ('+response.status+')'));
+     pending.remove();appendMessage('assistant',data.answer||'Claude returned an empty answer.');
+     appendSources(data.sources);
+     history.push({role:'user',content:question},{role:'assistant',content:String(data.answer||'')});
+     history=history.slice(-12);
+     if(data.corpus?.source==='demo_pack')note.textContent='Using bundled demo contracts ('+(data.corpus.contract_count||0)+' documents). Select PDF/TXT files above to switch to your own corpus.';
+     else if(data.corpus?.uploaded?.length)note.textContent='Using '+data.corpus.uploaded.length+' uploaded contract(s): '+data.corpus.uploaded.map(x=>x.filename).join(', ')+'.';
+   }catch(error){pending.remove();appendMessage('assistant',error.message||'Chat request failed. Check the backend and API token.','error');}
+   finally{send.disabled=false;send.textContent='Send ↗';input.focus();}
+ });
+ input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();form.requestSubmit();}});
+})();
+
 </script>
 
 </body></html>
