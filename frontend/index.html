@@ -1161,6 +1161,56 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   transform: none !important;
 }
 
+
+/* Contracts intake form: keep the dark theme stable on hover/focus. */
+#customPortfolioInput,
+#customPortfolioInput:hover,
+#customPortfolioInput:focus-within {
+  color: #f3efff !important;
+  background: linear-gradient(145deg,rgba(24,23,39,.97),rgba(13,13,23,.97)) !important;
+  border-color: rgba(190,165,255,.16) !important;
+  box-shadow: 0 8px 26px rgba(0,0,0,.18) !important;
+  transform: none !important;
+  filter: none !important;
+}
+#customPortfolioInput .fr9-title h1,
+#customPortfolioInput .fr9-title h2,
+#customPortfolioInput .fr9-title h3,
+#customPortfolioInput .fr9-title p,
+#customPortfolioInput > .form-grid > label,
+#customPortfolioInput > .controls > label,
+#customPortfolioInput > .small {
+  color: #f3efff !important;
+}
+#customPortfolioInput textarea,
+#customPortfolioInput textarea:hover,
+#customPortfolioInput textarea:focus,
+#customPortfolioInput input:not([type="checkbox"]):not([type="file"]),
+#customPortfolioInput input:not([type="checkbox"]):not([type="file"]):hover,
+#customPortfolioInput input:not([type="checkbox"]):not([type="file"]):focus {
+  color: #f3efff !important;
+  -webkit-text-fill-color: #f3efff !important;
+  background: rgba(7,7,14,.88) !important;
+  border-color: rgba(194,177,255,.28) !important;
+}
+#customPortfolioInput textarea::placeholder {
+  color: #858099 !important;
+  -webkit-text-fill-color: #858099 !important;
+}
+#customPortfolioInput input[type="file"],
+#customPortfolioInput input[type="file"]:hover,
+#customPortfolioInput input[type="file"]:focus {
+  color: #d5cfea !important;
+  background: rgba(8,8,15,.72) !important;
+  border-color: rgba(194,177,255,.35) !important;
+}
+#customPortfolioInput .controls,
+#customPortfolioInput #customPortfolioStatus {
+  color: #f3efff !important;
+  background: rgba(8,8,15,.72) !important;
+  border-color: rgba(194,177,255,.2) !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
