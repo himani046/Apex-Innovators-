@@ -198,9 +198,10 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     contract_reports.sort(key=lambda item: item["contract_id"])
     exposure = {"status": "not_calculated", "value": None,
                 "reason": "Custom portfolio intake does not infer exposure from contractual rates or unlinked event amounts."}
+    cross_contract_edges = [edge for edge in graph.get("edges", []) if str(edge.get("source", "")) in contracts and str(edge.get("target", "")) in contracts]
     company_report = {"title": "Company Risk Report", "company_context": company_context, "as_of_date": as_of,
                       "status": "complete_with_limitations", "contract_count": len(contracts),
-                      "contract_reports": len(contract_reports), "cross_contract_relationships": graph.get("edges", []),
+                      "contract_reports": len(contract_reports), "cross_contract_relationships": cross_contract_edges,
                       "total_financial_exposure": None, "financial_exposure_status": exposure["status"],
                       "prioritized_action_list": alerts, "worst_case_projection": {
                           "timeline": timeline, "note": "A defensible worst-case financial projection requires verified triggers, amounts, and periods."},
