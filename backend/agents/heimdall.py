@@ -10,8 +10,20 @@ def verify_contract_review(contract_id, source, findings, events):
     for event in events:
         body = str(event.get("body", event.get("text", "")))
         if re.search(r"(?<![A-Za-z0-9])" + re.escape(contract_id) + r"(?![A-Za-z0-9])", body, re.I):
+            body_terms = set(re.findall(r"[a-z]{4,}", body.casefold()))
+            matched_findings = []
+            for finding in findings:
+                category_terms = set(re.findall(r"[a-z]{4,}", str(finding.get("category", "")).replace("_", " ").casefold()))
+                quote_terms = set(re.findall(r"[a-z]{5,}", str((finding.get("evidence") or {}).get("quote", "")).casefold()))
+                overlap = sorted(body_terms.intersection(category_terms | quote_terms))
+                if overlap:
+                    matched_findings.append({"finding_id": finding.get("id"), "category": finding.get("category"),
+                                             "matched_terms": overlap, "clause_reference": (finding.get("evidence") or {}).get("clause_reference")})
             mapped.append({"event_id": event.get("event_id"), "timestamp": event.get("timestamp"),
-                           "body": body, "contract_id": contract_id, "status": "mapped_by_explicit_id"})
+                           "body": body, "contract_id": contract_id,
+                           "matched_clauses": matched_findings,
+                           "status": "mapped_to_contract_and_candidate_clauses" if matched_findings else "mapped_to_contract_only",
+                           "note": "Contract mapping requires an explicit ID; clause matches are lexical candidates, not proof of causation."})
     results = []
     for finding in findings:
         checks = []
