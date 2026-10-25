@@ -125,20 +125,26 @@ def build_contract_graph(contracts: dict[str, str]) -> dict[str, Any]:
                 "status": "evidence_linked" if evidence.get("verified") else "requires_review",
                 "evidence": evidence,
             })
-    # Explicitly capture precedence clauses even where the target identifier is separated by a line break.
+    # Explicitly capture precedence clauses whose "conflict" and "controls" words
+    # span adjacent lines (common in wrapped contract text).
     for key, source in contracts.items():
-        for number, raw in enumerate(_lines(source), start=1):
-            if re.search(r"\b(conflict\b.*\bcontrols|controls\b.*\bconflict)", raw, re.I):
-                lower_window = "\n".join(_lines(source)[max(0, number - 2):min(len(_lines(source)), number + 2)]).casefold()
-                targets = _referenced_targets(lower_window, identifiers, key)
-                for target in targets:
-                    edge = {
-                        "source": key, "target": target, "relation": "precedence_rule",
-                        "status": "evidence_linked",
-                        "evidence": {"document_id": key, "quote": raw, "line_number": number, "verified": raw in source},
-                    }
-                    if not any(e["source"] == key and e["target"] == target and e["relation"] == edge["relation"] and e["evidence"]["quote"] == raw for e in edges):
-                        edges.append(edge)
+        source_lines = _lines(source)
+        for number, raw in enumerate(source_lines, start=1):
+            if not re.search(r"\b(conflict|controls)\b", raw, re.I):
+                continue
+            window_lines = source_lines[max(0, number - 3):min(len(source_lines), number + 2)]
+            window = "\n".join(window_lines).casefold()
+            if not (re.search(r"\bconflict\b", window) and re.search(r"\bcontrols\b", window)):
+                continue
+            targets = _referenced_targets(window, identifiers, key)
+            for target in targets:
+                edge = {
+                    "source": key, "target": target, "relation": "precedence_rule",
+                    "status": "evidence_linked",
+                    "evidence": {"document_id": key, "quote": raw, "line_number": number, "verified": raw in source},
+                }
+                if not any(e["source"] == key and e["target"] == target and e["relation"] == edge["relation"] and e["evidence"]["quote"] == raw for e in edges):
+                    edges.append(edge)
     # Stable ordering makes test output and API payloads deterministic.
     edges.sort(key=lambda e: (e["source"], e["target"], e["relation"], e["evidence"].get("line_number") or 0))
     return {
