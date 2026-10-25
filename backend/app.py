@@ -166,13 +166,56 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
         saved_run = audit_store.get_run(body.run_id)
         if saved_run is None:
             raise HTTPException(status_code=404, detail="Audit run not found")
-        if not initial_state:
-            initial_state = (saved_run.get("payload") or {}).get("shared_state") or {}
+        saved_state = (saved_run.get("payload") or {}).get("shared_state") or {}
+        # Merge partial client state into the durable snapshot instead of replacing
+        # it. List sections are append-only/deduplicated to preserve earlier evidence.
+        initial_state = dict(saved_state)
+        list_sections = {
+            "extracted_clauses", "timeline_events", "financial_calculations", "risk_claims",
+            "evidence_references", "verification_outcomes", "unresolved_questions",
+            "recommended_actions", "agent_messages",
+        }
+        for key, value in (body.shared_state or {}).items():
+            existing = initial_state.get(key)
+            if key in list_sections and isinstance(value, list):
+                merged = list(existing or []) if isinstance(existing, list) else []
+                for item in value:
+                    if item not in merged:
+                        merged.append(item)
+                initial_state[key] = merged
+            elif isinstance(existing, dict) and isinstance(value, dict):
+                initial_state[key] = {**existing, **value}
+            else:
+                initial_state[key] = value
     shared = SharedAgentState(initial_state)
-    existing_terms = shared.data.get("extracted_clauses", []) or []
-    existing_refs = shared.data.get("evidence_references", []) or []
-    shared.update("extracted_clauses", existing_terms + terms)
-    shared.update("evidence_references", existing_refs + [term.get("citation") for term in terms if term.get("citation")])
+    existing_terms = list(shared.data.get("extracted_clauses", []) or [])
+    existing_refs = list(shared.data.get("evidence_references", []) or [])
+    def _term_key(term):
+        citation = term.get("citation") or {}
+        return (str(term.get("category", "")), str(citation.get("document_id", "")),
+                str(citation.get("clause_reference", "")), str(citation.get("quote", "")))
+    known_term_keys = {_term_key(term) for term in existing_terms if isinstance(term, dict)}
+    terms_added = []
+    for term in terms:
+        key = _term_key(term)
+        if key not in known_term_keys:
+            terms_added.append(term)
+            known_term_keys.add(key)
+    known_reference_keys = {
+        (str(ref.get("document_id", "")), str(ref.get("clause_reference", "")), str(ref.get("quote", "")))
+        for ref in existing_refs if isinstance(ref, dict)
+    }
+    references_added = []
+    for term in terms_added:
+        citation = term.get("citation")
+        if not citation:
+            continue
+        key = (str(citation.get("document_id", "")), str(citation.get("clause_reference", "")), str(citation.get("quote", "")))
+        if key not in known_reference_keys:
+            references_added.append(citation)
+            known_reference_keys.add(key)
+    shared.update("extracted_clauses", existing_terms + terms_added)
+    shared.update("evidence_references", existing_refs + references_added)
     shared.message("Odin", "Thor", "targeted_reextraction_request", "complete",
                    contract_id=body.contract_id, clause_reference=body.clause_reference)
     shared.message("Thor", "Odin", "targeted_reextraction_result", "complete" if terms else "no_matching_terms",
@@ -184,12 +227,12 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
         saved_payload["shared_state"] = snapshot
         history = list(saved_payload.get("reextraction_history") or [])
         history.append({"contract_id": body.contract_id, "clause_reference": body.clause_reference,
-                        "terms_returned": len(terms), "status": "complete" if terms else "no_matching_terms"})
+                        "terms_returned": len(terms), "terms_added": len(terms_added), "status": "complete" if terms else "no_matching_terms"})
         saved_payload["reextraction_history"] = history
         updated = audit_store.update_run_payload(
             body.run_id, saved_payload, actor="Thor", event_type="targeted_reextraction",
             details={"contract_id": body.contract_id, "clause_reference": body.clause_reference,
-                     "terms_returned": len(terms), "status": "complete" if terms else "no_matching_terms"},
+                     "terms_returned": len(terms), "terms_added": len(terms_added), "status": "complete" if terms else "no_matching_terms"},
         )
         persistence = {"persisted": True, "run_id": updated["run_id"], "updated_at": updated["updated_at"]}
     return {"status": "complete" if terms else "no_matching_terms", "contract_id": body.contract_id,
