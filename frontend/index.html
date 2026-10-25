@@ -837,9 +837,69 @@ input[type=file]::file-selector-button:hover{
 #customPortfolioInput input[type=file]::file-selector-button{background:#252137!important;color:#f6f2ff!important;border-color:rgba(194,177,255,.32)!important}
 #customPortfolioInput textarea:focus,#customPortfolioInput input:focus{outline:2px solid #c3a8ff!important;border-color:#bca1ff!important}
 
+
+/* Odin hero section — inspired by the supplied Vaultra reference, adapted for contract intelligence */
+.odin-hero{
+  position:relative;isolation:isolate;overflow:hidden;display:grid!important;
+  grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);align-items:center;
+  gap:clamp(28px,5vw,80px);min-height:470px;margin:0 0 34px!important;
+  padding:clamp(34px,5.5vw,76px)!important;border:1px solid rgba(190,165,255,.13);
+  border-radius:30px;background:
+    radial-gradient(ellipse at 72% 52%,rgba(113,64,177,.25),transparent 42%),
+    radial-gradient(ellipse at 24% 100%,rgba(68,47,132,.2),transparent 44%),
+    linear-gradient(125deg,#0a0912 0%,#100d1d 55%,#090911 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 26px 80px rgba(0,0,0,.22);
+}
+.odin-hero:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.25;pointer-events:none;background-image:linear-gradient(rgba(195,173,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(195,173,255,.08) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(90deg,transparent,black 45%,black 90%,transparent)}
+.hero-copy,.hero-side{position:relative;z-index:1;min-width:0}
+.hero-kicker{display:inline-flex;align-items:center;gap:10px;padding:9px 15px;border:1px solid rgba(202,184,255,.2);border-radius:999px;background:rgba(255,255,255,.035);color:#c8b8f5;text-transform:uppercase;letter-spacing:.16em;font-size:10px;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.16)}
+.hero-kicker-icon{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(180,146,255,.16);color:#d8c8ff;font-size:14px}
+.odin-hero h2{font-size:clamp(42px,5.2vw,76px)!important;line-height:.99!important;letter-spacing:-.065em!important;margin:25px 0 20px!important;font-weight:780}
+.odin-hero h2 span{display:inline-block;color:#b9a0ff;background:linear-gradient(100deg,#e0c8ff 0%,#b49aff 48%,#8f7df3 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.odin-hero .hero-copy>p{max-width:660px;color:#b8b1cb!important;font-size:clamp(14px,1.2vw,17px);line-height:1.8;margin:0}
+.hero-proof-points{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:28px}
+.hero-proof-points span{display:flex;align-items:center;gap:7px;color:#d2cce2;font-size:11px}
+.hero-proof-points i{font-style:normal;color:#a994ee;font-size:9px;font-weight:800;letter-spacing:.04em}
+.hero-side{display:flex;flex-direction:column;align-items:stretch;gap:16px;max-width:410px;width:100%;justify-self:end}
+.hero-floating-chip{display:flex;align-items:center;gap:12px;align-self:flex-start;padding:12px 16px;border:1px solid rgba(196,174,255,.22);border-radius:15px;background:rgba(15,13,27,.76);backdrop-filter:blur(14px);box-shadow:0 14px 38px rgba(0,0,0,.24)}
+.hero-floating-chip.chip-agents{align-self:flex-end}
+.chip-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,rgba(179,149,255,.28),rgba(108,82,174,.12));border:1px solid rgba(190,166,255,.22);color:#d4c3ff;font-size:20px}
+.hero-floating-chip b,.hero-floating-chip small{display:block}
+.hero-floating-chip b{font-size:12px;color:#f7f4ff}
+.hero-floating-chip small{font-size:10px;color:#a9a1be;margin-top:3px}
+.hero-control-card{margin-top:5px;padding:22px;border:1px solid rgba(193,169,255,.24);border-radius:20px;background:linear-gradient(145deg,rgba(30,25,48,.95),rgba(13,12,23,.97));box-shadow:0 20px 55px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.045)}
+.hero-control-heading{display:flex;align-items:center;gap:9px;color:#f8f5ff;font-size:13px;font-weight:750;margin-bottom:18px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#86e3b2;box-shadow:0 0 0 4px rgba(134,227,178,.1),0 0 16px rgba(134,227,178,.5)}
+.hero-control-card label{display:block;color:#aaa1c1;font-size:11px;margin-bottom:7px}
+.hero-control-card select{width:100%;margin-bottom:10px;background:#0b0a14!important;border-color:rgba(194,177,255,.24)!important}
+.hero-control-card #run{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 18px!important;border-radius:12px!important;color:#130f20!important;background:linear-gradient(110deg,#e1c9ff,#b5a0ff 65%,#9b8af5)!important;box-shadow:0 8px 28px rgba(145,112,235,.2)}
+.hero-control-card #run:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(145,112,235,.34)}
+.hero-control-card>small{display:block;color:#9189a7;font-size:10px;line-height:1.6;margin-top:12px}
+.hero-orbit{position:absolute;z-index:0;pointer-events:none;border:1px solid rgba(160,128,236,.15);border-radius:50%;width:560px;height:560px;right:-115px;top:50%;transform:translateY(-50%) rotate(-25deg)}
+.hero-orbit:before,.hero-orbit:after{content:"";position:absolute;inset:35px;border:1px dashed rgba(181,152,255,.15);border-radius:50%}
+.hero-orbit:after{inset:85px;border-style:solid;border-color:rgba(151,118,232,.13)}
+.hero-orbit-two{width:430px;height:430px;right:-48px;transform:translateY(-50%) rotate(35deg);border-color:rgba(109,91,224,.17)}
+.hero-glow{position:absolute;z-index:0;right:5%;top:15%;width:300px;height:300px;border-radius:50%;background:rgba(106,73,177,.13);filter:blur(65px);pointer-events:none}
+@media(max-width:900px){.odin-hero{grid-template-columns:1fr;gap:30px;min-height:0}.hero-side{max-width:100%;display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.hero-control-card{grid-column:1/-1}.hero-floating-chip,.hero-floating-chip.chip-agents{align-self:center}.hero-orbit{right:-240px}}
+@media(max-width:560px){.odin-hero{padding:28px 22px!important;border-radius:22px}.odin-hero h2{font-size:clamp(39px,12vw,56px)!important}.hero-side{display:flex}.hero-floating-chip.chip-agents{align-self:flex-end}.hero-proof-points{display:grid;gap:9px}.hero-orbit{right:-330px;opacity:.7}}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
-<main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
+<main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
+  <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div><div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <div class="hero-kicker"><span class="hero-kicker-icon">✦</span> Evidence before conclusions</div>
+    <h2 id="odin-hero-title">See the risk.<br><span>Prove the evidence.</span></h2>
+    <p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p>
+    <div class="hero-proof-points"><span><i>01</i> Source-grounded evidence</span><span><i>02</i> Multi-agent analysis</span><span><i>03</i> Human-approved actions</span></div>
+  </div>
+  <div class="hero-side">
+    <div class="hero-floating-chip chip-evidence"><span class="chip-icon">⌁</span><span><b>Evidence graph</b><small>Trace every connection</small></span></div>
+    <div class="hero-floating-chip chip-agents"><span class="chip-icon">✳</span><span><b>Agent orchestration</b><small>Specialists work together</small></span></div>
+    <div class="hero-control-card"><div class="hero-control-heading"><span class="live-dot"></span> Run a portfolio review</div><label for="date">Simulated analysis date</label><select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select><button id="run" onclick="runOdin()">Run agents <span aria-hidden="true">↗</span></button><small>Findings stay reviewable. No automatic legal conclusions.</small></div>
+  </div>
+</section>
 <div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
 <div id="dash" class="grid hidden">
 <div class="card full" id="customPortfolioInput"><div class="fr9-title"><div><div class="eyebrow">FR1.1 · CONFIGURABLE PORTFOLIO INPUT</div><h3>Analyze your contract set</h3><p class="muted">Provide company context and upload PDF or TXT contracts. Odin keeps source quotes and flags heuristic results for review.</p></div><span class="tag">PDF + TXT · up to 15 MB combined</span></div><div class="form-grid"><label>Company context<textarea id="customCompanyContext" rows="3" placeholder="Company, business context, key counterparties, and what you want monitored…">Quillhub Inc. manages vendor contracts, renewal windows, payments, and service obligations.</textarea></label><label>Contract files (.pdf, .txt)<input id="customContractFiles" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple></label><label>Optional event records (JSON array)<textarea id="customEvents" rows="3" placeholder='[{"event_id":"E-1","timestamp":"2027-03-01","body":"VENDOR_A invoice paid"}]'></textarea></label><label>Optional payment ledger (JSON array)<textarea id="customPaymentLedger" rows="3" placeholder='[{"date":"2027-03-01","contract_id":"VENDOR_A","reference":"Invoice INV-42","amount":"1200.00","currency":"USD","status":"paid"}]'></textarea></label></div><div class="controls"><label for="customAsOf">Analysis date</label><input id="customAsOf" type="date" value="2027-03-15"><label class="small" style="display:flex;align-items:center;gap:8px"><input id="customUseClaude" type="checkbox"> Enable Claude review (requires configured ANTHROPIC_API_KEY; may incur provider costs)</label><button type="button" id="customAnalyzeButton">Analyze portfolio ↗</button><button type="button" id="customIngestEvents">Store event feed</button></div><p class="small">The default workflow is deterministic and bounded. Optional Claude review is used only when enabled and configured; all model-proposed quotations are checked against source text. No unsupported financial exposure is calculated. PDF and TXT supported; scanned PDFs require OCR.</p><div id="customPortfolioStatus" class="small" role="status">Select at least one PDF or TXT contract file to begin.</div><div id="customPortfolioResults"></div></div>
