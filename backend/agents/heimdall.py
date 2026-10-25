@@ -173,7 +173,7 @@ def _trigger_language_candidates(clause_quote: str) -> list[str]:
 def _candidate_deadline(timestamp: Any, clause_quote: str) -> dict[str, Any] | None:
     """Compute only a clearly stated numeric hours/days candidate; never infer business-day rules."""
     period = re.search(
-        r"\b(?:within|no later than|not later than)\s+(?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?P<kind>calendar\s+days?|days?|hours?)\b",
+        r"\b(?:within|no later than|not later than)\s+(?P<count>\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?P<kind>(?:calendar\s+|business\s+)?days?|hours?)\b",
         clause_quote, re.I
     )
     if not period:
