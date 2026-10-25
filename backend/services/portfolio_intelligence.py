@@ -248,6 +248,8 @@ def reconcile_payment_events(
     normalized = normalize_event_records(events, as_of)
     money_re = re.compile(r"\b(?:USD|US\$|\$)\s*([\d,]+(?:\.\d{1,2})?)\b", re.I)
     invoice_re = re.compile(r"\b(?:invoice|inv)\s*(?:id|no\.?|number|#)\s*[:#-]?\s*([A-Z0-9][A-Z0-9-]{1,40})\b", re.I)
+    invoice_phrase_re = re.compile(r"\binvoice\s+(INV[- ][A-Z0-9][A-Z0-9-]{1,40})\b", re.I)
+    standalone_invoice_re = re.compile(r"\b(INV[- ][A-Z0-9][A-Z0-9-]{1,40})\b", re.I)
     candidates: list[dict[str, Any]] = []
     for event in normalized["events"]:
         body = str(event.get("body", ""))
@@ -267,9 +269,9 @@ def reconcile_payment_events(
         )
         invoice_id = str(event.get("invoice_id") or "").strip() or None
         if not invoice_id:
-            match = invoice_re.search(body)
+            match = invoice_re.search(body) or invoice_phrase_re.search(body) or standalone_invoice_re.search(body)
             if match:
-                invoice_id = match.group(1)
+                invoice_id = (match.group(1) if match.lastindex else match.group(0)).upper().replace(" ", "-")
         cid = str(event.get("contract_id") or "").strip()
         if cid not in contracts:
             hits = [known for known in contracts if re.search(r"(?<![A-Za-z0-9])" + re.escape(known) + r"(?![A-Za-z0-9])", body, re.I)]
