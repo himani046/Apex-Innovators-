@@ -14,6 +14,18 @@ NUM = re.compile(r"\b(\d+(?:\.\d+)?)\s*(hours?|days?|months?|years?|%)?\b", re.I
 MOD = re.compile(r"\b(must not|shall not|may not|prohibited|non-exclusive|exclusive|must|shall|required|permitted|allowed)\b", re.I)
 NEG = {"must not", "shall not", "may not", "prohibited"}
 POS = {"must", "shall", "required", "permitted", "allowed"}
+PARTY = re.compile(r"\b(?:between|by and between|party|customer|supplier|vendor|provider|client|licensor|licensee|contractor|subcontractor)\b", re.I)
+SCOPE = re.compile(r"\b(?:only|solely|within|in the state of|in [A-Z][a-z]+|for [A-Z][A-Za-z -]+|enterprise|retail|government|commercial|territory|territories|region|product|service|business unit)\b", re.I)
+PRECEDENCE = re.compile(r"\b(?:amendment|amended|addendum|supersede|supersedes|prevail|prevails|notwithstanding|order of precedence|incorporated by reference|schedule|exhibit)\b", re.I)
+
+
+def _context_signals(line: str) -> dict:
+    """Expose context that a reviewer must compare before deciding whether terms conflict."""
+    return {
+        "party_or_role_terms": list(dict.fromkeys(match.group(0) for match in PARTY.finditer(line))),
+        "scope_terms": list(dict.fromkeys(match.group(0) for match in SCOPE.finditer(line))),
+        "precedence_or_amendment_terms": list(dict.fromkeys(match.group(0) for match in PRECEDENCE.finditer(line))),
+    }
 def detect_cross_contract_candidates(contracts):
     """Flag different numeric/modality terms as candidates, never as legal conclusions."""
     provisions = {}
@@ -49,8 +61,19 @@ def detect_cross_contract_candidates(contracts):
                         {"document_id": a[0], "clause_reference": f"line {a[1]}", "line_number": a[1], "quote": a[2], "verified": a[2] in contracts[a[0]]},
                         {"document_id": b[0], "clause_reference": f"line {b[1]}", "line_number": b[1], "quote": b[2], "verified": b[2] in contracts[b[0]]},
                     ],
-                    "evidence_gaps": ["Confirm parties, scope, effective versions, amendments and precedence clauses."],
+                    "evidence_gaps": ["Confirm parties, scope, effective versions, amendments, exceptions, incorporated terms and precedence clauses."],
+                    "context_review": {
+                        "left": {"contract_id": a[0], "line_number": a[1], **_context_signals(a[2])},
+                        "right": {"contract_id": b[0], "line_number": b[1], **_context_signals(b[2])},
+                        "same_parties_confirmed": False,
+                        "same_scope_confirmed": False,
+                        "effective_versions_reconciled": False,
+                        "precedence_reconciled": False,
+                        "exceptions_reconciled": False,
+                        "incorporated_terms_reconciled": False,
+                    },
+                    "interpretation_status": "human_legal_review_required",
                     "human_review_required": True,
-                    "notice": "Syntactic inconsistency candidate only; not a legal conflict determination."
+                    "notice": "Syntactic inconsistency candidate only; context signals are triage aids, not a legal conflict determination."
                 })
     return found
