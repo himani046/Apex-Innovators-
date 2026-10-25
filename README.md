@@ -122,3 +122,20 @@ Phase 5 adds a normalized `evidence_grounded_finding` to each API run and expose
 The Phase 5 finding is a review artifact, not a legal conclusion. The A1 scenario still supports an unplanned 190-minute outage, but does not establish provider-awareness time or delivery time for the required Operations notice.
 
 Regression tests: `python -m unittest tests.test_evidence_grounding -v` and the full suite with `python -m unittest discover -s tests -v`.
+
+
+## Phase 6 — Executive dashboard and portfolio command center
+
+Phase 6 expands the single-page dashboard into a portfolio-level view using the current `/api/run` response.
+
+- **Portfolio overview:** counts source documents and distinct contracts represented in workstreams, summarizes high-priority triage signals and timeline items, and reports unresolved relationship/reconciliation review items.
+- **Contract explorer:** lists loaded source documents, extracted term counts, verified quote counts, detected relationships, and candidate obligations. Expand a document to inspect available source terms; use the jump control to navigate to the workstream detail.
+- **Portfolio timeline:** continues to show explicit normalized dates and operational milestones, including deadlines, payment candidates, and dates that require classification review.
+- **Risk heatmap:** groups workstream risk signals by contract/workstream and their reported severity/priority, with verification and open-question context.
+- **Agent activity:** retains agent status, messages, handoffs, bounded follow-up, stop reason, and execution-budget information.
+- **Decision/evidence panel:** retains the Phase 5 finding, source quotations, missing evidence, interpretation, and human-approval-only recommended action.
+- **Event/audit timeline:** combines returned portfolio milestones, current-run agent messages, finding status, and follow-up loop outcome.
+
+**Interpretation safeguards:** dashboard counts are triage summaries and may overlap (for example, a risk signal can also appear in the decision queue). Potential exposure is deliberately displayed as not calculated unless the source data and reconciliation logic support a defensible figure. Relationship edges and risk signals are not treated as proven legal conflicts or breaches.
+
+**Scope limitation:** the event/audit timeline is based on the current API run and is not a persistent cross-run audit database. The contract explorer shows available extracted terms and relationships, not a guarantee that every obligation or incorporated document has been identified. Dates and financial items remain subject to the existing source-grounding and human-review safeguards.
