@@ -172,6 +172,38 @@ button,select,input,textarea{font-family:inherit;transition:transform .18s ease,
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
 
 .graph-toolbar>div{flex-wrap:wrap}.graph-toolbar button{min-width:34px;min-height:34px;font-weight:700}.relationship-canvas{touch-action:none;user-select:none}.graph-stage{overflow:hidden}
+
+/* Reference-inspired interactive cards: neutral by default, charcoal mist on hover. */
+.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone{
+  color:#171b15;
+  background:#fff;
+  border:1px solid #e0e3da;
+  transition:background .28s ease,color .22s ease,border-color .22s ease,box-shadow .28s ease,transform .28s cubic-bezier(.2,.75,.25,1);
+}
+.card,.overview-metric{box-shadow:0 4px 18px rgba(30,36,25,.025)}
+.card:hover,.card:focus-within,.overview-metric:hover,.metric:hover,.agent:hover,.evidence:hover,.action:hover,.milestone:hover{
+  color:#fff;
+  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%);
+  border-color:#6d7770;
+  box-shadow:0 20px 42px rgba(35,42,34,.19);
+  transform:translateY(-4px);
+}
+.card:hover h1,.card:hover h2,.card:hover h3,.card:hover h4,.card:hover p,.card:hover li,.card:hover small,.card:hover label,
+.card:hover .value,.card:hover .muted,.card:hover .label,.card:hover .hint,
+.overview-metric:hover h1,.overview-metric:hover h2,.overview-metric:hover h3,.overview-metric:hover p,
+.overview-metric:hover .value,.overview-metric:hover .label,.overview-metric:hover .hint,
+.metric:hover h1,.metric:hover h2,.metric:hover h3,.metric:hover p,.metric:hover small,.metric:hover .value,
+.agent:hover,.evidence:hover,.action:hover,.milestone:hover{color:#fff}
+.card:hover:before{opacity:.75;background:linear-gradient(180deg,#fff,#bfc9bd)}
+.card:hover a,.card:hover button,.overview-metric:hover a{color:inherit}
+.card:hover .tag,.card:hover .badge,.card:hover .pill{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff}
+.card svg,.overview-metric svg{transition:opacity .22s ease,filter .22s ease}
+.card:hover svg,.overview-metric:hover svg{filter:brightness(0) invert(1);opacity:.92}
+.card button:hover,.overview-metric button:hover{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4)}
+.card:focus-within,.overview-metric:focus-within{outline:2px solid #91a182;outline-offset:2px}
+.top-tabs button:hover{background:#dfe2d8;color:#20241d;box-shadow:none}
+.top-tabs button.active:hover{background:#151813;color:#fff}
+@media(prefers-reduced-motion:reduce){.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone{transition:none}}
 </style></head><body>
 <header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
