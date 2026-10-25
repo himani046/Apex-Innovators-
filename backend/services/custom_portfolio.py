@@ -252,12 +252,14 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         if key not in {"traces", "agent_messages", "event_ingestion"}
     }
     if str(cross_contract_review.get("status", "")).startswith("partial_"):
-        agent_workflow["budget_exhausted"] = True
+        agent_workflow["partial_completion"] = True
         agent_workflow["stop_reason"] = (
             "cross_contract_review_budget_exhausted"
             if cross_contract_review.get("status") == "partial_budget_exhausted"
             else "cross_contract_candidate_limit_reached"
         )
+        if cross_contract_review.get("status") == "partial_budget_exhausted":
+            agent_workflow["budget_exhausted"] = True
     for candidate in cross_contract_candidates:
         ids = candidate.get("contract_ids", [])
         if len(ids) != 2:
@@ -416,8 +418,16 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                   "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
     for name, status in shared_state.get("agent_status", {}).items():
         status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
-        status["status"] = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
-    final_status = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
+        status["status"] = (
+            "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
+            else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+            else "complete_with_limitations"
+        )
+    final_status = (
+        "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
+        else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+        else "complete_with_limitations"
+    )
     company_report["status"] = final_status
     return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
