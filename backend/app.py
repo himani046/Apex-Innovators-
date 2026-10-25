@@ -57,6 +57,7 @@ class PortfolioAnalysisRequest(BaseModel):
     contracts: list[ContractTextInput] = Field(min_length=1, max_length=50)
     event_records: list[dict] = Field(default_factory=list, max_length=1000)
     as_of: date = Field(default=date(2027, 3, 15))
+    use_claude: bool = False
 
 class ReExtractionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -165,6 +166,7 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
             contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
             events=body.event_records,
             as_of=body.as_of.isoformat(),
+            use_llm=body.use_claude,
         )
         audit = audit_store.record_run(result)
         result["audit"] = {
