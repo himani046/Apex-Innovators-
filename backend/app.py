@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile, Body
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from backend.config import PACK_DIR,USE_CLAUDE
@@ -20,7 +20,7 @@ def pack_summary():
  p=load_pack(PACK_DIR);return {'company':'Quillhub Inc.','contracts':[{'id':k,'characters':len(v)} for k,v in p['contracts'].items()],'event_counts':{k:len(v) for k,v in p['event_drops'].items()},'parse_errors':p['parse_errors'],'checkpoints':p['clock']['checkpoints']}
 @app.get('/api/run')
 def run(as_of:str=Query(default='2027-03-15'),use_claude:bool=Query(default=True)):
- try:return run_demo(as_of,use_claude)
+ try:\n  result=run_demo(as_of,use_claude)\n  audit=audit_store.record_run(result)\n  result["audit"]={"run_id":audit["run_id"],"created_at":audit["created_at"],"input_fingerprint":audit["input_fingerprint"]}\n  result["run_id"]=audit["run_id"]\n  return result
  except ValueError:raise HTTPException(status_code=400,detail='as_of must be an ISO date, e.g. 2027-03-15')
  except Exception as exc:raise HTTPException(status_code=500,detail='Odin run failed safely: '+str(exc))
 
