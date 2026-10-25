@@ -126,6 +126,16 @@ def list_events(as_of: date | None = Query(default=None), limit: int = Query(def
         raise HTTPException(status_code=400, detail="Invalid event query") from exc
 
 
+@app.get("/api/events/history", dependencies=[Depends(require_api_token)])
+def event_history(
+    source: str = Query(min_length=1, max_length=120),
+    event_id: str = Query(min_length=1, max_length=160),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    """Return retained before/after snapshots for an event that changed at its source."""
+    return event_store.list_revisions(source=source, event_id=event_id, limit=limit)
+
+
 @app.get("/api/run")
 def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query(default=True)):
     try:
