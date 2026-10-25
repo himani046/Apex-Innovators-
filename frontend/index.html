@@ -1837,6 +1837,54 @@ html body #dash #fr9Dashboard .fr9-graph-shell:hover {
   background: #090910 !important;
   color: #f8f6ff !important;
 }
+
+/* Page-specific hero behavior: keep the animated globe behind every page,
+   but show the full hero copy only on Overview. */
+body:not(.page-is-overview) main > .odin-hero {
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  isolation: auto !important;
+  z-index: 0 !important;
+}
+body:not(.page-is-overview) main > .odin-hero > :not(.hero-globe-stage) {
+  display: none !important;
+}
+body:not(.page-is-overview) main > .odin-hero .hero-globe-stage {
+  position: fixed !important;
+  inset: 70px 0 0 !important;
+  height: auto !important;
+  width: 100vw !important;
+  z-index: 0 !important;
+  opacity: .8 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+body:not(.page-is-overview) main > .odin-hero .hero-globe-mask,
+body:not(.page-is-overview) main > .odin-hero .hero-globe-media,
+body:not(.page-is-overview) main > .odin-hero .hero-globe-atmosphere {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+body:not(.page-is-overview) main > .odin-hero .hero-globe-media {
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+body:not(.page-is-overview) main > .odin-hero .hero-globe-atmosphere {
+  background: linear-gradient(180deg,rgba(9,8,17,.25),rgba(9,8,17,.58)) !important;
+}
+body:not(.page-is-overview) main > #dash {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
@@ -1935,7 +1983,7 @@ function setupOdinPages(){
  const orch=document.createElement('div');orch.className='card full orchestrator-panel';orch.id='odinOrchestratorPanel';orch.innerHTML='<div class="orch-head"><div><div class="eyebrow">FR1 · ORCHESTRATION CONTROL TOWER</div><h3>Odin orchestrator <span class="tag" id="orchRunStatus">Awaiting analysis</span></h3><p class="muted">Live view of planning, agent delegation, workstream progress and bounded coordination for the current run.</p></div><div class="orch-last-run" id="orchRunMeta">No run loaded</div></div><div class="orch-pipeline" id="orchPipeline"><div class="orch-step"><span>01</span><b>Intake</b><small>Company + contracts</small></div><i>→</i><div class="orch-step"><span>02</span><b>Plan</b><small>Contract streams + portfolio</small></div><i>→</i><div class="orch-step"><span>03</span><b>Delegate</b><small>Agent tasks + status</small></div><i>→</i><div class="orch-step"><span>04</span><b>Coordinate</b><small>Clarify / verify / follow-up</small></div><i>→</i><div class="orch-step"><span>05</span><b>Synthesis</b><small>Decision-ready output</small></div></div><div class="orch-stats" id="orchStats"><div><span>Workstreams</span><b>—</b></div><div><span>Completed</span><b>—</b></div><div><span>Agents recorded</span><b>—</b></div><div><span>Follow-up iterations</span><b>—</b></div></div><h4>Functional requirement coverage</h4><div class="orch-fr-list" id="orchFRList"><p class="small">Run agents to populate requirement evidence.</p></div><h4>Workstream execution map</h4><div class="orch-workstreams" id="orchWorkstreams"><p class="small">No workstream data yet.</p></div><h4>Coordination trace</h4><div class="orch-trace" id="orchTrace"><p class="small">Agent handoffs and loop outcomes will appear here after a run.</p></div>';
  views.agents.prepend(orch);
  document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
- function showPage(key){document.querySelectorAll('.page-view').forEach(v=>v.classList.toggle('active',v.dataset.view===key));document.querySelectorAll('[data-page]').forEach(b=>{const on=b.dataset.page===key;b.classList.toggle('active',on);b.setAttribute('aria-current',on?'page':'false')});window.scrollTo({top:0,behavior:'smooth'});}
+ function showPage(key){document.body.classList.toggle('page-is-overview',key==='overview');document.querySelectorAll('.page-view').forEach(v=>v.classList.toggle('active',v.dataset.view===key));document.querySelectorAll('[data-page]').forEach(b=>{const on=b.dataset.page===key;b.classList.toggle('active',on);b.setAttribute('aria-current',on?'page':'false')});window.scrollTo({top:0,behavior:'smooth'});}
  window.odinShowPage=showPage;
 }
 
