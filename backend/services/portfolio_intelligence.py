@@ -756,7 +756,7 @@ def run_bounded_review_cycles(
             verified_rows = list(verification.get("findings") or [])
             citation_ratio = (sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)) if verified_rows else 0.0
             if verified_rows and citation_ratio >= CITATION_VERIFICATION_THRESHOLD:
-                trace["stop_reason"] = "evidence_threshold_met_with_open_questions"
+                trace["stop_reason"] = "evidence_threshold_met"
                 trace["threshold"] = CITATION_VERIFICATION_THRESHOLD
                 trace["citation_verification_ratio"] = round(citation_ratio, 3)
                 break
