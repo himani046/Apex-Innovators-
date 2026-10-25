@@ -754,12 +754,15 @@ def run_bounded_review_cycles(
                 break
             # A repeated source read cannot resolve missing external event or trigger facts.
             verified_rows = list(verification.get("findings") or [])
-            citation_ratio = (sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)) if verified_rows else 0.0
-            if verified_rows and citation_ratio >= CITATION_VERIFICATION_THRESHOLD:
-                trace["stop_reason"] = "evidence_threshold_met"
-                trace["threshold"] = CITATION_VERIFICATION_THRESHOLD
-                trace["citation_verification_ratio"] = round(citation_ratio, 3)
-                break
+            citation_ratio = (
+                sum(bool(item.get("citation_checks_passed")) for item in verified_rows) / len(verified_rows)
+                if verified_rows else 0.0
+            )
+            # A high citation ratio is not sufficient when Loki/Heimdall still
+            # report open questions. Issue the bounded clarification first; the
+            # loop stops on a later no-gap pass or when its configured limit hits.
+            trace["citation_verification_ratio"] = round(citation_ratio, 3)
+            trace["citation_verification_threshold"] = CITATION_VERIFICATION_THRESHOLD
             if iteration >= max_iterations:
                 trace["stop_reason"] = "iteration_limit_reached"
                 break
