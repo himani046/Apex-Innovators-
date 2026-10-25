@@ -100,6 +100,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     risks = []
     contract_reports = []
     agent_messages = []
+    debate_traces = []
     alerts = []
     events = events or []
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
@@ -112,6 +113,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         contract_risks = loki_result.get("findings", [])
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
+        debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
+                              "heimdall_verification": heimdall_result, "tyr_rulings": tyr_result.get("rulings", [])})
         mapped_events = heimdall_result.get("mapped_events", [])
         risks.extend(contract_risks)
         agent_messages.extend(loki_result.get("clarification_requests", []))
@@ -231,6 +234,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure,
-            "agent_debate": {"messages": agent_messages, "note": "Messages describe deterministic handoffs; this path does not claim a live LLM debate."},
+            "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Structured deterministic challenge/verification/ruling traces; this path does not claim a live LLM debate."},
             "contract_reports": contract_reports, "company_risk_report": company_report,
             "shared_state": shared_state, "limitations": company_report["limitations"]}
