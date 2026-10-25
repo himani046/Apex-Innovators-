@@ -18,7 +18,7 @@ from backend.services.upload_analysis import extract_document_terms
 from backend.services.custom_portfolio import analyze_custom_portfolio
 from backend.services.agentic_state import SharedAgentState
 from backend.services.event_store import EventStore
-from backend.config import MAX_LLM_TOKENS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS
+from backend.config import MAX_LLM_TOKENS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_AGENT_CALLS, MAX_LLM_CALLS, MODEL
 from backend.services.llm_runtime import llm_run_context, usage_snapshot
 from backend.claude_client import ask_claude
 from backend.services.contract_chat import retrieve_excerpts, build_chat_prompt
@@ -192,8 +192,8 @@ def health():
         "project": "Odin — The Contract War Room",
         "pack_found": PACK_DIR.exists(),
         "claude_configured": USE_CLAUDE,
-        "claude_model": __import__("backend.config", fromlist=["MODEL"]).MODEL,
-        "llm_limits": {"max_provider_calls": __import__("backend.config", fromlist=["MAX_LLM_CALLS"]).MAX_LLM_CALLS, "max_tokens": MAX_LLM_TOKENS},
+        "claude_model": MODEL,
+        "llm_limits": {"max_provider_calls": MAX_LLM_CALLS, "max_tokens": MAX_LLM_TOKENS},
         "persistent_audit_enabled": True,
         "persistent_event_store_enabled": True,
         "security_mode": security_mode(),
