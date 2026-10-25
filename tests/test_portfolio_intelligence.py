@@ -1,0 +1,88 @@
+import unittest
+
+from backend.services.portfolio_intelligence import (
+    detect_cross_contract_candidates,
+    normalize_event_records,
+    run_bounded_review_cycles,
+)
+from backend.services.upload_analysis import extract_document_terms
+
+
+class CrossContractIntelligenceTests(unittest.TestCase):
+    def test_numeric_notice_difference_has_two_verified_citations(self):
+        contracts = {
+            "A": "Provider shall provide written notice within 4 hours after incident awareness.",
+            "B": "Provider shall provide written notice within 24 hours after incident awareness.",
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        self.assertTrue(candidates)
+        candidate = candidates[0]
+        self.assertEqual(candidate["classification"], "numeric_term_difference")
+        self.assertEqual(len(candidate["evidence"]), 2)
+        self.assertTrue(all(item["verified"] for item in candidate["evidence"]))
+        self.assertFalse(candidate["legal_conflict_determined"])
+        self.assertTrue(candidate["human_review_required"])
+
+    def test_opposing_modality_is_candidate_not_legal_conclusion(self):
+        contracts = {
+            "A": "Supplier shall provide written notice within 4 hours after incident awareness.",
+            "B": "Supplier shall not provide written notice within 4 hours after incident awareness.",
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        self.assertTrue(any(item["classification"] == "opposing_modality_candidate" for item in candidates))
+        self.assertTrue(all(item["status"] == "candidate_requires_human_review" for item in candidates))
+
+    def test_does_not_compare_clauses_within_one_contract(self):
+        contracts = {
+            "A": "Supplier shall provide written notice within 4 hours. Supplier shall provide written notice within 24 hours."
+        }
+        self.assertEqual(detect_cross_contract_candidates(contracts), [])
+
+    def test_event_ingestion_filters_future_and_rejects_malformed(self):
+        result = normalize_event_records([
+            {"event_id": "E1", "timestamp": "2027-03-10", "body": "A1 incident reported"},
+            {"event_id": "E2", "timestamp": "2027-03-20", "body": "Future event"},
+            {"event_id": "E3", "timestamp": "not-a-date", "body": "Bad timestamp"},
+            {"event_id": "E4", "timestamp": "2027-03-10", "body": ""},
+            "not an object",
+        ], "2027-03-15")
+        self.assertEqual([event["event_id"] for event in result["events"]], ["E1"])
+        self.assertEqual(result["counts"]["rejected"], 3)
+        self.assertFalse(result["source_authenticity_verified"])
+
+    def test_bounded_workflow_runs_clarification_and_keeps_gaps_visible(self):
+        source = (
+            "Section 1 — Incident Notice\n"
+            "Provider shall provide written notice within 4 hours after incident awareness.\n"
+        )
+        contracts = {"A1": source}
+        extractions = {"A1": extract_document_terms(source, "A1")}
+        result = run_bounded_review_cycles(
+            contracts, extractions, [], "2027-03-15",
+            max_iterations=1, max_agent_calls=20,
+        )
+        self.assertEqual(result["mode"], "bounded_deterministic_multi_agent_workflow")
+        self.assertLessEqual(result["agent_calls_used"], result["agent_call_budget"])
+        self.assertTrue(result["loop_traces"])
+        self.assertIn(result["loop_traces"][0]["stop_reason"], {
+            "evidence_gap_persists_human_review_required",
+            "evidence_threshold_met",
+            "no_clarification_needed",
+            "iteration_limit_reached",
+        })
+        self.assertTrue(any(message["type"] == "targeted_reextraction_request"
+                            for message in result["agent_messages"]))
+        self.assertFalse(result["legal_outcome_resolved"])
+
+    def test_budget_exhaustion_is_explicit(self):
+        source = "Supplier shall provide written notice within 4 hours after incident awareness."
+        result = run_bounded_review_cycles(
+            {"A1": source}, {"A1": extract_document_terms(source, "A1")}, [],
+            "2027-03-15", max_iterations=1, max_agent_calls=2,
+        )
+        self.assertTrue(result["budget_exhausted"])
+        self.assertLessEqual(result["agent_calls_used"], result["agent_call_budget"])
+
+
+if __name__ == "__main__":
+    unittest.main()
