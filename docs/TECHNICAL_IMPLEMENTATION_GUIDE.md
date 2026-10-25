@@ -229,7 +229,7 @@ Run tests:
 
     python -m unittest discover -s tests -v
 
-The changes described here have been committed to GitHub, but a successful local test run and full browser/API end-to-end test have not been independently verified. Run these checks before representing the features as acceptance-tested.
+GitHub Actions run 40195473116 completed successfully for commit 7256e3eb9c0b3039c3ddc9583d1756ce2e46f528: dependency installation, Python compileall, and unittest discovery all passed. A full browser/API end-to-end acceptance test has not yet been run. The CI result validates compilation and unit tests, not every functional requirement.
 
 ## 11. Highest-priority remaining work
 
