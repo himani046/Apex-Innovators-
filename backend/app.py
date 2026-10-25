@@ -1,8 +1,9 @@
+import json
 from datetime import date
 from pathlib import Path
 from typing import Literal
 
-from fastapi import Body, Depends, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
@@ -251,6 +252,76 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
             "shared_state": snapshot, "persistence": persistence,
             "notice": ("Targeted extraction was saved to the selected audit run." if persistence["persisted"]
                        else "This response contains an updated state snapshot but is not durable. Supply run_id to persist it to an existing audit run.")}
+
+
+@app.post("/api/analyze-portfolio-upload", dependencies=[Depends(require_api_token)])
+async def analyze_portfolio_upload(
+    company_context: str = Form(...),
+    files: list[UploadFile] = File(...),
+    event_records: str = Form(default="[]"),
+    payment_ledger: str = Form(default="[]"),
+    as_of: str = Form(default="2027-03-15"),
+    use_claude: bool = Form(default=False),
+):
+    """Extract text from uploaded TXT/PDF contracts, then run the same portfolio workflow."""
+    if not files:
+        raise HTTPException(status_code=422, detail="Upload at least one PDF or TXT contract.")
+    if len(files) > 50:
+        raise HTTPException(status_code=422, detail="Upload no more than 50 contracts at a time.")
+
+    contracts = []
+    uploaded_documents = []
+    total_bytes = 0
+    for file in files:
+        filename = file.filename or "contract.txt"
+        raw = await file.read(15 * 1024 * 1024 + 1)
+        total_bytes += len(raw)
+        if len(raw) > 15 * 1024 * 1024 or total_bytes > 15 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Combined uploaded files exceed the 15 MB limit.")
+        try:
+            document = extract_uploaded_document(filename, raw)
+        except DocumentUploadError as exc:
+            raise HTTPException(status_code=422, detail=f"{Path(filename).name}: {exc}") from exc
+        if len(document["text"]) < 20:
+            raise HTTPException(status_code=422, detail=f"{Path(filename).name}: not enough readable contract text was found.")
+        contract_id = Path(document["filename"]).stem.upper()
+        contract_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in contract_id)[:80]
+        contracts.append({"id": contract_id, "text": document["text"]})
+        uploaded_documents.append({
+            "filename": document["filename"],
+            "format": document["format"],
+            "pages": document.get("pages"),
+            "characters": document["characters"],
+            "sha256": document["sha256"],
+        })
+        await file.close()
+
+    try:
+        parsed_events = json.loads(event_records or "[]")
+        parsed_ledger = json.loads(payment_ledger or "[]")
+        if not isinstance(parsed_events, list):
+            raise ValueError("Event records must be a JSON array.")
+        if not isinstance(parsed_ledger, list):
+            raise ValueError("Payment ledger must be a JSON array.")
+        analysis_date = date.fromisoformat(as_of)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid upload form data: {exc}") from exc
+
+    try:
+        body = PortfolioAnalysisRequest(
+            company_context=company_context,
+            contracts=contracts,
+            event_records=parsed_events,
+            payment_ledger=parsed_ledger,
+            as_of=analysis_date,
+            use_claude=use_claude,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid company context or contract input.") from exc
+
+    result = analyze_portfolio(body)
+    result["uploaded_documents"] = uploaded_documents
+    return result
 
 
 @app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])
