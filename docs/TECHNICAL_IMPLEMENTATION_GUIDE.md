@@ -135,10 +135,10 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: partial; generalized adversarial review across every arbitrary contract remains unfinished.
 
 ### FR5 — Heimdall Event Monitoring
-- FR5.1: The fixed pack loads JSONL event drops, retains parse errors, filters events for the selected date, and links events to known contracts only using explicit identifiers. Custom intake accepts events, maps only explicit contract-ID matches, and uses lexical overlap to suggest clause candidates; those mappings are review signals, not proof of causation.
-- FR5.2: The A1 verifier checks documented outage facts and preserves missing awareness/notification timestamps. Citation checks are separately exposed.
-- FR5.3: The decision queue prioritizes returned deadline, payment, and risk candidates. These are not all verified breach alerts.
-- Status: partial; generalized event-to-clause mapping and continuous event ingestion remain unfinished.
+- FR5.1: The fixed pack loads JSONL event drops and retains parse errors. Custom intake accepts supplied events; `POST /api/events/ingest` stores source-labeled event records in SQLite and `GET /api/events?as_of=YYYY-MM-DD` filters future-dated events for a simulated date.
+- FR5.2: Event records are normalized; missing bodies and invalid timestamps are rejected, and event-to-contract mapping remains evidence-led. Explicit IDs and lexical clause overlap are candidates, not proof of causation.
+- FR5.3: The verifier preserves missing awareness/notification timestamps. Event source authenticity is never accepted from a user-supplied flag; a trusted external-source connector and signature/provenance validation are still required.
+- Status: substantial ingestion and normalization foundation; authenticated external integrations and causal event-to-clause verification remain partial.
 
 ### FR6 — Tyr Arbitration and Action
 - FR6.1: The A1 path resolves the current Loki/Heimdall evidence disagreement into a qualified ruling.
@@ -147,9 +147,10 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - Status: partial; generalized dispute resolution and fully clause-specific ready-to-send notices remain unfinished.
 
 ### FR7 — Agent Workflow
-- FR7.1: The A1 scenario demonstrates targeted Thor re-extraction, Loki challenge, Heimdall verification, and Tyr ruling. Custom intake is a deterministic single pass, not a live debate.
-- FR7.2: The fixed pipeline has configurable MAX_AGENT_CALLS and MAX_AGENT_ITERATIONS, stop reasons, and unresolved-gap preservation.
-- Status: partial to substantial for the fixed scenario; generalized loops for every contract remain unfinished.
+- FR7.1: Fixed-pack and custom portfolio runs execute bounded per-contract Thor → Norns → Loki → Heimdall → Tyr cycles with structured handoffs, targeted source re-extraction, persistent evidence gaps, and explicit stop reasons.
+- FR7.2: Iterations and agent calls are budgeted. A budget-exhausted workstream is not marked complete; completed analysis does not mean a legal outcome is resolved.
+- FR7.3: Claude review is opt-in. When configured, Thor/Loki/Heimdall/Tyr can contribute suggestions; all model-proposed source quotations are checked against canonical contract/event text, and Tyr actions remain draft-only. Without a configured key, the workflow falls back to deterministic agents.
+- Status: bounded collaboration and optional hybrid LLM path implemented; live-provider smoke tests, deeper semantic disagreement resolution, and full browser/API acceptance remain outstanding.
 
 ### FR8 — Synthesis
 - FR8.1: backend/services/synthesis.py assembles a report per contract with terms, obligations, timeline, risks, recommended actions, citations, citation validation, confidence where available, and unresolved questions.
@@ -170,7 +171,9 @@ Exact quote matching helps catch invented or misattributed quotations. It does n
 - GET /api/health — health/configuration.
 - GET /api/pack — configured pack summary.
 - GET /api/run?as_of=2027-03-15&use_claude=false — fixed-pack orchestration.
-- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records and simulated date; returns graph, contract reports, company report, alerts and shared state.
+- POST /api/analyze-portfolio — company context, multiple contract texts, optional event records, simulated date, and opt-in `use_claude`; returns graph, workflow traces, contract reports, company report, alerts, financial reconciliation candidates, and shared state.
+- POST /api/events/ingest — persist source-labeled event records with deduplication; records remain unverified.
+- GET /api/events?as_of=YYYY-MM-DD — list stored events and exclude future-dated records for the selected simulated date.
 - POST /api/reextract — targeted extraction from supplied contract text and optional clause reference.
 - POST /api/analyze-upload — document-level PDF/TXT extraction and quote checks; not full portfolio reconciliation.
 - GET /api/audit/runs?limit=20 — list saved runs.
@@ -191,7 +194,7 @@ Send JSON with company_context, as_of, contracts, and optional event_records. Th
 - Strict Pydantic schemas reject unexpected fields where used.
 - The fixed follow-up loop has call and iteration limits.
 - Unresolved evidence gaps persist across follow-ups.
-- SQLite saves run snapshots and reviewer decisions.
+- SQLite saves run snapshots, reviewer decisions, and source-labeled event records; this is persistence, not proof of event authenticity.
 - The API can require a shared bearer token and fails closed in production mode if it is not configured.
 - Security headers and non-cache headers are applied.
 - Draft actions are never sent automatically.
@@ -206,7 +209,7 @@ Limitations: a shared token is not individual identity verification; reviewer na
 - NFR4 Observability: Workstreams, statuses, handoffs, findings, timelines, citations, and audit history are exposed; some statuses remain high-level.
 - NFR5 Performance: Call/iteration limits and targeted re-extraction exist. Cross-run caching and comprehensive duplicate-call avoidance are not implemented.
 - NFR6 Reproducibility: Fixed-pack deterministic fallback and structured state exist; audit snapshots are persistent. LLM output may vary.
-- NFR7 LLM usage: Claude is integrated in supported Thor/Loki paths when configured. The custom-input endpoint is deterministic triage, not an LLM multi-agent run. This remains an acceptance gap if judges require every arbitrary portfolio run to use LLM agents.
+- NFR7 LLM usage: Claude can be explicitly enabled for bounded Thor/Loki/Heimdall/Tyr review when a key is configured. Quote validation, call budgets, safe fallback, and draft-only actions are implemented. No provider key is configured in the current environment, so the default run remains deterministic; a live-provider smoke test is still needed.
 
 ## 10. Run locally
 
@@ -233,11 +236,10 @@ GitHub Actions run 40195717406 completed successfully for commit 4ff4886d9280529
 
 ## 11. Highest-priority remaining work
 
-1. Make arbitrary portfolio intake use the same full orchestration as the fixed pack, including event/payment context and a cross-contract workstream.
-2. Replace A1-specific timeline and risk logic with generic evidence-grounded handlers.
-3. Add targeted clarification loops and explicit completion criteria per workstream.
-4. Generalize Loki/Heimdall disagreements and Tyr rulings across all contract workstreams.
-5. Improve party/clause extraction and use a genuine 3D engine if strict 3D is required.
-6. Calculate exposure only after contract triggers, amounts, periods, invoices and payment status are reconciled.
-7. Add and run integration tests for every FR/NFR; verify the dashboard against actual API responses.
-8. Harden identity, durable storage, audit tamper evidence, and deployment before handling sensitive contracts.
+1. Add trusted external event adapters and independent source-provenance/authenticity verification.
+2. Improve semantic contract comparison for party/scope equivalence, amendment precedence, and incorporated terms; current cross-contract differences remain candidates.
+3. Reconcile invoice, due date, contractual trigger, payment/credit evidence, and source authenticity before calculating exposure.
+4. Run a live-provider smoke test when a valid Claude key is available; validate failure/timeout behavior against a real provider.
+5. Add browser-driven end-to-end tests for upload, analysis, graph, reports, stored event feed, and human decision flow.
+6. Improve extraction beyond keyword heuristics and replace the pseudo-3D graph with WebGL only if strict 3D is required.
+7. Harden identity, tamper-evident audit storage, TLS, rate limiting, deployment volumes, and secret rotation before handling sensitive contracts.
