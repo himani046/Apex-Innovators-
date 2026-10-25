@@ -86,7 +86,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             term["citation"] = citation
 
     base_graph = build_contract_graph(contracts)
-    graph = _rich_graph(contracts, extractions, base_graph)
+    graph = build_rich_contract_graph(contracts, extractions, base_graph)
     timeline = []
     risks = []
     contract_reports = []
