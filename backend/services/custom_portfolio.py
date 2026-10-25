@@ -115,6 +115,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     stage_names = ("Thor", "Norns", "Loki", "Heimdall", "Tyr")
     budget_allows_contracts = execution_budget.max_calls >= len(stage_names) * len(contracts)
     budget_exhausted = not budget_allows_contracts
+    if not budget_allows_contracts:
+        execution_budget.stop_reason = "insufficient_call_budget_for_complete_custom_run"
     shared_agent_state = SharedAgentState()
     shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})
     debate_traces = []
