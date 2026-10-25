@@ -6,6 +6,7 @@ from backend.services.citations import verify_all
 from backend.services.contract_graph import build_contract_graph, reconcile_contracts
 from backend.services.workstreams import build_workstreams
 from backend.services.portfolio_operations import build_portfolio_operations
+from backend.services.decision_engine import build_decision_queue
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
@@ -33,6 +34,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     portfolio_operations = build_portfolio_operations(
         multi_contract_analysis, pack["event_drops"], as_of, pack["ledger"]
     )
+    decision_queue = build_decision_queue(portfolio_operations, multi_contract_analysis)
     source = contracts.get("A1")
     if not source:
         raise RuntimeError("A1.txt missing from supplied pack")
@@ -49,6 +51,7 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "workstream_analysis": multi_contract_analysis,
         "portfolio_summary": multi_contract_analysis["portfolio_summary"],
         "portfolio_operations": portfolio_operations,
+        "decision_queue": decision_queue,
         "workstreams": [
             {
                 **item,
@@ -89,6 +92,14 @@ def run_demo(as_of="2027-03-15", request_claude=True):
                 "status": portfolio_operations["financial_reconciliation"]["status"],
                 "transaction_candidates": portfolio_operations["financial_reconciliation"]["counts"]["transaction_candidates"],
                 "unlinked_candidates": portfolio_operations["financial_reconciliation"]["counts"]["unlinked_candidates"],
+            },
+            {
+                "from": "Tyr",
+                "to": "Odin",
+                "type": "evidence_grounded_decision_queue",
+                "status": decision_queue["status"],
+                "prioritized_issues": decision_queue["counts"]["total"],
+                "high_priority": decision_queue["counts"]["high"],
             },
             {
                 "from": "Odin",
@@ -158,7 +169,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "Cross-contract exclusivity and shared-provider signals are potential review items, not adjudicated conflicts.",
         "Dates are extracted only when explicitly stated; relative deadlines require trigger evidence and are not guessed.",
         "Financial amounts are quoted individually; aggregate exposure is not calculated without invoice, period, and trigger evidence.",
-        "Phase 3 normalizes explicit portfolio dates and identifies payment-event candidates; ledger candidates are not accounting entries until reconciled to contract, invoice, trigger, and payment/credit evidence.",
+        "Phase 3 classifies explicit dates by context and identifies payment-ledger/event candidates; rows remain unverified until reconciled to contract, invoice, trigger, and payment/credit evidence.",
+        "Phase 4 ranks review tasks using deterministic evidence/status rules; prioritization is not a legal or accounting conclusion.",
         "Norns, Heimdall, and Tyr use deterministic logic in this version.",
         "Draft actions require human approval and are never sent automatically.",
     ]
