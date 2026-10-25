@@ -1211,6 +1211,40 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
   border-color: rgba(194,177,255,.2) !important;
 }
 
+
+/* Time machine: timeline rows must keep dark surfaces and readable light text,
+   including when the pointer is over a row or its parent panel. */
+.page-view[data-view="timeline"] .milestone,
+.page-view[data-view="timeline"] .milestone:hover,
+.page-view[data-view="timeline"] .milestone:focus-within,
+.page-view[data-view="timeline"] .card:has(.milestone:hover),
+.page-view[data-view="timeline"] .card:has(.milestone:focus-within) {
+  color: #f3efff !important;
+  background: linear-gradient(125deg,rgba(25,23,40,.98),rgba(14,13,24,.98)) !important;
+  border-color: rgba(190,165,255,.18) !important;
+  box-shadow: 0 8px 26px rgba(0,0,0,.18) !important;
+  transform: none !important;
+  filter: none !important;
+}
+.page-view[data-view="timeline"] .milestone *,
+.page-view[data-view="timeline"] .milestone:hover *,
+.page-view[data-view="timeline"] .milestone:focus-within * {
+  color: #f3efff !important;
+  -webkit-text-fill-color: #f3efff !important;
+}
+.page-view[data-view="timeline"] .milestone .date,
+.page-view[data-view="timeline"] .milestone:hover .date {
+  color: #bda4ff !important;
+  -webkit-text-fill-color: #bda4ff !important;
+}
+.page-view[data-view="timeline"] .milestone .tag,
+.page-view[data-view="timeline"] .milestone:hover .tag {
+  color: #dcd2ff !important;
+  -webkit-text-fill-color: #dcd2ff !important;
+  background: rgba(155,126,229,.14) !important;
+  border-color: rgba(194,177,255,.24) !important;
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
