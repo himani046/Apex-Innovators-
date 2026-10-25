@@ -153,10 +153,17 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
         result.setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
         if isinstance(result.get("shared_state"), dict):
             result["shared_state"].setdefault("reproducibility", {})["input_fingerprint"] = audit["input_fingerprint"]
-        audit_store.update_run_payload(
-            audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
-            details={"input_fingerprint": audit["input_fingerprint"]},
-        )
+        try:
+            audit_store.update_run_payload(
+                audit["run_id"], result, actor="Odin", event_type="reproducibility_metadata_attached",
+                details={"input_fingerprint": audit["input_fingerprint"]},
+            )
+            result["audit"]["reproducibility_metadata_persisted"] = True
+        except KeyError:
+            # A mocked or external audit adapter may return run metadata without
+            # actually persisting the run. Keep analysis usable, but expose that
+            # the post-run metadata update was not durable.
+            result["audit"]["reproducibility_metadata_persisted"] = False
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="as_of must be an ISO date, e.g. 2027-03-15") from exc
