@@ -35,6 +35,8 @@ class CustomPortfolioTests(unittest.TestCase):
         self.assertEqual(len(result["contract_reports"]), 2)
         self.assertEqual(len(result["workstreams"]), 3)
         self.assertEqual(result["workstreams"][-1]["id"], "portfolio-cross-contract")
+        senders = {message.get("from") for message in result["agent_debate"]["messages"]}
+        self.assertTrue({"Thor", "Norns", "Loki", "Heimdall", "Tyr"}.issubset(senders))
         self.assertEqual(result["company_risk_report"]["contract_count"], 2)
         self.assertEqual(result["company_risk_report"]["total_financial_exposure"], None)
 
