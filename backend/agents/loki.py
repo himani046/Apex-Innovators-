@@ -21,6 +21,11 @@ def review_contract_candidates(contract_id, source, extraction):
         ("liability_or_indemnity", r"\b(indemnif\w*|limitation of liability|liability cap|consequential damages)\b", "medium"),
         ("notice_obligation", r"\b(notice period|written notice|notify within|notification within)\b", "medium"),
         ("exclusivity_or_conflict", r"\b(exclusive|exclusivity|conflict of terms|inconsistent with)\b", "medium"),
+        ("payment", r"\b(payment terms?|invoice|billing|remittance|amounts? due|net\s+\d+|pay within|purchase order)\b", "medium"),
+        ("delivery_performance", r"\b(deliver(?:y|ies)?|shipment|service level|\bSLA\b|uptime|downtime|availability|performance standard|milestone)\b", "medium"),
+        ("data_security", r"\b(data breach|security incident|unauthorized access|personal data|cybersecurity|security measures|data protection)\b", "high"),
+        ("confidentiality", r"\b(confidential(?:ity)?|non-disclosure|trade secret|proprietary information)\b", "medium"),
+        ("force_majeure", r"\bforce majeure\b|beyond (?:a party's|either party's) reasonable control", "medium"),
         ("compliance", r"\b(comply|compliance|regulatory|applicable law|audit right)\b", "medium"),
     ]
     terms_by_quote = {str((term.get("citation") or {}).get("quote", "")): term
