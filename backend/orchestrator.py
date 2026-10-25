@@ -317,9 +317,14 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "parse_errors": pack["parse_errors"],
     }
     state["status"] = "complete_with_limitations"
+    # Report the mode actually used, not merely whether a provider was requested.
     state["agent_modes"] = {
-        name: ("claude" if use and name in ("Thor", "Loki") else "deterministic")
-        for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]
+        "Odin": "deterministic_orchestrator",
+        "Thor": str((state.get("extraction") or {}).get("mode", "deterministic_source_triage")),
+        "Norns": "deterministic",
+        "Loki": str((state.get("risk_finding") or {}).get("mode", "deterministic_fallback")),
+        "Heimdall": "deterministic",
+        "Tyr": "deterministic",
     }
     state["limitations"] = [
         "Each in-scope contract has a source-specific workstream; extracted lines are candidates, not final legal interpretations.",
