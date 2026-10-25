@@ -1011,6 +1011,35 @@ main>.odin-hero .hero-globe-media{
 /* Lock the Portfolio Command Center header and description against hover recoloring. */
 .card.full:has(#portfolioOverview),.card.full:has(#portfolioOverview):hover,.card.full:has(#portfolioOverview):focus-within{background:linear-gradient(145deg,#141320 0%,#0d0d17 100%)!important;color:#f8f6ff!important;border-color:rgba(190,165,255,.16)!important;box-shadow:0 8px 26px rgba(0,0,0,.18)!important;transform:none!important;filter:none!important}
 .card.full:has(#portfolioOverview):hover h3,.card.full:has(#portfolioOverview):hover p,.card.full:has(#portfolioOverview):hover span,.card.full:has(#portfolioOverview):hover .muted,.card.full:has(#portfolioOverview):hover .tag,.card.full:has(#portfolioOverview):focus-within h3,.card.full:has(#portfolioOverview):focus-within p,.card.full:has(#portfolioOverview):focus-within span,.card.full:has(#portfolioOverview):focus-within .muted,.card.full:has(#portfolioOverview):focus-within .tag{color:#f8f6ff!important;background-color:transparent;filter:none!important}
+
+/* Global no-hover mode: remove hover-only visual motion and recoloring site-wide. */
+@media (hover:hover){
+  html body *:hover{
+    transform:none!important;
+    filter:none!important;
+    transition:none!important;
+    animation:none!important;
+    text-decoration:none!important;
+    caret-color:auto!important;
+  }
+  /* Preserve each element's normal foreground/background while hovered. */
+  html body *:hover{
+    color:inherit!important;
+    box-shadow:none!important;
+    outline-color:inherit!important;
+  }
+  html body button:hover,
+  html body a:hover,
+  html body input:hover,
+  html body select:hover,
+  html body textarea:hover,
+  html body [role="button"]:hover{
+    transform:none!important;
+    filter:none!important;
+    box-shadow:inherit!important;
+  }
+}
+
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
