@@ -245,3 +245,19 @@ GitHub Actions run 40195717406 completed successfully for commit 4ff4886d9280529
 5. Add browser-driven end-to-end tests for upload, analysis, graph, reports, stored event feed, cross-contract review, and human decision flow.
 6. Improve extraction beyond keyword heuristics and replace the pseudo-3D graph with WebGL only if strict 3D is required.
 7. Harden identity, tamper-evident audit storage, TLS, rate limiting, deployment volumes, and secret rotation before handling sensitive contracts.
+
+## Amendment-aware cross-contract resolution
+
+The custom portfolio path now runs `backend/services/amendment_resolution.py` before the bounded cross-contract Loki → Heimdall → Tyr review. It produces structured candidates for:
+
+- Amendment/addendum documents and explicit links to other supplied contract IDs.
+- Precedence/supersession language, with a direction candidate only where the wording is explicit enough to support one.
+- Effective-date text candidates from document headers.
+- Incorporated references to master agreements, order forms, statements of work, schedules, exhibits, and appendices.
+- Missing or unresolved base agreements and incorporated source documents.
+- Candidate-by-candidate amendment context attached to cross-contract differences.
+
+The API returns `amendment_resolution` at the portfolio root and in the company risk report/shared state. Candidate traces include amendment context and unresolved questions. The dashboard has an Amendment lineage · precedence · incorporated terms section.
+
+**Safety boundary:** this is deterministic source triage, not a legal precedence engine. An explicit reference does not prove execution, validity, same scope, effective version, or controlling effect. The system deliberately reports zero legally resolved conflicts and leaves human review required. It does not infer that an absent amendment reference means no amendment exists. Date parsing and document linking are candidates, not verified metadata. No tests were run as part of this implementation because local testing is being handled separately.
+
