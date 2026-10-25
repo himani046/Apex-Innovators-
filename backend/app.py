@@ -194,7 +194,9 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
         for event in stored_events + body.event_records:
             event_id = str(event.get("event_id") or event.get("id") or "")
             source_id = str(event.get("source") or "request")
-            key = (source_id, event_id) if event_id else (source_id, str(event.get("body") or event.get("text") or ""))
+            timestamp = str(event.get("timestamp") or event.get("date") or "")
+            body_text = str(event.get("body") or event.get("text") or event.get("description") or "")
+            key = ("content", timestamp, body_text) if timestamp and body_text else (source_id, event_id or body_text)
             combined_events[key] = event
         result = analyze_custom_portfolio(
             company_context=body.company_context,
