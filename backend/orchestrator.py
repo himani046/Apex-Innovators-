@@ -364,6 +364,53 @@ def run_demo(as_of="2027-03-15", request_claude=True):
             "contract_ids": ids, "status": candidate.get("status"),
             "evidence": candidate.get("evidence", []), "human_review_required": True,
         })
+    # Surface cross-contract candidates in the same workstream and decision
+    # queues consumed by the dashboard, not only in the synthesis report.
+    portfolio_summary = state.get("workstream_analysis", {}).setdefault("portfolio_summary", {})
+    portfolio_summary["cross_contract_candidates"] = state["cross_contract_candidates"]
+    state["portfolio_summary"] = portfolio_summary
+    issues = state.get("decision_queue", {}).setdefault("issues", [])
+    existing_issue_ids = {item.get("id") or item.get("finding_id") for item in issues}
+    for candidate in state["cross_contract_candidates"]:
+        ids = set(candidate.get("contract_ids", []))
+        issue = {
+            "id": candidate.get("id"), "finding_id": candidate.get("id"),
+            "contract_id": next(iter(sorted(ids)), None), "contract_ids": sorted(ids),
+            "category": "cross_contract_inconsistency_candidate",
+            "title": "Review potential cross-contract " + str(candidate.get("topic", "term")) + " difference",
+            "priority": "medium", "severity": candidate.get("severity", "medium"),
+            "status": candidate.get("status"), "reason": candidate.get("explanation"),
+            "claim": candidate.get("explanation"), "evidence": candidate.get("evidence", []),
+            "citations": candidate.get("evidence", []),
+            "recommended_next_step": "Compare party identity, scope, amendments, precedence, and incorporated terms.",
+            "human_review_required": True, "legal_conflict_determined": False,
+        }
+        if issue["id"] not in existing_issue_ids:
+            issues.append(issue)
+            existing_issue_ids.add(issue["id"])
+        for collection in (
+            state.get("workstream_analysis", {}).get("workstreams", []),
+            state.get("workstreams", []),
+        ):
+            for stream in collection:
+                stream_contracts = set(stream.get("contract_ids", []) or [])
+                primary = stream.get("primary_contract_id")
+                if primary:
+                    stream_contracts.add(primary)
+                if not ids.intersection(stream_contracts):
+                    continue
+                stream.setdefault("risk_findings", []).append({
+                    "id": candidate.get("id"), "category": "cross_contract_inconsistency_candidate",
+                    "title": issue["title"], "claim": candidate.get("explanation"),
+                    "severity": candidate.get("severity", "medium"), "status": candidate.get("status"),
+                    "evidence": candidate.get("evidence", []), "citations": candidate.get("evidence", []),
+                    "evidence_gaps": candidate.get("unresolved_questions", []),
+                    "human_review_required": True, "legal_conflict_determined": False,
+                })
+                stream["open_questions"] = list(dict.fromkeys(
+                    list(stream.get("open_questions", []) or []) + list(candidate.get("unresolved_questions", []) or [])
+                ))
+                stream["status"] = "complete_with_review_items"
     state["contract_graph"]["node_count"] = len(state["contract_graph"].get("nodes", []))
     state["contract_graph"]["edge_count"] = len(state["contract_graph"].get("edges", []))
     state["shared_state"]["contracts_and_relationships"]["graph"] = state["contract_graph"]
