@@ -9,6 +9,7 @@ from backend.services.workstreams import build_workstreams
 from backend.services.portfolio_operations import build_portfolio_operations
 from backend.services.decision_engine import build_decision_queue
 from backend.services.evidence_grounding import build_evidence_grounded_finding
+from backend.services.synthesis import build_synthesis
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
@@ -326,4 +327,6 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     state["collaboration"]["unresolved_questions"] = state["shared_state"]["unresolved_questions"]
     state["collaboration"]["recommended_actions"] = state["shared_state"]["recommended_actions"]
     state["agent_messages"] = state["shared_state"]["agent_messages"]
+    # FR8: produce one contract report per loaded document and a company-wide synthesis.
+    state["synthesis"] = build_synthesis(state)
     return state
