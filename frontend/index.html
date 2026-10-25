@@ -70,8 +70,48 @@ input,select,textarea{background:#fff;border:1px solid var(--line);border-radius
 section[id],.wide[id],.side[id],.half[id]{scroll-margin-top:105px}
 @media(max-width:1000px){header{grid-template-columns:1fr auto}.top-tabs{grid-column:1/-1;grid-row:2;justify-content:flex-start}#health{grid-column:2;grid-row:1}}
 @media(max-width:560px){body{padding:0 14px 24px}header{margin:0 -14px 22px;padding:14px;grid-template-columns:1fr auto;gap:10px}.top-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.top-tabs a{padding:10px 14px}.card{padding:15px}}
+
+/* Multi-page shell: moves existing feature cards without recreating their IDs or handlers. */
+body{max-width:none;padding:0 2.35vw 30px;background:radial-gradient(ellipse at 28% 0%,#d9d7cd 0,transparent 320px),#e9eae4}
+header{margin:0 -2.35vw 0;padding:20px 2.35vw;grid-template-columns:minmax(170px,1fr) auto auto;gap:18px}
+header h1{font-size:24px;letter-spacing:-1px;font-weight:800}
+.top-tabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.top-tabs button{background:transparent;color:#596052;border:1px solid #c9ccbf;border-radius:999px;padding:12px 17px;font:600 13px system-ui;white-space:nowrap;cursor:pointer}
+.top-tabs button.active{background:#151813;color:#fff;border-color:#151813}
+.top-tabs button:hover{background:#fff;color:#151813}
+main{max-width:1600px;padding:28px 0}
+.intro{align-items:center;min-height:200px;padding:12px 0 24px}
+.intro .eyebrow{font-size:11px;letter-spacing:2px;font-weight:800}
+.intro h2{font-size:clamp(36px,4vw,58px);line-height:1.06;letter-spacing:-2px;margin:14px 0}
+.intro p{max-width:760px;font-size:16px;line-height:1.7}
+#dash{display:block}
+.page-view{display:none}
+.page-view.active{display:block}
+.page-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:stretch}
+.page-grid>.card{grid-column:span 6;min-width:0}
+.page-grid>.card.full{grid-column:1/-1}
+.page-grid>.card.wide{grid-column:span 8}
+.page-grid>.card.side{grid-column:span 4}
+.page-grid>.card.half{grid-column:span 6}
+.page-grid>.card.metric{grid-column:span 3;min-height:150px;display:flex;flex-direction:column;justify-content:center}
+.card{border:1px solid #e2e4dc;border-radius:22px;padding:22px;background:#fff;box-shadow:0 10px 28px #20261608}
+.card h3{font-size:17px;letter-spacing:-.4px}
+.card .value{font-size:34px;letter-spacing:-1.2px}
+.metric .value{font-size:42px}
+.quick-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}
+.quick-link{display:block;text-align:left;padding:20px;background:#fff;border:1px solid #e0e2d9;border-radius:20px;color:#151813;cursor:pointer}
+.quick-link b{display:block;font-size:16px;margin-bottom:8px}.quick-link span{font-size:12px;color:#777d6e;line-height:1.5}.quick-link:hover{border-color:#81916f;transform:translateY(-2px)}
+#overviewMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.overview-metric{background:#fff;border:1px solid #e0e2d9;border-radius:22px;padding:20px}
+.overview-metric .label{font-size:12px;color:#777d6e}.overview-metric .value{font-size:38px;letter-spacing:-1.5px;margin:12px 0 5px}.overview-metric .hint{font-size:11px;color:#777d6e}
+.graph-wrap{width:100%;overflow:auto;background:#f7f8f3;border:1px solid #e2e4dc;border-radius:18px;min-height:250px}
+.graph-wrap svg{display:block;width:100%;min-width:650px;height:320px}
+.graph-node{cursor:pointer}.graph-node rect{fill:#fff;stroke:#cbd0c2;stroke-width:1.5}.graph-node:hover rect,.graph-node:focus rect{stroke:#81916f;stroke-width:3}.graph-node text{fill:#151813;font-size:13px}.graph-edge{stroke:#a6ad9a;stroke-width:2}.graph-edge-label{fill:#6c7462;font-size:10px}
+.section-actions{display:flex;justify-content:flex-end;gap:8px;margin:0 0 14px}.section-actions button{background:#151813;color:white;border:0;border-radius:999px;padding:11px 16px}
+@media(max-width:1050px){header{grid-template-columns:1fr auto}.top-tabs{grid-column:1/-1;grid-row:2;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}#health{grid-column:2;grid-row:1}.page-grid>.card.metric{grid-column:span 6}.quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){body{padding:0 14px 22px}header{margin:0 -14px;padding:14px;grid-template-columns:1fr auto}header h1{font-size:18px}.top-tabs button{padding:10px 13px}.intro{display:block;padding:18px 0}.intro .controls{margin-top:18px}.page-grid{grid-template-columns:1fr}.page-grid>.card,.page-grid>.card.full,.page-grid>.card.wide,.page-grid>.card.side,.page-grid>.card.half,.page-grid>.card.metric{grid-column:1/-1}#overviewMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-links{grid-template-columns:1fr 1fr}.card{padding:16px}}
 </style></head><body>
-<header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard sections"><a class="active" href="#overview">Overview</a><a href="#contracts">Contracts</a><a href="#timeline">Time machine</a><a href="#agents">Agents</a><a href="#audit">Audit</a></nav><span class="tag" id="health">Connecting…</span></header>
+<header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
 <div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
 <div id="dash" class="grid hidden">
@@ -100,6 +140,66 @@ section[id],.wide[id],.side[id],.half[id]{scroll-margin-top:105px}
 const $=x=>document.getElementById(x);function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function apiHeaders(extra={}){const token=$('apiToken')?.value?.trim();return {...extra,...(token?{Authorization:'Bearer '+token}:{})}}
 async function get(u){let r=await fetch(u,{headers:apiHeaders()}),d=await r.json();if(!r.ok)throw Error(d.detail||r.status);return d}
+
+function setupOdinPages(){
+ const dash=$('dash'); if(!dash||dash.dataset.pagesReady)return; dash.dataset.pagesReady='1';
+ const cards=[...dash.children].filter(el=>el.classList.contains('card'));
+ const views={};
+ for(const [key,title] of [['overview','Overview'],['contracts','Contracts'],['timeline','Time machine'],['agents','Agents'],['review','Risk & review'],['audit','Audit']]){
+  const view=document.createElement('section');view.className='page-view'+(key==='overview'?' active':'');view.dataset.view=key;view.setAttribute('aria-label',title);
+  const grid=document.createElement('div');grid.className='page-grid';view.appendChild(grid);dash.appendChild(view);views[key]=grid;
+ }
+ const group=(card)=>{
+  const h=(card.querySelector('h3')?.innerText||'').toLowerCase();
+  if(card.classList.contains('metric'))return 'overview';
+  if(h.includes('portfolio command center'))return 'overview';
+  if(h.includes('contract explorer')||h.includes('multi-contract workstreams')||h.includes('extracted terms')||h.includes('portfolio scan')||h.includes('relationship graph')||h.includes('amendment reconciliation')||h.includes('scope note'))return 'contracts';
+  if(h.includes('event and audit timeline')||h.includes('norns · timeline')||h.includes('portfolio operations')||h.includes('timeline milestones')||h.includes('payment ledger')||h.includes('decision queue'))return 'timeline';
+  if(h.includes('agent operations')||h.includes('agentic collaboration')||h.includes('agent message trace'))return 'agents';
+  if(h.includes('risk heatmap')||h.includes('evidence-backed risk')||h.includes("tyr's ruling")||h.includes('evidence-grounded risk finding')||h.includes('follow-up decision')||h.includes('action center')||h.includes('unresolved questions'))return 'review';
+  if(h.includes('persistent audit explorer')||h.includes('data integrity'))return 'audit';
+  if(h.includes('thor · extracted terms'))return 'contracts';
+  return 'review';
+ };
+ cards.forEach(card=>views[group(card)].appendChild(card));
+ const overview=views.overview;
+ const links=document.createElement('div');links.className='quick-links';links.innerHTML=
+  '<button class="quick-link" data-go="contracts"><b>Contracts ↗</b><span>Explore agreements, extracted clauses, amendments and the relationship graph.</span></button>'+
+  '<button class="quick-link" data-go="timeline"><b>Time machine ↗</b><span>Review deadlines, dated milestones and payment-event candidates.</span></button>'+
+  '<button class="quick-link" data-go="agents"><b>Agent operations ↗</b><span>Inspect workstreams, shared state, handoffs and agent traces.</span></button>'+
+  '<button class="quick-link" data-go="review"><b>Risk &amp; review ↗</b><span>Inspect evidence, uncertainty, draft actions and human decisions.</span></button>';
+ overview.parentElement.insertBefore(links,overview);
+ const metrics=document.createElement('div');metrics.id='overviewMetrics';metrics.innerHTML=
+  '<div class="overview-metric"><div class="label">Active contracts</div><div class="value" id="homeContracts">—</div><div class="hint">Loaded agreements</div></div>'+
+  '<div class="overview-metric"><div class="label">Priority signals</div><div class="value" id="homeRisks">—</div><div class="hint">For human review</div></div>'+
+  '<div class="overview-metric"><div class="label">Upcoming deadlines</div><div class="value" id="homeDeadlines">—</div><div class="hint">Source-grounded dates</div></div>'+
+  '<div class="overview-metric"><div class="label">Open review items</div><div class="value" id="homeReview">—</div><div class="hint">No automatic legal conclusions</div></div>';
+ overview.parentElement.insertBefore(metrics,overview);
+ const graphCard=document.createElement('div');graphCard.className='card full';graphCard.innerHTML='<h3>Contract relationship graph <span class="tag">Select a contract node</span></h3><p class="muted">Connections represent relationship evidence; downstream impact is a candidate for review, not a proven legal outcome.</p><div id="homeGraph" class="graph-wrap"><p style="padding:20px;color:#777d6e">Run analysis to map contract relationships.</p></div>';
+ overview.parentElement.insertBefore(graphCard,overview);
+ document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
+ document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.go)));
+ function showPage(key){document.querySelectorAll('.page-view').forEach(v=>v.classList.toggle('active',v.dataset.view===key));document.querySelectorAll('[data-page]').forEach(b=>{const on=b.dataset.page===key;b.classList.toggle('active',on);b.setAttribute('aria-current',on?'page':'false')});window.scrollTo({top:0,behavior:'smooth'});}
+ window.odinShowPage=showPage;
+}
+function updateOverviewAndGraph(){
+ const textOf=id=>$(id)?.innerText||'';
+ const contractText=textOf('explorerCount').match(/\\d+/);if($('homeContracts'))$('homeContracts').textContent=contractText?contractText[0]:'—';
+ const riskText=textOf('heatmapStatus').match(/\\d+/);if($('homeRisks'))$('homeRisks').textContent=riskText?riskText[0]:(($('riskHeatmap')?.children.length)||0);
+ const deadlines=(($('opsMilestones')?.querySelectorAll('.agent,.milestone,li')||[]).length);if($('homeDeadlines'))$('homeDeadlines').textContent=deadlines||(($('timeline')?.children.length)||0)||'—';
+ const reviews=(($('decisionQueueItems')?.children.length)||0)+(($('reviewItems')?.children.length)||0);if($('homeReview'))$('homeReview').textContent=reviews||'0';
+ const host=$('homeGraph');if(!host)return;
+ const source=$('graphEdges');const nodes=[...document.querySelectorAll('#contractExplorer .agent, #contractExplorer button, #contractExplorer [data-contract]')].slice(0,8);
+ let names=nodes.map(n=>(n.innerText||n.textContent||'').trim().split('\\n')[0].slice(0,34)).filter(Boolean);
+ if(!names.length){names=[...new Set((source?.innerText||'').split('\\n').filter(s=>/contract|agreement|amendment|A[1-3]|B[1-2]|C1|D1/i.test(s)).map(s=>s.trim()).filter(s=>s.length>2))].slice(0,6)}
+ if(!names.length){host.innerHTML='<p style="padding:20px;color:#777d6e">Relationship graph will populate after a successful analysis run.</p>';return}
+ const width=850,height=320,cx=width/2,cy=height/2,rx=300,ry=112;
+ const points=names.map((name,i)=>({name,x:cx+rx*Math.cos((2*Math.PI*i/names.length)-Math.PI/2),y:cy+ry*Math.sin((2*Math.PI*i/names.length)-Math.PI/2)}));
+ const edgeMarkup=points.length>1?points.slice(1).map((p,i)=>'<line class="graph-edge" x1="'+points[i].x+'" y1="'+points[i].y+'" x2="'+p.x+'" y2="'+p.y+'"/><text class="graph-edge-label" x="'+((points[i].x+p.x)/2)+'" y="'+((points[i].y+p.y)/2-6)+'">relationship to review</text>').join(''):'';
+ const nodeMarkup=points.map((p,i)=>'<g class="graph-node" tabindex="0" role="button" data-node-index="'+i+'"><rect x="'+(p.x-70)+'" y="'+(p.y-25)+'" width="140" height="50" rx="12"/><text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle">'+esc(p.name.length>19?p.name.slice(0,18)+'…':p.name)+'</text></g>').join('');
+ host.innerHTML='<svg viewBox="0 0 '+width+' '+height+'" role="img" aria-label="Contract relationship overview">'+edgeMarkup+nodeMarkup+'</svg><p style="padding:0 16px 12px;color:#777d6e;font-size:12px">Select a node to open Contracts. Relationship lines are a visual index only; confirm each link in the sourced relationship evidence below.</p>';
+ host.querySelectorAll('[data-node-index]').forEach(n=>{const go=()=>window.odinShowPage?.('contracts');n.addEventListener('click',go);n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
+}
 async function init(){try{let h=await get('/api/health');$('health').textContent=h.claude_configured?'Claude configured':'Demo mode · key optional';await runOdin()}catch(e){$('loading').textContent='Backend error: '+e.message}}
 
 async function uploadContract(){const input=document.getElementById('contractFile'),btn=document.getElementById('uploadBtn'),box=document.getElementById('uploadResult');if(!input.files||!input.files.length){alert('Choose a PDF or TXT contract first.');return}btn.disabled=true;btn.textContent='Extracting…';try{const form=new FormData();form.append('file',input.files[0]);const response=await fetch('/api/analyze-upload?use_claude=true',{method:'POST',headers:apiHeaders(),body:form});const data=await response.json();if(!response.ok)throw new Error(data.detail||'Upload failed');const terms=data.extraction.extracted_terms||[],v=data.extraction.citation_validation||{};box.innerHTML='<div class="evidence"><b>'+esc(data.document.filename)+'</b> · '+esc(data.document.format)+' · '+data.document.characters+' characters · citations '+(v.verified||0)+'/'+(v.total||0)+'<p>SHA-256: <code>'+esc(data.document.sha256)+'</code></p>'+terms.map(t=>'<div class="evidence"><b>'+esc(t.category||'Term')+'</b> · '+(t.citation&&t.citation.verified?'VERIFIED':'REVIEW')+'<p>'+esc(t.value||'')+'</p><blockquote>'+esc(t.citation&&t.citation.quote||'')+'</blockquote></div>').join('')+'<div class="notice">'+esc(data.notice)+'</div></div>';box.classList.remove('hidden')}catch(e){alert(e.message)}finally{btn.disabled=false;btn.textContent='Analyze uploaded file'}}
@@ -599,5 +699,5 @@ async function runOdin() {
   }
 }
 if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}
-init();$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
+setupOdinPages();init();$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
 </script></body></html>
