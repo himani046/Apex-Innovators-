@@ -14,6 +14,7 @@ from backend.services.audit_store import audit_store
 from backend.services.document_upload import DocumentUploadError, extract_uploaded_document
 from backend.services.ingestion import load_pack
 from backend.services.upload_analysis import extract_document_terms
+from backend.services.custom_portfolio import analyze_custom_portfolio
 
 app = FastAPI(
     title="Odin | Contract War Room",
@@ -42,6 +43,19 @@ class HumanDecisionRequest(BaseModel):
     decision: Literal["approved", "rejected"]
     reviewer: str = Field(min_length=2, max_length=120)
     note: str = Field(default="", max_length=2000)
+
+class ContractTextInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
+    text: str = Field(min_length=20, max_length=2_000_000)
+
+
+class PortfolioAnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    company_context: str = Field(min_length=10, max_length=100_000)
+    contracts: list[ContractTextInput] = Field(min_length=1, max_length=50)
+    event_records: list[dict] = Field(default_factory=list, max_length=1000)
+    as_of: date = Field(default=date(2027, 3, 15))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -90,6 +104,41 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
     except Exception as exc:
         # Avoid returning internal exception text, paths, or provider details to clients.
         raise HTTPException(status_code=500, detail="Odin run failed safely; inspect server logs.") from exc
+
+
+@app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])
+def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
+    """Analyze a user-supplied company context and multiple contract texts.
+
+    The custom-input path performs conservative deterministic source triage. It
+    does not claim to run a live multi-agent LLM debate or calculate unsupported
+    financial exposure.
+    """
+    contract_ids = [item.id.strip() for item in body.contracts]
+    if len(set(cid.casefold() for cid in contract_ids)) != len(contract_ids):
+        raise HTTPException(status_code=422, detail="Contract IDs must be unique, ignoring case")
+    total_bytes = sum(len(item.text.encode("utf-8")) for item in body.contracts)
+    if total_bytes > 15 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Combined contract text exceeds the 15 MB limit")
+    try:
+        result = analyze_custom_portfolio(
+            company_context=body.company_context,
+            contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
+            events=body.event_records,
+            as_of=body.as_of.isoformat(),
+        )
+        audit = audit_store.record_run(result)
+        result["audit"] = {
+            "run_id": audit["run_id"],
+            "created_at": audit["created_at"],
+            "input_fingerprint": audit["input_fingerprint"],
+        }
+        result["run_id"] = audit["run_id"]
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid simulated date or portfolio input") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Portfolio analysis failed safely; inspect server logs.") from exc
 
 
 @app.get("/api/audit/runs", dependencies=[Depends(require_api_token)])
