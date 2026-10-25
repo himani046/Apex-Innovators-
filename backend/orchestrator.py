@@ -342,7 +342,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         events=portfolio_events,
         as_of=as_of,
         max_iterations=1,
-        max_agent_calls=MAX_AGENT_CALLS * 10,
+        max_agent_calls=max(MAX_AGENT_CALLS * 10, len(contracts) * 13),
+        use_llm=use,
     )
     state["cross_contract_candidates"] = detect_cross_contract_candidates(contracts)
     for candidate in state["cross_contract_candidates"]:
