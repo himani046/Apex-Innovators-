@@ -265,6 +265,46 @@ header #health{justify-self:end}
 }
 #dash>.card.full:hover:before{opacity:0!important}
 #dash>.card.full:hover svg{filter:none!important}
+
+/* Hover belongs to leaf cards only. Section/panel wrappers never recolor,
+   including when the pointer is over an interactive card nested inside them. */
+.card.full:hover,
+.card.full:focus-within,
+.card.full:has(.card:hover),
+.card.full:has(.overview-metric:hover),
+.card.full:has(.metric:hover),
+.card.full:has(.agent:hover),
+.card.full:has(.evidence:hover),
+.card.full:has(.action:hover),
+.card.full:has(.milestone:hover),
+.card.full:has(.graph-shell):hover,
+.card.full:has(#fr9Graph):hover{
+  color:#171b15!important;
+  background:#fff!important;
+  border-color:#e0e3da!important;
+  box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
+  transform:none!important;
+}
+.card.full:hover h1,.card.full:hover h2,.card.full:hover h3,.card.full:hover h4,
+.card.full:hover p,.card.full:hover li,.card.full:hover small,.card.full:hover label,
+.card.full:hover .value,.card.full:hover .muted,.card.full:hover .label,.card.full:hover .hint,
+.card.full:focus-within h1,.card.full:focus-within h2,.card.full:focus-within h3,
+.card.full:focus-within h4,.card.full:focus-within p,.card.full:focus-within small,
+.card.full:has(.card:hover) h1,.card.full:has(.card:hover) h2,
+.card.full:has(.card:hover) h3,.card.full:has(.card:hover) p,
+.card.full:has(.overview-metric:hover) h1,.card.full:has(.overview-metric:hover) h2,
+.card.full:has(.overview-metric:hover) h3,.card.full:has(.overview-metric:hover) p{
+  color:#171b15!important;
+}
+.card.full:hover:before,.card.full:focus-within:before{opacity:0!important}
+.card.full:hover svg,.card.full:focus-within svg{filter:none!important;opacity:1!important}
+/* A small card remains responsible for its own hover styling. */
+.card.full .card:hover,.card.full .overview-metric:hover,
+.card.full .metric:hover,.card.full .agent:hover,.card.full .evidence:hover,
+.card.full .action:hover,.card.full .milestone:hover{
+  color:#fff;
+  background:linear-gradient(125deg,#747873 0%,#555d5b 46%,#3f5153 100%);
+}
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
