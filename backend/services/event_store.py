@@ -192,3 +192,28 @@ class EventStore:
             "future_events_excluded": future_excluded,
             "source_authenticity_verified": False,
         }
+
+    def list_revisions(self, source: str, event_id: str, limit: int = 50) -> dict[str, Any]:
+        """Return the retained before/after payloads for a changed source event."""
+        if limit < 1 or limit > 200:
+            raise ValueError("limit must be between 1 and 200")
+        with self._connection() as db:
+            rows = db.execute(
+                """SELECT revision_id,source,event_id,changed_at,previous_payload_hash,
+                          new_payload_hash,previous_payload_json,new_payload_json
+                   FROM ingested_event_revisions
+                   WHERE source=? AND event_id=? ORDER BY revision_id DESC LIMIT ?""",
+                (str(source), str(event_id), limit),
+            ).fetchall()
+        revisions = []
+        for row in rows:
+            item = dict(row)
+            item["previous_payload"] = json.loads(item.pop("previous_payload_json"))
+            item["new_payload"] = json.loads(item.pop("new_payload_json"))
+            revisions.append(item)
+        return {
+            "source": str(source), "event_id": str(event_id),
+            "revision_count": len(revisions), "revisions": revisions,
+            "source_authenticity_verified": False,
+            "notice": "Revision history records source changes; it does not independently authenticate either version.",
+        }
