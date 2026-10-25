@@ -106,3 +106,19 @@ Run the test suite after pulling updates:
 python -m unittest discover -s tests -v
 ```
 
+
+## Phase 5 — Evidence-grounded risk and decisions
+
+Phase 5 adds a normalized `evidence_grounded_finding` to each API run and exposes it in the dashboard.
+
+- **Structured finding:** finding ID, contract ID, claim, severity, supporting evidence, missing evidence, status, recommended action, and human-review requirement.
+- **Exact quote validation:** contract quotations are checked against the named canonical contract source; the E-04 event quotation is checked against the exact event-feed body. The API reports the validation result and note for each evidence item.
+- **Facts vs. interpretation:** the dashboard separates what the event record supports from the interpretation that notification compliance remains uncertain.
+- **No unsupported breach conclusion:** the A1 finding remains `partially_supported` while provider-awareness and notice-delivery evidence are missing; `breach_proven` remains false.
+- **Uncertainty and conflicts:** missing evidence and verification challenges are explicit. Conflicting evidence is recorded only when a source-backed conflict is supplied; an absence of evidence is not mislabeled as a contradiction.
+- **Decision transparency:** the dashboard shows remaining gaps, loop stop reason, iteration/call budget, recommended next action, and its approval status.
+- **Approval gate:** consequential actions remain draft-only and are never sent automatically. The dashboard communicates the approval requirement; it does not silently approve or dispatch the action.
+
+The Phase 5 finding is a review artifact, not a legal conclusion. The A1 scenario still supports an unplanned 190-minute outage, but does not establish provider-awareness time or delivery time for the required Operations notice.
+
+Regression tests: `python -m unittest tests.test_evidence_grounding -v` and the full suite with `python -m unittest discover -s tests -v`.
