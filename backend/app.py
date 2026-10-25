@@ -418,6 +418,7 @@ def audit_run_observability(run_id: str):
     payload = result.get("payload") or {}
     shared = payload.get("shared_state") or {}
     workstreams = payload.get("workstreams") or (payload.get("workstream_analysis") or {}).get("workstreams", [])
+    portfolio_workflow = payload.get("portfolio_agent_workflow") or {}
     return {
         "run_id": result.get("run_id", run_id),
         "status": payload.get("status"),
@@ -441,11 +442,26 @@ def audit_run_observability(run_id: str):
                 for term in (shared.get("extracted_clauses") or (payload.get("extraction") or {}).get("extracted_terms", []))
                 if isinstance(term, dict)
             ],
-            "timeline_projections": (payload.get("portfolio_operations") or {}).get("norns_timeline", payload.get("timeline", {})),
-            "attack_proposals": (payload.get("portfolio_agent_workflow") or {}).get("attack_proposals", payload.get("risk_finding", {})),
-            "verifications": payload.get("verification"),
-            "rulings": payload.get("ruling"),
-            "rationale": (payload.get("ruling") or {}).get("rationale"),
+            "timeline_projections": {
+                "portfolio": (payload.get("portfolio_operations") or {}).get("norns_timeline", payload.get("timeline", {})),
+                "per_contract": portfolio_workflow.get("timeline_candidates", []),
+            },
+            "attack_proposals": {
+                "portfolio": portfolio_workflow.get("risk_findings", []),
+                "legacy_a1": payload.get("risk_finding", {}),
+            },
+            "verifications": {
+                "portfolio": portfolio_workflow.get("verification_outcomes", []),
+                "legacy_a1": payload.get("verification"),
+            },
+            "rulings": {
+                "portfolio": portfolio_workflow.get("rulings", []),
+                "legacy_a1": payload.get("ruling"),
+            },
+            "rationale": {
+                "portfolio": [item.get("rationale") for item in portfolio_workflow.get("rulings", []) if isinstance(item, dict)],
+                "legacy_a1": (payload.get("ruling") or {}).get("rationale"),
+            },
         },
         "agent_transitions": payload.get("agent_messages") or shared.get("agent_messages", []),
         "final_synthesis": payload.get("synthesis", {}),
