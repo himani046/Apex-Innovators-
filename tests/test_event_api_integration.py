@@ -40,9 +40,9 @@ class EventAPIIntegrationTests(unittest.TestCase):
                     "ruling": {"action_draft": {"subject": "Review", "body": "Draft only"}},
                 })
                 source = (
-                    "Section 1. Term\\nThe agreement lasts twelve months.\\n"
-                    "Section 4. Renewal\\nThe agreement automatically renews for one year.\\n"
-                    "Section 8. Payment\\nCustomer shall pay USD 500 monthly.\\n"
+                    "Section 1. Term\nThe agreement lasts twelve months.\n"
+                    "Section 4. Renewal\nThe agreement automatically renews for one year.\n"
+                    "Section 8. Payment\nCustomer shall pay USD 500 monthly.\n"
                 )
                 result = app_module.reextract_clause(app_module.ReExtractionRequest(
                     contract_id="VENDOR_X", text=source, clause_reference="Section 4",
@@ -67,7 +67,7 @@ class EventAPIIntegrationTests(unittest.TestCase):
                 with self.assertRaises(Exception) as raised:
                     app_module.reextract_clause(app_module.ReExtractionRequest(
                         contract_id="VENDOR_X",
-                        text="Section 4. Renewal\\nThe agreement automatically renews for one year.",
+                        text="Section 4. Renewal\nThe agreement automatically renews for one year.",
                         clause_reference="Section 4",
                         run_id="missing-run",
                     ))
