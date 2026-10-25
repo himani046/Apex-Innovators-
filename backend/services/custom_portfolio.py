@@ -122,27 +122,25 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
     for cid, source in contracts.items():
         extraction = extractions[cid]
-        if not execution_budget.reserve_call(f"Thor extraction {cid}"):
+        if not budget_allows_contracts:
+            shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
+            continue
+        stage_slots = all(execution_budget.reserve_call(f"{agent_name} {cid}") for agent_name in stage_names)
+        if not stage_slots:
             budget_exhausted = True
         shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
         timeline.extend(contract_timeline)
-        if not execution_budget.reserve_call(f"Norns timeline {cid}"):
-            budget_exhausted = True
+        # The call slots above reserve a complete deterministic stage sequence; the
+        # remaining stage messages below record actual functions executed.
         shared_agent_state.message("Norns", "Loki", "timeline_candidates", "complete", contract_id=cid, milestones=len(contract_timeline))
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
-        if not execution_budget.reserve_call(f"Loki review {cid}"):
-            budget_exhausted = True
         shared_agent_state.message("Loki", "Heimdall", "risk_challenge", "submitted", contract_id=cid, findings=len(contract_risks))
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         verification_records.append({"contract_id": cid, **heimdall_result})
-        if not execution_budget.reserve_call(f"Heimdall verification {cid}"):
-            budget_exhausted = True
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
-        if not execution_budget.reserve_call(f"Tyr ruling {cid}"):
-            budget_exhausted = True
         shared_agent_state.message("Heimdall", "Tyr", "verification_result", heimdall_result.get("status", "unknown"), contract_id=cid, findings=len(heimdall_result.get("findings", [])))
         shared_agent_state.message("Tyr", "Odin", "rulings", tyr_result.get("status", "unknown"), contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
@@ -219,7 +217,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         contract_reports.append(report)
 
     for item in timeline:
-        if item.get("date_type") == "deadline_or_notice":
+        if item.get("date_type") == "possible_action_deadline":
             alerts.append({
                 "id": f"{item.get('contract_id')}:{item.get('date')}:timeline",
                 "contract_id": item.get("contract_id"),
@@ -236,6 +234,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     workstreams = []
     for report in contract_reports:
         gaps = report.get("unresolved_questions", []) or []
+        budget_limited_stream = budget_exhausted and not any(message.get("contract_id") == report["contract_id"] and message.get("from") == "Tyr" for message in agent_messages)
         workstreams.append({
             "id": "contract-" + report["contract_id"],
             "label": "Contract " + report["contract_id"],
@@ -243,17 +242,17 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "contract_ids": [report["contract_id"]],
             "responsibility": "Extract source terms, classify date candidates, review risks, verify evidence, and draft review actions.",
             "assigned_agents": ["Thor", "Norns", "Loki", "Heimdall", "Tyr"],
-            "status": report["status"],
-            "progress": {"completed_stages": 5, "total_stages": 5, "percentage": 100, "note": "Pipeline stages executed; legal outcome may remain unresolved."},
+            "status": "incomplete_budget_exhausted" if budget_limited_stream else report["status"],
+            "progress": {"completed_stages": 0 if budget_limited_stream else 5, "total_stages": 5, "percentage": 0 if budget_limited_stream else 100, "note": "Execution budget did not permit the full workflow." if budget_limited_stream else "Pipeline stages executed; legal outcome may remain unresolved."},
             "extracted_obligations": report.get("obligations", []),
             "timeline_candidates": report.get("timeline", []),
             "risk_findings": report.get("risks", []),
             "open_questions": gaps,
-            "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(gaps),
-                                "human_review_required": bool(gaps or report.get("risks")),
+            "completion_gate": {"workflow_complete": not budget_limited_stream, "budget_exhausted": budget_limited_stream, "evidence_gaps_remaining": bool(gaps) or budget_limited_stream,
+                                "human_review_required": True,
                                 "legal_outcome_resolved": False,
-                                "note": "Workflow stages completed; this gate does not mean the contract is legally resolved."},
-            "completion_note": "Source-triage stages ran; unresolved questions and human review remain visible. This is not a legal-completeness guarantee."
+                                "note": "Workflow stage completion is distinct from legal resolution."},
+            "completion_note": "Incomplete because execution budget was exhausted." if budget_limited_stream else "Source-triage stages ran; unresolved questions and human review remain visible. This is not a legal-completeness guarantee."
         })
     workstreams.append({
         "id": "portfolio-cross-contract",
