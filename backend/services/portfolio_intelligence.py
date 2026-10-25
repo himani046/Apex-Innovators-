@@ -27,6 +27,34 @@ NEGATIVE_MODAL = re.compile(r"\b(shall not|must not|may not|is prohibited from|w
 OVERRIDE = re.compile(r"\b(amendment|amended|addendum|notwithstanding|prevail|precedence|supersede|subject to)\b", re.I)
 PARTY_LABEL = re.compile(r"\b(customer|client|buyer|supplier|provider|vendor|landlord|tenant|party a|party b)\b", re.I)
 
+PARTY_ROLE_RE = re.compile(r"\b(customer|client|buyer|supplier|provider|vendor|landlord|tenant|party\s+[ab])\b", re.I)
+INCORPORATION_RE = re.compile(r"\b(incorporated by reference|incorporate[sd]? by reference|attached hereto|master services agreement|statement of work|order form|schedule [a-z0-9]+|exhibit [a-z0-9]+)\b", re.I)
+CONTEXT_STOP_WORDS = {
+    "shall", "must", "will", "may", "not", "within", "after", "before", "days",
+    "hours", "business", "calendar", "notice", "notify", "notification", "renewal",
+    "agreement", "contract", "party", "provider", "supplier", "customer", "client",
+    "buyer", "vendor", "landlord", "tenant", "written", "provide", "provided",
+    "under", "pursuant", "subject", "terms", "conditions", "section", "article",
+}
+
+
+def _context_terms(line: str) -> set[str]:
+    """Extract rough scope/context tokens; never treat lexical overlap as proof."""
+    tokens = set(re.findall(r"[a-z]{4,}", line.casefold()))
+    return tokens - CONTEXT_STOP_WORDS
+
+
+def _referenced_contract_ids(line: str, known_ids: list[str], current_id: str) -> list[str]:
+    """Find explicit mentions of other supplied contract IDs in a source line."""
+    found = []
+    for candidate in known_ids:
+        if candidate == current_id:
+            continue
+        if re.search(r"(?<![A-Za-z0-9])" + re.escape(candidate) + r"(?![A-Za-z0-9])", line, re.I):
+            found.append(candidate)
+    return sorted(found)
+
+
 
 def _topic(line: str) -> str | None:
     matches = [name for name, pattern in TOPICS.items() if pattern.search(line)]
@@ -84,6 +112,10 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "negative": bool(NEGATIVE_MODAL.search(line)),
                 "override": bool(OVERRIDE.search(line)),
                 "party_label": bool(PARTY_LABEL.search(line)),
+                "party_roles": sorted(set(role.casefold().replace(" ", "_") for role in PARTY_ROLE_RE.findall(line))),
+                "scope_terms": _context_terms(line),
+                "referenced_contract_ids": _referenced_contract_ids(line, sorted(contracts), cid),
+                "incorporation_marker": bool(INCORPORATION_RE.search(line)),
                 "tokens": set(re.findall(r"[a-z]{4,}", line.casefold())),
             })
             contract_rows += 1
@@ -143,15 +175,31 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "explanation": explanation, "evidence": evidence,
                 "evidence_verified": all(item["verified"] for item in evidence),
                 "context_checks": {
+                    # These fields are diagnostic signals only; no lexical heuristic
+                    # can confirm legal identity, scope, or precedence by itself.
                     "same_parties_confirmed": False,
+                    "party_roles_overlap": bool(set(left["party_roles"]) & set(right["party_roles"])),
+                    "party_roles_left": left["party_roles"],
+                    "party_roles_right": right["party_roles"],
                     "same_scope_confirmed": False,
-                    "amendment_precedence_resolved": not precedence_review,
+                    "scope_overlap_tokens": sorted(left["scope_terms"] & right["scope_terms"])[:20],
+                    "scope_overlap_ratio": round(
+                        len(left["scope_terms"] & right["scope_terms"]) /
+                        max(1, len(left["scope_terms"] | right["scope_terms"])), 3
+                    ),
+                    "explicit_cross_references": sorted(set(
+                        left["referenced_contract_ids"] + right["referenced_contract_ids"]
+                    )),
+                    "amendment_or_precedence_marker_detected": precedence_review,
+                    "amendment_precedence_resolved": False,
+                    "incorporation_marker_detected": bool(left["incorporation_marker"] or right["incorporation_marker"]),
                     "incorporated_terms_resolved": False,
                 },
                 "unresolved_questions": [
-                    "Are the parties, services, and covered periods the same?",
-                    "Does an amendment, order form, or precedence clause control either excerpt?",
-                    "Are exceptions or incorporated terms relevant?",
+                    "Confirm the actual legal parties and whether they act in the same capacity in both contracts.",
+                    "Confirm service, territory, transaction, duration, and covered-period scope; token overlap is not scope equivalence.",
+                    "Check explicit cross-references, amendments, order forms, precedence clauses, and which document controls.",
+                    "Check incorporated terms, exhibits, schedules, statements of work, and exceptions.",
                 ],
                 "legal_conflict_determined": False,
                 "human_review_required": True,
