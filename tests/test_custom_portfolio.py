@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from backend.services.custom_portfolio import analyze_custom_portfolio
 
 
@@ -90,6 +91,33 @@ class CustomPortfolioTests(unittest.TestCase):
             result["agent_workflow"]["agent_calls_used"],
             result["agent_workflow"]["agent_call_budget"],
         )
+
+    def test_missing_agent_workstream_is_not_reported_complete(self):
+        with patch("backend.services.custom_portfolio.run_bounded_review_cycles", return_value={
+            "mode": "bounded_test_workflow",
+            "workstreams": [],
+            "agent_calls_used": 0,
+            "agent_call_budget": 300,
+            "iterations_used": 0,
+            "max_iterations": 1,
+            "stop_reason": "test_missing_workstream",
+            "agent_messages": [],
+        }):
+            result = analyze_custom_portfolio(
+                company_context="Example Buyer manages a supplier contract and its obligations.",
+                contract_items=[{"id": "VENDOR_X", "text": (
+                    "Section 1. Renewal\\nThe agreement automatically renews unless written notice is given."
+                )}],
+                events=[],
+                as_of="2027-03-15",
+            )
+        stream = next(item for item in result["workstreams"] if item.get("primary_contract_id") == "VENDOR_X")
+        self.assertEqual(stream["status"], "not_run_missing_workstream")
+        self.assertEqual(stream["progress"]["percentage"], 83)
+        self.assertFalse(stream["completion_gate"]["workflow_complete"])
+        self.assertEqual(result["status"], "partial_workstream_coverage")
+        self.assertTrue(all(item["status"] == "partial_workstream_coverage"
+                            for item in result["shared_state"]["agent_status"].values()))
 
     def test_alerts_are_triage_not_breach_conclusions(self):
         result = analyze_custom_portfolio(

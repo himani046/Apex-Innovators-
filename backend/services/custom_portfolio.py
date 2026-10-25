@@ -320,16 +320,16 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "responsibility": "Extract source terms, classify date candidates, review risks, verify evidence, and draft review actions.",
             "assigned_agents": ["Thor", "Norns", "Loki", "Heimdall", "Tyr"],
             "status": report["status"],
-            "progress": {"completed_stages": 5, "total_stages": 5, "percentage": 100},
+            "progress": {"completed_stages": 5, "total_stages": 6, "percentage": 83},
             "extracted_obligations": report.get("obligations", []),
             "timeline_candidates": report.get("timeline", []),
             "risk_findings": report.get("risks", []),
             "open_questions": gaps,
-            "completion_gate": {"workflow_complete": True, "evidence_gaps_remaining": bool(gaps),
-                                "human_review_required": bool(gaps or report.get("risks")),
+            "completion_gate": {"workflow_complete": False, "evidence_gaps_remaining": bool(gaps),
+                                "human_review_required": True,
                                 "legal_outcome_resolved": False,
-                                "note": "Workflow stages completed; this gate does not mean the contract is legally resolved."},
-            "completion_note": "Source-triage stages ran; unresolved questions and human review remain visible. This is not a legal-completeness guarantee."
+                                "note": "Source triage ran; bounded agent review must be confirmed before this workstream can be marked workflow-complete."},
+            "completion_note": "Source triage is complete; bounded agent review has not yet been confirmed."
         })
     workstreams.append({
         "id": "portfolio-cross-contract",
@@ -357,9 +357,23 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     for stream in workstreams:
         cid = stream.get("primary_contract_id")
         if cid not in workflow_by_contract:
+            if cid is not None:
+                stream["status"] = "not_run_missing_workstream"
+                stream["progress"] = {"completed_stages": 5, "total_stages": 6, "percentage": 83}
+                stream["completion_gate"] = {
+                    "workflow_complete": False,
+                    "evidence_gaps_remaining": bool(stream.get("open_questions")),
+                    "human_review_required": True,
+                    "legal_outcome_resolved": False,
+                    "agent_review_stop_reason": "missing_workstream",
+                    "note": "No bounded agent-workflow result was returned for this contract; it must not be marked complete.",
+                }
+                stream["completion_note"] = "Agent review did not return a result for this contract. Re-run or inspect the workflow before treating it as complete."
             continue
         workflow = workflow_by_contract[cid]
-        ran = workflow.get("status") != "not_run_budget_exhausted"
+        ran = bool(workflow.get("status")) and workflow.get("status") not in {
+            "not_run_budget_exhausted", "not_run_missing_workstream", "failed", "error", "not_run"
+        }
         stream["progress"] = {
             "completed_stages": 6 if ran else 5,
             "total_stages": 6,
@@ -423,16 +437,23 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "execution": {"mode": agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow"), "max_iterations": agent_workflow.get("max_iterations", 1), "iterations_used": agent_workflow.get("iterations_used", 0),
                                   "agent_calls_used": agent_workflow.get("agent_calls_used", 0), "agent_call_budget": agent_workflow.get("agent_call_budget", 300),
                                   "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
+    coverage_incomplete = any(
+        stream.get("primary_contract_id") is not None
+        and not (stream.get("completion_gate") or {}).get("workflow_complete", False)
+        for stream in workstreams
+    )
     for name, status in shared_state.get("agent_status", {}).items():
         status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
         status["status"] = (
             "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
             else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+            else "partial_workstream_coverage" if coverage_incomplete
             else "complete_with_limitations"
         )
     final_status = (
         "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
         else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+        else "partial_workstream_coverage" if coverage_incomplete
         else "complete_with_limitations"
     )
     company_report["status"] = final_status
