@@ -70,9 +70,9 @@ def build_evidence_grounded_finding(
     # Only explicit, source-backed contradictions are recorded as conflicts.
     # Verification challenges that describe absent evidence remain uncertainty.
     status = "partially_supported"
-    if not evidence_gaps and verification.get("status") == "verified" and all(
-        item["verified"] for item in evidence if item["source_type"] == "contract"
-    ):
+    contract_evidence = [item for item in evidence if item["source_type"] == "contract"]
+    if (not evidence_gaps and verification.get("status") == "verified"
+            and contract_evidence and all(item["verified"] for item in contract_evidence)):
         status = "supported"
     elif not any(item["verified"] for item in evidence):
         status = "unverified"
