@@ -198,6 +198,33 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
         "relative_or_notice_terms": sum(item["date_type"] == "relative_or_notice_term" for item in deadlines),
     }
     matched = sum(item["contract_id"] is not None for item in ledger)
+    invoice_groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for item in ledger:
+        contract_id = item.get("contract_id")
+        invoice_ref = item.get("invoice_reference_candidate")
+        if contract_id and invoice_ref:
+            invoice_groups.setdefault((str(contract_id), str(invoice_ref)), []).append(item)
+    invoice_reconciliation = []
+    for (contract_id, invoice_ref), rows in sorted(invoice_groups.items()):
+        kinds = {
+            "credit" if re.search(r"\b(credit|refund|refunded)\b", str(row.get("evidence_text", "")), re.I)
+            else "payment" if str(row.get("payment_status", "")).casefold() in {"paid", "settled", "remitted"}
+            else "invoice_or_other"
+            for row in rows
+        }
+        amounts = sorted({row.get("amount_numeric_candidate") for row in rows if row.get("amount_numeric_candidate") is not None})
+        invoice_reconciliation.append({
+            "contract_id": contract_id,
+            "invoice_reference": invoice_ref,
+            "source_event_ids": [row.get("event_id") for row in rows],
+            "candidate_kinds": sorted(kinds),
+            "amount_candidates": amounts,
+            "amounts_consistent": len(amounts) <= 1,
+            "status": "linked_candidate_requires_human_review",
+            "confirmed_liability": False,
+            "human_review_required": True,
+            "note": "Exact invoice-reference linkage is a candidate only; contract trigger, billing period, credit application, and settlement evidence must still be reconciled.",
+        })
     return {
         "as_of_date": as_of,
         "timeline": {
@@ -208,12 +235,16 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
         "financial_reconciliation": {
             "contract_amounts": contract_amounts,
             "payment_ledger_candidates": ledger,
+            "invoice_reconciliation_candidates": invoice_reconciliation,
             "counts": {
                 "contract_amounts": len(contract_amounts),
                 "transaction_candidates": len(ledger),
                 "contract_linked_candidates": matched,
                 "unlinked_candidates": len(ledger) - matched,
                 "payment_ledger_rows": sum(item["event_source"] == "payments_ledger.csv" for item in ledger),
+                "explicit_invoice_groups": len(invoice_reconciliation),
+                "invoice_groups_with_amount_disagreement": sum(not item["amounts_consistent"] for item in invoice_reconciliation),
+                "rows_with_invalid_source_date": sum(not item.get("source_date_valid", True) for item in ledger),
             },
             "portfolio_total_usd": None,
             "status": "evidence_candidates_only",
