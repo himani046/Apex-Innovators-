@@ -16,6 +16,9 @@ from backend.services.ingestion import load_pack
 from backend.services.upload_analysis import extract_document_terms
 from backend.services.custom_portfolio import analyze_custom_portfolio
 from backend.services.agentic_state import SharedAgentState
+from backend.services.event_store import EventStore
+
+event_store = EventStore()
 
 app = FastAPI(
     title="Odin | Contract War Room",
@@ -59,6 +62,12 @@ class PortfolioAnalysisRequest(BaseModel):
     as_of: date = Field(default=date(2027, 3, 15))
     use_claude: bool = False
 
+class EventIngestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str = Field(min_length=1, max_length=120)
+    events: list[dict] = Field(min_length=1, max_length=1000)
+
+
 class ReExtractionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     contract_id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
@@ -80,6 +89,7 @@ def health():
         "pack_found": PACK_DIR.exists(),
         "claude_configured": USE_CLAUDE,
         "persistent_audit_enabled": True,
+        "persistent_event_store_enabled": True,
         "security_mode": security_mode(),
     }
 
@@ -94,6 +104,24 @@ def pack_summary():
         "parse_errors": pack["parse_errors"],
         "checkpoints": pack["clock"]["checkpoints"],
     }
+
+
+@app.post("/api/events/ingest", dependencies=[Depends(require_api_token)])
+def ingest_events(body: EventIngestionRequest = Body(...)):
+    """Persist source-labeled event records; persistence does not authenticate their provenance."""
+    try:
+        return event_store.ingest(body.source, body.events)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/events", dependencies=[Depends(require_api_token)])
+def list_events(as_of: date | None = Query(default=None), limit: int = Query(default=1000, ge=1, le=5000)):
+    """List durable event records; future records are excluded when a simulated date is supplied."""
+    try:
+        return event_store.list_events(as_of=as_of.isoformat() if as_of else None, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid event query") from exc
 
 
 @app.get("/api/run")
@@ -161,13 +189,25 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
     if total_bytes > 15 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Combined contract text exceeds the 15 MB limit")
     try:
+        stored_events = event_store.list_events(as_of=body.as_of.isoformat(), limit=1000)["events"]
+        combined_events = {}
+        for event in stored_events + body.event_records:
+            event_id = str(event.get("event_id") or event.get("id") or "")
+            source_id = str(event.get("source") or "request")
+            key = (source_id, event_id) if event_id else (source_id, str(event.get("body") or event.get("text") or ""))
+            combined_events[key] = event
         result = analyze_custom_portfolio(
             company_context=body.company_context,
             contract_items=[{"id": item.id.strip(), "text": item.text} for item in body.contracts],
-            events=body.event_records,
+            events=list(combined_events.values()),
             as_of=body.as_of.isoformat(),
             use_llm=body.use_claude,
         )
+        result["event_store_context"] = {
+            "stored_events_loaded": len(stored_events),
+            "request_events_received": len(body.event_records),
+            "event_source_authenticity_verified": False,
+        }
         audit = audit_store.record_run(result)
         result["audit"] = {
             "run_id": audit["run_id"],
