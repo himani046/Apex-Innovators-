@@ -84,7 +84,7 @@ def _filter_alert_noise(alerts: list[dict], as_of: date) -> tuple[list[dict], di
         if level == "low" and not concrete:
             suppressed_low += 1
             continue
-        if category == "contract_clause_triage" and level not in {"high", "critical"} and not concrete:
+        if (category == "contract_clause_triage" or alert.get("alert_source") == "contract_clause_triage") and level not in {"high", "critical"} and not concrete:
             suppressed_low += 1
             continue
         selected.append(alert)
