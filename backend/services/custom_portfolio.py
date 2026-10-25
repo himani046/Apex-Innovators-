@@ -116,6 +116,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 if pattern.search(raw):
                     risk = {"id": f"{cid}:{category}:{line_no}", "contract_id": cid, "category": category,
                             "title": category.replace("_", " ").title(), "severity": severity,
+                            "likelihood": "unassessed_source_triage", "confidence": 0.65,
                             "priority": severity, "status": "candidate_requires_review",
                             "claim": "A potentially relevant contractual provision was identified; applicability and legal effect require review.",
                             "reason": "Keyword-based source triage; this is not a finding of breach.",
@@ -135,6 +136,25 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         confidence = [float(t["confidence"]) for t in extraction.get("extracted_terms", [])
                       if isinstance(t.get("confidence"), (int, float))]
         gaps = extraction.get("ambiguities", [])
+        actions = []
+        for risk in contract_risks:
+            category = risk["category"]
+            if category == "renewal":
+                action_type, subject = "renewal_review", f"Review renewal and notice requirements for {cid}"
+            elif category == "termination":
+                action_type, subject = "termination_review", f"Review termination and cure-period language for {cid}"
+            elif category == "penalty_or_interest":
+                action_type, subject = "financial_escalation_memo", f"Validate penalty or interest trigger for {cid}"
+            elif category == "notice_obligation":
+                action_type, subject = "evidence_request", f"Confirm notice timing and delivery evidence for {cid}"
+            elif category == "liability_or_indemnity":
+                action_type, subject = "legal_review_memo", f"Review liability allocation in {cid}"
+            else:
+                action_type, subject = "cross_contract_review", f"Review possible term interaction in {cid}"
+            actions.append({"type": action_type, "subject": subject,
+                            "body": "Please review the cited source language, confirm the applicable trigger and relevant facts, and determine whether a notice or other action is appropriate. This draft is not sent automatically.",
+                            "citations": [risk["evidence"]], "confidence": 0.65,
+                            "human_approval_required": True, "status": "draft_only_not_sent"})
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
                   "timeline": [t for t in timeline if t["contract_id"] == cid], "risks": contract_risks,
@@ -143,8 +163,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                           "failed": sum(not c.get("verified", False) for c in citations)},
                   "confidence": round(sum(confidence)/len(confidence), 3) if confidence else None,
                   "unresolved_questions": gaps,
-                  "recommended_actions": [{"type": "review_request", "subject": "Review source-grounded contract candidates",
-                                           "body": "Review the cited terms and confirm relevant triggers and facts before taking action.",
+                  "recommended_actions": actions or [{"type": "review_request", "subject": f"Review contract {cid}",
+                                           "body": "Review extracted source candidates and confirm all relevant obligations before taking action.",
                                            "citations": citations[:5], "confidence": 0.65,
                                            "human_approval_required": True, "status": "draft_only_not_sent"}],
                   "notice": "Keyword-based source triage; not legal advice and not a complete semantic contract review."}
