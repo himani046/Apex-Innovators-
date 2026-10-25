@@ -27,6 +27,34 @@ NEGATIVE_MODAL = re.compile(r"\b(shall not|must not|may not|is prohibited from|w
 OVERRIDE = re.compile(r"\b(amendment|amended|addendum|notwithstanding|prevail|precedence|supersede|subject to)\b", re.I)
 PARTY_LABEL = re.compile(r"\b(customer|client|buyer|supplier|provider|vendor|landlord|tenant|party a|party b)\b", re.I)
 
+PARTY_ROLE_RE = re.compile(r"\b(customer|client|buyer|supplier|provider|vendor|landlord|tenant|party\s+[ab])\b", re.I)
+INCORPORATION_RE = re.compile(r"\b(incorporated by reference|incorporate[sd]? by reference|attached hereto|master services agreement|statement of work|order form|schedule [a-z0-9]+|exhibit [a-z0-9]+)\b", re.I)
+CONTEXT_STOP_WORDS = {
+    "shall", "must", "will", "may", "not", "within", "after", "before", "days",
+    "hours", "business", "calendar", "notice", "notify", "notification", "renewal",
+    "agreement", "contract", "party", "provider", "supplier", "customer", "client",
+    "buyer", "vendor", "landlord", "tenant", "written", "provide", "provided",
+    "under", "pursuant", "subject", "terms", "conditions", "section", "article",
+}
+
+
+def _context_terms(line: str) -> set[str]:
+    """Extract rough scope/context tokens; never treat lexical overlap as proof."""
+    tokens = set(re.findall(r"[a-z]{4,}", line.casefold()))
+    return tokens - CONTEXT_STOP_WORDS
+
+
+def _referenced_contract_ids(line: str, known_ids: list[str], current_id: str) -> list[str]:
+    """Find explicit mentions of other supplied contract IDs in a source line."""
+    found = []
+    for candidate in known_ids:
+        if candidate == current_id:
+            continue
+        if re.search(r"(?<![A-Za-z0-9])" + re.escape(candidate) + r"(?![A-Za-z0-9])", line, re.I):
+            found.append(candidate)
+    return sorted(found)
+
+
 
 def _topic(line: str) -> str | None:
     matches = [name for name, pattern in TOPICS.items() if pattern.search(line)]
@@ -84,6 +112,10 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "negative": bool(NEGATIVE_MODAL.search(line)),
                 "override": bool(OVERRIDE.search(line)),
                 "party_label": bool(PARTY_LABEL.search(line)),
+                "party_roles": sorted(set(role.casefold().replace(" ", "_") for role in PARTY_ROLE_RE.findall(line))),
+                "scope_terms": _context_terms(line),
+                "referenced_contract_ids": _referenced_contract_ids(source, sorted(contracts), cid),
+                "incorporation_marker": bool(INCORPORATION_RE.search(source)),
                 "tokens": set(re.findall(r"[a-z]{4,}", line.casefold())),
             })
             contract_rows += 1
@@ -143,15 +175,31 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "explanation": explanation, "evidence": evidence,
                 "evidence_verified": all(item["verified"] for item in evidence),
                 "context_checks": {
+                    # These fields are diagnostic signals only; no lexical heuristic
+                    # can confirm legal identity, scope, or precedence by itself.
                     "same_parties_confirmed": False,
+                    "party_roles_overlap": bool(set(left["party_roles"]) & set(right["party_roles"])),
+                    "party_roles_left": left["party_roles"],
+                    "party_roles_right": right["party_roles"],
                     "same_scope_confirmed": False,
-                    "amendment_precedence_resolved": not precedence_review,
+                    "scope_overlap_tokens": sorted(left["scope_terms"] & right["scope_terms"])[:20],
+                    "scope_overlap_ratio": round(
+                        len(left["scope_terms"] & right["scope_terms"]) /
+                        max(1, len(left["scope_terms"] | right["scope_terms"])), 3
+                    ),
+                    "explicit_cross_references": sorted(set(
+                        left["referenced_contract_ids"] + right["referenced_contract_ids"]
+                    )),
+                    "amendment_or_precedence_marker_detected": precedence_review,
+                    "amendment_precedence_resolved": False,
+                    "incorporation_marker_detected": bool(left["incorporation_marker"] or right["incorporation_marker"]),
                     "incorporated_terms_resolved": False,
                 },
                 "unresolved_questions": [
-                    "Are the parties, services, and covered periods the same?",
-                    "Does an amendment, order form, or precedence clause control either excerpt?",
-                    "Are exceptions or incorporated terms relevant?",
+                    "Confirm the actual legal parties and whether they act in the same capacity in both contracts.",
+                    "Confirm service, territory, transaction, duration, and covered-period scope; token overlap is not scope equivalence.",
+                    "Check explicit cross-references, amendments, order forms, precedence clauses, and which document controls.",
+                    "Check incorporated terms, exhibits, schedules, statements of work, and exceptions.",
                 ],
                 "legal_conflict_determined": False,
                 "human_review_required": True,
@@ -699,4 +747,185 @@ def run_bounded_review_cycles(
         "human_review_required": any(item.get("human_review_required") for item in workstreams),
         "legal_outcome_resolved": False,
         "notice": ("Bounded hybrid agent workflow with quote-validated LLM suggestions; still not a legal opinion, breach determination, or event-authenticity check." if llm_enabled else "Bounded deterministic agent collaboration; LLM use was not enabled or no provider key is configured. This is not a legal opinion, breach determination, or external event-authenticity check."),
+    }
+
+
+def review_cross_contract_candidates(
+    candidates: list[dict[str, Any]],
+    contracts: dict[str, str],
+    events: list[dict[str, Any]] | None,
+    as_of: str,
+    max_agent_calls: int = 150,
+) -> dict[str, Any]:
+    """Run bounded Loki → Heimdall → Tyr review on portfolio-level candidates.
+
+    This is a deterministic, evidence-first review trace. It validates quotations
+    against canonical contract text, surfaces explicitly linked event candidates,
+    and keeps the outcome unresolved for human review. It never concludes that a
+    legal conflict or breach exists.
+    """
+    normalized = normalize_event_records(events, as_of)
+    visible_events = normalized["events"]
+    traces: list[dict[str, Any]] = []
+    messages: list[dict[str, Any]] = []
+    calls_used = 0
+    stop_reason = "all_candidates_reviewed"
+
+    for candidate in candidates[:100]:
+        candidate_id = str(candidate.get("id", ""))
+        contract_ids = [str(cid) for cid in candidate.get("contract_ids", []) if str(cid) in contracts]
+        if len(contract_ids) != 2:
+            continue
+        if calls_used + 3 > max(0, int(max_agent_calls)):
+            stop_reason = "agent_call_budget_exhausted"
+            traces.append({
+                "candidate_id": candidate_id, "status": "not_run_budget_exhausted",
+                "decision": "not_reviewed", "legal_conflict_determined": False,
+                "human_review_required": True,
+            })
+            continue
+
+        evidence = candidate.get("evidence", []) or []
+        verified_evidence = []
+        for item in evidence:
+            cid = str(item.get("document_id", ""))
+            quote = str(item.get("quote", ""))
+            source = contracts.get(cid, "")
+            verified_evidence.append({
+                **item,
+                "verified": bool(quote and quote in source),
+                "verification_note": (
+                    "Exact quote matched canonical contract text."
+                    if quote and quote in source
+                    else "Quote could not be independently matched to the supplied canonical contract."
+                ),
+            })
+        calls_used += 1
+        loki = {
+            "agent": "Loki",
+            "status": "challenge_submitted",
+            "candidate_id": candidate_id,
+            "claim_challenged": candidate.get("explanation", "Potential cross-contract inconsistency."),
+            "alternative_explanations": [
+                "The clauses may govern different parties, services, territories, transactions, or periods.",
+                "An amendment, order form, precedence clause, exception, or incorporated term may control.",
+            ],
+            "attack_path": [
+                "Check whether the compared clauses have the same parties and scope.",
+                "Check amendment history and document precedence before treating different wording as inconsistent.",
+            ],
+            "evidence": verified_evidence,
+            "legal_conflict_determined": False,
+        }
+        messages.append({
+            "from": "Loki", "to": "Heimdall", "type": "cross_contract_challenge",
+            "status": "submitted", "candidate_id": candidate_id,
+            "evidence_count": len(verified_evidence),
+        })
+
+        topic = str(candidate.get("topic", "")).replace("_", " ").casefold()
+        event_candidates = []
+        for event in visible_events:
+            event_contract = str(event.get("contract_id", "")).strip()
+            body = str(event.get("body", ""))
+            explicit_link = event_contract in contract_ids or any(
+                re.search(r"(?<![A-Za-z0-9])" + re.escape(cid) + r"(?![A-Za-z0-9])", body, re.I)
+                for cid in contract_ids
+            )
+            topic_match = bool(topic and re.search(r"\b" + re.escape(topic) + r"\b", body, re.I))
+            if explicit_link and topic_match:
+                event_candidates.append({
+                    "event_id": event.get("event_id"),
+                    "contract_id": event_contract or None,
+                    "quote": body,
+                    "quote_matches_supplied_event": True,
+                    "source_authenticity_verified": False,
+                    "status": "event_candidate_requires_source_and_trigger_verification",
+                })
+        calls_used += 1
+        citations_verified = len(verified_evidence) >= 2 and all(
+            item.get("verified") for item in verified_evidence[:2]
+        )
+        heimdall = {
+            "agent": "Heimdall",
+            "status": "source_quotes_verified" if citations_verified else "citation_gap",
+            "candidate_id": candidate_id,
+            "verified_contract_citations": sum(bool(item.get("verified")) for item in verified_evidence),
+            "citation_count": len(verified_evidence),
+            "event_candidates": event_candidates,
+            "event_source_authenticity_verified": False,
+            "challenges": [
+                "Quoted clauses are source-grounded but do not establish identical scope or a legal contradiction."
+            ],
+            "evidence_gaps": list(candidate.get("unresolved_questions", []) or []),
+            "legal_conflict_determined": False,
+        }
+        messages.append({
+            "from": "Heimdall", "to": "Tyr", "type": "cross_contract_evidence_verification",
+            "status": heimdall["status"], "candidate_id": candidate_id,
+            "verified_citations": heimdall["verified_contract_citations"],
+            "event_candidates": len(event_candidates),
+        })
+
+        calls_used += 1
+        decision = "retain_for_human_review" if citations_verified else "insufficient_verified_evidence"
+        tyr = {
+            "agent": "Tyr",
+            "status": "draft_only_not_sent",
+            "candidate_id": candidate_id,
+            "decision": decision,
+            "rationale": (
+                "Both contract quotations matched the supplied source. Party identity, scope, amendments, "
+                "precedence, and incorporated terms remain unresolved; no legal conflict is determined."
+                if citations_verified else
+                "One or more source quotations could not be verified. Do not rely on this candidate until the source is corrected."
+            ),
+            "legal_conflict_determined": False,
+            "human_approval_required": True,
+            "action_draft": {
+                "subject": "Human review: cross-contract " + topic + " candidate",
+                "body": (
+                    "Review candidate " + candidate_id + " across contracts " + " and ".join(contract_ids) +
+                    ". Verify party identity, scope, amendments, precedence, incorporated terms, and any relevant events. "
+                    "This draft is not a legal conclusion and has not been sent."
+                ),
+                "citations": verified_evidence,
+                "status": "draft_only_not_sent",
+                "human_approval_required": True,
+            },
+        }
+        messages.append({
+            "from": "Tyr", "to": "Odin", "type": "cross_contract_review_ruling",
+            "status": decision, "candidate_id": candidate_id,
+            "human_approval_required": True, "legal_conflict_determined": False,
+        })
+        traces.append({
+            "candidate_id": candidate_id, "contract_ids": contract_ids,
+            "status": "complete_with_review_items",
+            "loki_challenge": loki, "heimdall_verification": heimdall,
+            "tyr_ruling": tyr, "iterations_used": 0,
+            "stop_reason": "human_review_required",
+            "legal_conflict_determined": False, "human_review_required": True,
+        })
+
+    if len(candidates) > 100 and stop_reason == "all_candidates_reviewed":
+        stop_reason = "candidate_limit_reached"
+    return {
+        "mode": "bounded_cross_contract_review",
+        "status": (
+            "partial_budget_exhausted" if stop_reason == "agent_call_budget_exhausted"
+            else "partial_candidate_limit_reached" if stop_reason == "candidate_limit_reached"
+            else "complete_with_review_items" if traces else "no_candidates"
+        ),
+        "candidate_count": len(candidates),
+        "candidate_review_limit": 100,
+        "candidates_not_reviewed": max(0, len(candidates) - len(traces)),
+        "agent_calls_used": calls_used,
+        "agent_call_budget": max(0, int(max_agent_calls)),
+        "stop_reason": stop_reason,
+        "event_ingestion": normalized,
+        "traces": traces,
+        "agent_messages": messages,
+        "legal_outcome_resolved": False,
+        "human_review_required": bool(candidates),
     }

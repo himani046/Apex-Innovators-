@@ -17,7 +17,7 @@ from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
-from backend.services.portfolio_intelligence import detect_cross_contract_candidates, reconcile_payment_events, run_bounded_review_cycles
+from backend.services.portfolio_intelligence import detect_cross_contract_candidates, reconcile_payment_events, review_cross_contract_candidates, run_bounded_review_cycles
 
 
 DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b", re.I)
@@ -216,12 +216,50 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             })
     # Run a bounded second-pass collaboration cycle. This is deterministic and
     # evidence-preserving; it never claims an LLM debate or a legal conclusion.
+    portfolio_call_budget = max(450, len(contracts) * 13 + 150)
     agent_workflow = run_bounded_review_cycles(
         contracts=contracts, extractions=extractions, events=visible_events,
-        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 13), use_llm=use_llm,
+        as_of=as_of, max_iterations=1, max_agent_calls=portfolio_call_budget, use_llm=use_llm,
     )
     financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
+    cross_review_budget = max(
+        0, portfolio_call_budget - int(agent_workflow.get("agent_calls_used", 0))
+    )
+    cross_contract_review = review_cross_contract_candidates(
+        cross_contract_candidates, contracts, visible_events, as_of,
+        max_agent_calls=cross_review_budget,
+    )
+    cross_review_by_id = {
+        trace.get("candidate_id"): trace
+        for trace in cross_contract_review.get("traces", [])
+        if trace.get("candidate_id")
+    }
+    for candidate in cross_contract_candidates:
+        if candidate.get("id") in cross_review_by_id:
+            candidate["agent_review"] = cross_review_by_id[candidate["id"]]
+        else:
+            candidate["agent_review"] = {
+                "status": "not_reviewed_budget_or_candidate_limit",
+                "human_review_required": True,
+                "legal_conflict_determined": False,
+            }
+    agent_workflow["agent_calls_used"] = int(agent_workflow.get("agent_calls_used", 0)) + int(
+        cross_contract_review.get("agent_calls_used", 0)
+    )
+    agent_workflow["cross_contract_review"] = {
+        key: value for key, value in cross_contract_review.items()
+        if key not in {"traces", "agent_messages", "event_ingestion"}
+    }
+    if str(cross_contract_review.get("status", "")).startswith("partial_"):
+        agent_workflow["partial_completion"] = True
+        agent_workflow["stop_reason"] = (
+            "cross_contract_review_budget_exhausted"
+            if cross_contract_review.get("status") == "partial_budget_exhausted"
+            else "cross_contract_candidate_limit_reached"
+        )
+        if cross_contract_review.get("status") == "partial_budget_exhausted":
+            agent_workflow["budget_exhausted"] = True
     for candidate in cross_contract_candidates:
         ids = candidate.get("contract_ids", [])
         if len(ids) != 2:
@@ -262,9 +300,15 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     graph["node_count"] = len(graph.get("nodes", []))
     graph["edge_count"] = len(graph.get("edges", []))
     agent_messages.extend(agent_workflow.get("agent_messages", []))
+    agent_messages.extend(cross_contract_review.get("agent_messages", []))
     debate_traces.append({"workflow": agent_workflow.get("mode"),
                           "loop_traces": agent_workflow.get("loop_traces", []),
                           "stop_reason": agent_workflow.get("stop_reason")})
+    debate_traces.append({
+        "workflow": cross_contract_review.get("mode"),
+        "traces": cross_contract_review.get("traces", []),
+        "stop_reason": cross_contract_review.get("stop_reason"),
+    })
     workstreams = []
     for report in contract_reports:
         gaps = report.get("unresolved_questions", []) or []
@@ -374,8 +418,16 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                   "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
     for name, status in shared_state.get("agent_status", {}).items():
         status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
-        status["status"] = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
-    final_status = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
+        status["status"] = (
+            "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
+            else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+            else "complete_with_limitations"
+        )
+    final_status = (
+        "partial_budget_exhausted" if agent_workflow.get("budget_exhausted")
+        else "partial_review_limit_reached" if agent_workflow.get("partial_completion")
+        else "complete_with_limitations"
+    )
     company_report["status"] = final_status
     return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
@@ -384,5 +436,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "risk_signals": risks, "alert_feed": alerts, "exposure": exposure, "financial_reconciliation": financial_reconciliation,
             "agent_debate": {"messages": agent_messages, "traces": debate_traces, "note": "Bounded deterministic challenge/verification/ruling cycles; this is not a live LLM debate."},
             "agent_workflow": agent_workflow, "cross_contract_candidates": cross_contract_candidates,
+            "cross_contract_review": cross_contract_review,
             "contract_reports": contract_reports, "company_risk_report": company_report,
             "shared_state": shared_state, "limitations": company_report["limitations"]}
