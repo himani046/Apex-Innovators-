@@ -1691,6 +1691,36 @@ html body #dash .card.full:has(> #homeGraph):focus-within::before{
 :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):is(:hover,:focus-within)::before {
   opacity: 0 !important;
 }
+
+
+/* Final fix: stop hover rules from changing card surfaces or making text low-contrast.
+   Use explicit stable theme values instead of inheriting the hovered element's color. */
+html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
+html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):focus-within {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  border-color: rgba(190,165,255,.16) !important;
+}
+html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
+html body :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):focus-within * {
+  text-shadow: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html body #dash .page-view[data-view="agents"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
+html body #dash .page-view[data-view="review"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
+html body #dash .page-view[data-view="audit"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover,
+html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover {
+  background: linear-gradient(145deg,#141320 0%,#0d0d17 100%) !important;
+  color: #f8f6ff !important;
+}
+html body #dash .page-view[data-view="agents"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
+html body #dash .page-view[data-view="review"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
+html body #dash .page-view[data-view="audit"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover *,
+html body #dash .page-view[data-view="timeline"] :is(.card,.overview-metric,.metric,.agent,.evidence,.action,.milestone):hover * {
+  color: #f8f6ff !important;
+  -webkit-text-fill-color: #f8f6ff !important;
+}
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><section class="intro odin-hero" aria-labelledby="odin-hero-title">
