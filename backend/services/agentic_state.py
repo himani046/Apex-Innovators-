@@ -107,10 +107,44 @@ class ExecutionBudget:
         }
 
 
+def _gap_key(gap: Any) -> str:
+    """Return a stable comparable representation for a gap item."""
+    if isinstance(gap, str):
+        return gap.strip()
+    if isinstance(gap, dict):
+        for key in ("id", "question", "description", "gap"):
+            if gap.get(key):
+                return str(gap[key]).strip()
+    return repr(gap)
+
+
+def _preserve_unresolved_gaps(
+    previous: dict[str, Any], current: dict[str, Any]
+) -> list[Any]:
+    """Carry gaps forward unless the verifier explicitly marks them resolved.
+
+    Omitting a gap from a later response is not proof its underlying fact was
+    found. A follow-up must list resolved_evidence_gaps to close an old gap.
+    """
+    combined: list[Any] = []
+    seen: set[str] = set()
+    for gap in list(previous.get("evidence_gaps", []) or []) + list(current.get("evidence_gaps", []) or []):
+        key = _gap_key(gap)
+        if key and key not in seen:
+            combined.append(deepcopy(gap))
+            seen.add(key)
+    resolved = {
+        _gap_key(gap)
+        for gap in (current.get("resolved_evidence_gaps", []) or [])
+        if _gap_key(gap)
+    }
+    return [gap for gap in combined if _gap_key(gap) not in resolved]
+
+
 def needs_follow_up(verification: dict[str, Any]) -> bool:
-    """True when verification explicitly reports missing proof or failed checks."""
+    """True when verification is incomplete or asks for further evidence."""
     return bool(
-        verification.get("status") == "unverified"
+        verification.get("status") in {"unverified", "verified_with_limitations", "complete_with_gaps"}
         or verification.get("citation_checks_passed") is False
         or verification.get("evidence_gaps")
         or verification.get("recommended_follow_up")
@@ -142,9 +176,22 @@ def run_bounded_follow_up(
         })
         if not budget.reserve_call("targeted_follow_up"):
             break
+        previous_verification = current_verification
         current_finding, current_verification = targeted_follow_up(
-            current_finding, current_verification, iteration
+            current_finding, previous_verification, iteration
         )
+        # Never infer resolution from omission. Only explicit verifier resolution
+        # can close a gap; otherwise preserve it across targeted re-analysis.
+        current_verification = deepcopy(current_verification)
+        current_verification["evidence_gaps"] = _preserve_unresolved_gaps(
+            previous_verification, current_verification
+        )
+        trace[-1]["remaining_gaps"] = deepcopy(current_verification["evidence_gaps"])
+        trace[-1]["verification_status"] = current_verification.get("status", "unknown")
+        trace[-1]["resolved_gaps"] = deepcopy(current_verification.get("resolved_evidence_gaps", []))
+        if not needs_follow_up(current_verification):
+            budget.stop_reason = budget.stop_reason or "verification_satisfied"
+            break
     if needs_follow_up(current_verification) and not budget.stop_reason:
         budget.stop_reason = "iteration_limit_reached"
     return current_finding, current_verification, {
@@ -153,4 +200,6 @@ def run_bounded_follow_up(
         "max_iterations": budget.max_iterations,
         "stop_reason": budget.stop_reason or "completed",
         "needs_human_follow_up": needs_follow_up(current_verification),
+        "remaining_gaps": deepcopy(current_verification.get("evidence_gaps", [])),
+        "verification_status": current_verification.get("status", "unknown"),
     }
