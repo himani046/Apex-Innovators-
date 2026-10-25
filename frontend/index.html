@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Odin — Contract War Room</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Odin — Contract Intelligence</title>
 <style>
 :root{--bg:#e9eae4;--p:#ffffff;--line:#d7d9cf;--txt:#151813;--muted:#777d6e;--cyan:#81916f;--gold:#c89a45;--green:#50765c}
 /* Phase 5 review readability refinements */
@@ -653,7 +653,85 @@ header #health{justify-self:end}
   .page-view[data-view="contracts"] .agentlist .evidence {min-width:0;padding:14px!important}
 }
 
+
+/* Odin hero and executive command-center refresh */
+:root{--ink:#f6f5fb;--muted:#a4a2b5;--line:#29283a;--panel:#12121c;--accent:#b8a6ff;--mint:#9cf5df}
+body{background:#08080d;color:var(--ink);font-family:Poppins,Inter,system-ui,sans-serif}
+body:has(#odinHero:not(.hidden)){padding:0;background:#08080d}
+#odinHero{position:relative;min-height:100svh;overflow:hidden;isolation:isolate;padding:26px clamp(22px,5vw,78px) 40px;display:flex;flex-direction:column;background:#08080d;color:#fff}
+#odinHero:before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,rgba(8,8,13,.36),rgba(8,8,13,.26) 42%,#08080d 100%),url('https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg') center 52%/cover no-repeat;opacity:.82}
+#odinHero:after{content:"";position:absolute;z-index:-1;left:-12%;right:-12%;bottom:-37%;height:94%;border-radius:50% 50% 0 0;background:radial-gradient(ellipse at 50% 8%,rgba(238,82,155,.2),transparent 26%),radial-gradient(ellipse at 38% 14%,rgba(77,108,255,.23),transparent 32%),linear-gradient(180deg,transparent,#08080d 75%);pointer-events:none}
+.hero-nav{display:flex;align-items:center;justify-content:space-between;gap:22px;z-index:1}
+.hero-brand{display:flex;gap:12px;align-items:center;font-size:23px;font-weight:700;letter-spacing:-.8px}.hero-mark{font-size:28px;color:#b9a6ff;font-weight:300;letter-spacing:-7px;margin-right:6px}
+.hero-links{display:flex;gap:22px;align-items:center;color:#d5d3e1;font-size:13px}.hero-links a{color:inherit;text-decoration:none}.hero-links a:first-child{color:white}.hero-actions{display:flex;gap:9px;align-items:center}.hero-actions button,.hero-cta{border-radius:999px;padding:12px 21px;font-size:13px;font-weight:600;cursor:pointer}
+.hero-ghost{background:#ffffff0c;border:1px solid #ffffff38;color:#fff}.hero-white{background:#fff!important;color:#11111a!important;border:1px solid #fff!important}
+.hero-center{margin:auto;max-width:1000px;text-align:center;padding:72px 0 65px;z-index:1}.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid #ffffff27;background:#ffffff0b;border-radius:999px;color:#e8e4fb;font-size:12px;backdrop-filter:blur(15px);animation:heroRise .8s .12s both}
+.hero-headline{font-family:Inter,system-ui,sans-serif;font-size:clamp(40px,6.3vw,82px);font-weight:300;letter-spacing:-.065em;line-height:1.04;margin:27px 0 20px;animation:heroRise .9s .23s both}.hero-headline span{background:linear-gradient(92deg,#fff 4%,#f6b9e1 32%,#c1afff 66%,#fff 96%);color:transparent;background-clip:text;-webkit-background-clip:text}
+.hero-copy{font-size:clamp(14px,1.35vw,17px);line-height:1.8;color:#c0bdcf;max-width:680px;margin:0 auto 27px;animation:heroRise .8s .4s both}.hero-cta{display:inline-flex;gap:12px;align-items:center;text-decoration:none;animation:heroRise .8s .52s both}.hero-note{color:#8e8b9f;font-size:11px;margin-top:17px;animation:heroRise .8s .68s both}.hero-chip{position:absolute;z-index:1;width:44px;height:44px;border:1px solid #ffffff25;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#ffffff20,#ffffff04);box-shadow:0 0 36px #bfaeff20;backdrop-filter:blur(9px);font-size:17px;color:#f5f0ff;animation:chipFloat 6s ease-in-out infinite}
+.hero-chip.c1{left:10%;top:35%;animation-delay:-1s}.hero-chip.c2{right:13%;top:31%;animation-delay:-3s}.hero-chip.c3{right:8%;bottom:23%;animation-delay:-2s}.hero-chip.c4{left:17%;bottom:20%;animation-delay:-4s}
+.hero-scroll{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#868398;display:flex;align-items:center;gap:10px;z-index:2}.hero-scroll span{width:18px;height:27px;border:1px solid #68647c;border-radius:999px;position:relative}.hero-scroll span:after{content:"";position:absolute;width:3px;height:5px;border-radius:3px;background:#c0b5ff;top:5px;left:7px}
+@keyframes heroRise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+body:has(#odinHero:not(.hidden))>header,body:has(#odinHero:not(.hidden))>main,body:has(#odinHero:not(.hidden))>.footer{display:none!important}
+#odinAppShell.hidden{display:none!important}
+#odinAppShell{min-height:100vh;background:#0a0a10;color:#f5f4fb}
+#odinAppShell header{margin:0;padding:16px clamp(16px,3vw,44px);background:#0d0d14ed;border-bottom:1px solid #292837;color:#f6f5fb;grid-template-columns:minmax(140px,1fr) auto auto}
+#odinAppShell header h1{font-size:24px;letter-spacing:-1px}#odinAppShell header h1 span{color:#b8a6ff}
+#odinAppShell .top-tabs a{color:#b7b4c8;border-color:#343246;padding:11px 16px}#odinAppShell .top-tabs a.active{background:#b8a6ff;border-color:#b8a6ff;color:#101018}
+#odinAppShell .top-tabs a:hover{background:#1b1a2a;color:#fff;border-color:#625a82}
+#odinAppShell main{max-width:1600px;padding:25px clamp(14px,2.4vw,40px)}
+#odinAppShell .intro{align-items:center;padding:12px 0 20px}
+#odinAppShell .eyebrow{color:#b8a6ff}#odinAppShell h2{font-weight:600;letter-spacing:-1.4px}#odinAppShell h2 span{color:#b8a6ff!important}
+#odinAppShell p,#odinAppShell .muted{color:#a5a2b8}
+#odinAppShell .card{background:linear-gradient(145deg,#151520,#101018);border:1px solid #29283a;box-shadow:0 12px 36px #0003;color:#f4f2fb;border-radius:18px}
+#odinAppShell .agent,#odinAppShell .evidence,#odinAppShell .action,#odinAppShell .milestone,#odinAppShell .step,#odinAppShell .flow .step{background:#1a1a27;border-color:#302f44;color:#edebf6}
+#odinAppShell .value{color:#faf9ff}#odinAppShell .label,#odinAppShell .meta,#odinAppShell .small{color:#a6a3b9}
+#odinAppShell button{background:#1d1c2b;color:#eeeaff;border:1px solid #39374f}#odinAppShell button#run,#odinAppShell button.primary{background:#b8a6ff;color:#12111b;border-color:#b8a6ff}
+#odinAppShell input,#odinAppShell select,#odinAppShell textarea{background:#101019;color:#f8f6ff;border-color:#39374c}
+#odinAppShell .tag{background:#242337;color:#c5c0dd}
+#odinAppShell .notice{background:#332618;border-color:#735830;color:#f0cc8f}
+#odinAppShell .err{background:#3a1f2a;color:#ffcad4}
+#odinAppShell .fr9-graph-shell,#odinAppShell .fr9-subcard{background:#101019;border-color:#302f43}
+#odinAppShell .footer{color:#77748b}
+#odinAppShell .esign-panel{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:16px}
+#odinAppShell .esign-paper{min-height:280px;padding:26px;background:#faf9f6;color:#272631;border-radius:12px;font-family:Georgia,serif;box-shadow:0 12px 30px #0004}
+#odinAppShell .esign-paper h4{font-size:23px;color:#272631;margin:0 0 18px}
+#odinAppShell .esign-paper p{color:#5b5962;font-size:13px;line-height:1.85}
+#odinAppShell .signature-line{border-bottom:1px solid #aaa6b6;min-width:150px;display:inline-block;margin:18px 8px 3px 0}
+#odinAppShell .esign-badge{border:1px solid #39364d;border-radius:12px;padding:14px;background:#1b1a28;margin:10px 0}
+#odinAppShell .status-pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;background:#27243b;color:#c8bdff}
+#odinAppShell .agent-button{display:flex;gap:12px;align-items:center;text-align:left;width:100%;background:#181725!important;border:1px solid #333149!important;border-radius:14px;padding:13px;margin-bottom:9px}
+#odinAppShell .agent-glyph{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#aa9aff,#f3a7dc);display:grid;place-items:center;color:#171522;font-weight:800}
+#odinAppShell .agent-button[aria-pressed=true]{border-color:#b8a6ff!important;background:#252238!important}
+#odinAppShell .hero-callout{border:1px solid #343149;background:#171622;border-radius:14px;padding:16px;color:#e7e3f7}
+#odinAppShell .deadline-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+#odinAppShell .day-cell{border:1px solid #2d2b40;border-radius:9px;min-height:80px;padding:8px;font-size:11px;background:#12121b;cursor:pointer}
+#odinAppShell .day-cell strong{display:block;color:#b8a6ff;font-size:13px;margin-bottom:5px}
+#odinAppShell .day-cell .day-event{margin-top:5px;border-radius:5px;padding:4px;background:#34253a;color:#f0bedc;line-height:1.3;overflow-wrap:anywhere}
+#odinAppShell .scenario-choice{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+#odinAppShell .scenario-choice button[aria-pressed=true]{background:#b8a6ff;color:#12111b;border-color:#b8a6ff}
+#odinAppShell .scenario-output{border-left:3px solid #b8a6ff;background:#181725;padding:16px;border-radius:0 12px 12px 0;line-height:1.7}
+#odinAppShell .new-panels{grid-column:1/-1}
+@media(max-width:900px){.hero-links{display:none}#odinAppShell header{grid-template-columns:1fr auto}#odinAppShell .top-tabs{grid-column:1/-1;grid-row:2;overflow:auto;flex-wrap:nowrap}#odinAppShell .esign-panel{grid-template-columns:1fr}#odinAppShell .deadline-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:560px){#odinHero{padding:20px 18px 36px}#odinHero:before{background-position:52% center;opacity:.56}.hero-actions .hero-ghost{display:none}.hero-center{padding:56px 0 66px}.hero-headline{font-size:clamp(39px,12vw,58px)}.hero-chip{width:36px;height:36px}.hero-chip.c1{left:6%;top:25%}.hero-chip.c2{right:7%;top:23%}.hero-chip.c3{right:7%;bottom:17%}.hero-chip.c4{left:7%;bottom:15%}#odinAppShell main{padding:18px 12px}#odinAppShell .deadline-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#odinAppShell .grid{gap:10px}}
+@media(prefers-reduced-motion:reduce){#odinHero *{animation:none!important;transition:none!important}#odinHero:before{background-image:linear-gradient(180deg,rgba(8,8,13,.25),#08080d 100%),url('https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/f1631235-0a76-464d-8f1d-2c4b48a997d5.jpg')!important}}
+
 </style></head><body>
+<section id="odinHero" aria-label="Odin contract intelligence welcome">
+  <nav class="hero-nav" aria-label="Main navigation">
+    <div class="hero-brand"><span class="hero-mark">//</span> Odin<span style="color:#b7a4ff">.</span></div>
+    <div class="hero-links"><a href="#home">Home</a><a href="#capabilities" data-hero-target="contracts">Contracts</a><a href="#agents" data-hero-target="agents">Agents</a><a href="#timeline" data-hero-target="timeline">Deadlines</a><a href="#business" data-hero-target="review">For business</a><a href="#audit" data-hero-target="audit">Audit</a></div>
+    <div class="hero-actions"><button type="button" class="hero-ghost" data-enter-odin>Log In</button><button type="button" class="hero-white" data-enter-odin>Open workspace ↗</button></div>
+  </nav>
+  <div class="hero-chip c1" aria-hidden="true">₿</div><div class="hero-chip c2" aria-hidden="true">⌘</div><div class="hero-chip c3" aria-hidden="true">§</div><div class="hero-chip c4" aria-hidden="true">✦</div>
+  <div class="hero-center"><div class="hero-badge">✦ &nbsp; Multi-agent contract intelligence</div>
+    <h1 class="hero-headline"><span>Manage Contracts in a<br>Fast, Controlled &amp;<br>Collaborative Way</span></h1>
+    <p class="hero-copy">Bring every agreement, obligation, deadline, and review into one coordinated workspace. Let specialized agents surface evidence and options—while people keep control of every legal decision.</p>
+    <button type="button" class="hero-cta hero-white" data-enter-odin>Get Started <span>→</span></button>
+    <div class="hero-note">Evidence-linked. Deadline-aware. Human-approved.</div>
+  </div><div class="hero-scroll"><span></span> Scroll to explore</div>
+</section>
+<div id="odinAppShell" class="hidden">
+
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
 <div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
@@ -686,7 +764,12 @@ header #health{justify-self:end}
 <div class="actions"><button id="approveAction" type="button">Record approval</button><button id="rejectAction" type="button" class="secondary">Record rejection</button></div>
 <p class="small" id="approvalResult">Approval/rejection is recorded only; no email, contract change, or other action is executed.</p></div>
 <div class="agentlist" id="auditSelectedEvents"></div></div><div class="card half"><h3>Data integrity</h3><div id="integrity" class="small"></div></div>
-<div class="card full"><h3>Thor · portfolio scan <span class="tag" id="portfolioCount">Loading documents</span></h3><p class="muted">Evidence-linked candidate lines across every loaded contract. These are triage signals, not final legal conclusions.</p><div id="portfolioTerms" class="agentlist"></div></div><div class="card full"><h3>Odin · contract relationship graph <span class="tag" id="graphCount">Loading relationships</span></h3><p class="muted">Evidence-backed document links and precedence clauses. A graph edge is a sourced relationship signal, not a standalone legal conclusion.</p><div id="graphEdges" class="agentlist"></div></div><div class="card full"><h3>Amendment reconciliation <span class="tag" id="reconcileCount">Review required</span></h3><p class="muted">Explicit changes are separated from amendment sections that still require clause-level review.</p><div id="resolvedChanges" class="agentlist"></div><div id="reviewItems" class="agentlist" style="margin-top:10px"></div></div><div class="card full"><h3>Scope note</h3><p class="muted">Phase 2 adds independent A1, B1, B2, C1, and D1 workstreams plus a portfolio-wide review. Dates and financial amounts are source-grounded; financial totals are not inferred without invoice and trigger evidence. Potential conflicts and candidate obligations require human review. Malformed JSONL records are reported rather than silently dropped.</p></div></div><div class="footer">ODIN · all challenge data is fictional</div></main>
+<div class="card full"><h3>Thor · portfolio scan <span class="tag" id="portfolioCount">Loading documents</span></h3><p class="muted">Evidence-linked candidate lines across every loaded contract. These are triage signals, not final legal conclusions.</p><div id="portfolioTerms" class="agentlist"></div></div><div class="card full"><h3>Odin · contract relationship graph <span class="tag" id="graphCount">Loading relationships</span></h3><p class="muted">Evidence-backed document links and precedence clauses. A graph edge is a sourced relationship signal, not a standalone legal conclusion.</p><div id="graphEdges" class="agentlist"></div></div><div class="card full"><h3>Amendment reconciliation <span class="tag" id="reconcileCount">Review required</span></h3><p class="muted">Explicit changes are separated from amendment sections that still require clause-level review.</p><div id="resolvedChanges" class="agentlist"></div><div id="reviewItems" class="agentlist" style="margin-top:10px"></div></div><div class="card full"><h3>Scope note</h3><p class="muted">Phase 2 adds independent A1, B1, B2, C1, and D1 workstreams plus a portfolio-wide review. Dates and financial amounts are source-grounded; financial totals are not inferred without invoice and trigger evidence. Potential conflicts and candidate obligations require human review. Malformed JSONL records are reported rather than silently dropped.</p></div>
+<section class="card full new-panels" id="agentActivityPanel"><h3>Agent activity · click an agent to inspect its work <span class="tag">Current run evidence</span></h3><p class="muted">Select an agent to inspect its responsibility, state transitions, findings, and source-backed output from the latest run.</p><div class="agentlist" id="agentClickList"></div><div class="hero-callout" id="agentWorkDetail" style="margin-top:12px">Run analysis to populate agent outputs. Empty states are not represented as completed work.</div></section>
+<section class="card full new-panels" id="esignPanel"><h3>Document studio &amp; e-sign approvals <span class="tag">Human-controlled draft workflow</span></h3><p class="muted">Generate a review draft from the current recommendation, edit the text, and record a signature intent. This prototype does not create a legally binding signature or call an e-signature provider.</p><div class="esign-panel"><div class="esign-paper"><h4 id="esignDocTitle">Contract notice / amendment draft</h4><p id="esignDocMeta">Prepared from the latest Odin run · Review required</p><label for="esignTitle" style="font-family:system-ui;font-size:12px;color:#555">Document title</label><input id="esignTitle" value="Contract notice / amendment draft" style="width:100%;margin:5px 0 12px"><label for="esignBody" style="font-family:system-ui;font-size:12px;color:#555">Draft document text</label><textarea id="esignBody" rows="8" style="width:100%;margin-top:5px;background:#fff;color:#262530;border-color:#c9c6d2">This draft is a working document only. Load an Odin analysis to populate its recommendation and supporting context. Please review the contract, cited evidence, and applicable approval policy before issuing.</textarea><div style="margin-top:10px"><span>Authorized reviewer:</span> <span class="signature-line"></span><span>Counterparty:</span> <span class="signature-line"></span></div></div><div><div class="esign-badge"><b>01 · Generate from current run</b><p class="small">Uses available draft action and its cited source references.</p><button type="button" id="generateEsignDraft" class="primary">Generate draft</button></div><div class="esign-badge"><b>02 · Approval workflow</b><p class="small">Prepare an approval packet and store a local prototype status. Real identity verification/provider delivery is not connected.</p><label for="signerName">Authorized signer's name</label><input id="signerName" placeholder="Full legal name" style="width:100%;margin:7px 0"><button type="button" id="recordSignatureIntent">Record signature intent</button><div class="status-pill" id="esignStatus" style="margin-top:10px">Draft not prepared</div></div><button type="button" id="downloadEsignDraft">Download draft (.txt)</button></div></div></section>
+<section class="card full new-panels" id="deadlineCalendarPanel"><h3>Deadline calendar <span class="tag">Source-grounded milestones</span></h3><p class="muted">A month-style view of returned obligations and events. Select a date to inspect any items attached to that day.</p><div class="controls"><label for="calendarMonth">Month</label><input type="month" id="calendarMonth" value="2027-03"><button type="button" id="refreshDeadlineCalendar">Refresh calendar</button></div><div class="deadline-grid" id="deadlineCalendar"></div><div class="hero-callout" id="calendarDayDetail" style="margin-top:12px">No date selected.</div></section>
+<section class="card full new-panels" id="missedDeadlinePanel"><h3>Missed-deadline recovery planner <span class="tag">Scenario guidance · human review</span></h3><p class="muted">Explore response options for a missed deadline. Recommendations are general next-step scenarios, not a legal interpretation; confirm notice periods, cure rights, and remedies against the exact contract before acting.</p><div class="scenario-choice" id="scenarioChoices"><button type="button" data-scenario="payment" aria-pressed="true">Payment missed</button><button type="button" data-scenario="renewal">Renewal / termination window</button><button type="button" data-scenario="delivery">Delivery / performance</button><button type="button" data-scenario="notice">Notice deadline</button><button type="button" data-scenario="security">Security incident</button></div><label for="scenarioContract">Contract / counterparty (optional)</label><input id="scenarioContract" placeholder="Contract ID or counterparty" style="width:100%;margin:7px 0 12px"><label for="scenarioNotes">What happened? (optional details)</label><textarea id="scenarioNotes" rows="3" placeholder="Describe the deadline, when it was missed, and any communication already sent." style="width:100%;margin-bottom:12px"></textarea><div class="scenario-output" id="scenarioOutput"></div><button type="button" id="copyScenario" style="margin-top:12px">Copy recovery checklist</button></section>
+</div><div class="footer">ODIN · all challenge data is fictional</div></main>
 <script>
 const $=x=>document.getElementById(x);function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function apiHeaders(extra={}){const token=$('apiToken')?.value?.trim();return {...extra,...(token?{Authorization:'Bearer '+token}:{})}}
@@ -1514,4 +1597,98 @@ async function initOdinApp(){
 
 if($('apiToken')){$('apiToken').value=sessionStorage.getItem('odinApiToken')||'';$('apiToken').addEventListener('input',()=>sessionStorage.setItem('odinApiToken',$('apiToken').value));}
 setupOdinPages();initFR9TimeSlider();initOdinApp();$('customAnalyzeButton')?.addEventListener('click',runCustomPortfolio);$('customIngestEvents')?.addEventListener('click',ingestCustomEvents);$('date').addEventListener('change',runOdin);$('approveAction').addEventListener('click',()=>submitAuditDecision('approved'));$('rejectAction').addEventListener('click',()=>submitAuditDecision('rejected'));
-</script></body></html>
+</script></div>
+<script>
+(function(){
+ const hero=document.getElementById('odinHero'),shell=document.getElementById('odinAppShell');
+ function enterOdin(target){
+   hero.classList.add('hidden');shell.classList.remove('hidden');document.body.style.padding='0 2.35vw 30px';
+   if(target&&window.odinShowPage)window.odinShowPage(target);
+   else if(target){const b=document.querySelector('[data-page="'+target+'"]');if(b)b.click();}
+   if(location.hash!=='#workspace')history.replaceState(null,'','#workspace');
+ }
+ document.querySelectorAll('[data-enter-odin]').forEach(b=>b.addEventListener('click',()=>enterOdin()));
+ document.querySelectorAll('[data-hero-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();enterOdin(a.dataset.heroTarget)}));
+ window.odinEnterWorkspace=enterOdin;
+ if(location.hash==='#workspace'||location.hash.startsWith('#workspace/'))enterOdin();
+})();
+</script>
+
+<script>
+const odinAgentDetails={
+ Odin:{glyph:'◎',role:'Orchestrator',reads:'Company context, contract inventory, agent status',writes:'Run plan, delegation, synthesis',note:'Coordinates bounded workstreams and gathers outputs; it should not claim completion where an agent output is absent.'},
+ Thor:{glyph:'T',role:'Contract extraction',reads:'Contract source text and requested fields',writes:'Terms, obligations, source quotes, ambiguities',note:'Findings should be traced to exact source text; uncertain interpretation remains flagged.'},
+ Norns:{glyph:'◷',role:'Timeline projection',reads:'Dated obligations, terms, simulated date',writes:'Milestones, overdue/upcoming classification, projections',note:'Dates are shown only when returned or grounded in supplied terms.'},
+ Loki:{glyph:'⚔',role:'Adversarial review',reads:'Extracted terms and candidate findings',writes:'Attack paths, potential conflicts, severity candidates',note:'Challenges claims and surfaces counter-arguments; not a legal verdict.'},
+ Heimdall:{glyph:'◈',role:'Event verification',reads:'Event feed, source evidence, clauses',writes:'Event mapping, provenance, unresolved authenticity',note:'Separates matching signals from verified authenticity, causation, or breach.'},
+ Tyr:{glyph:'⚖',role:'Ruling & action draft',reads:'Risk challenges, verification, evidence gaps',writes:'Rationale, draft notice/amendment, approval gate',note:'Produces draft-only actions that require an authorized human approval.'}
+};
+let latestOdinData=null,selectedScenario='payment';
+function populateAgentActivity(d){
+ latestOdinData=d||latestOdinData;
+ const messages=(latestOdinData?.agent_messages||[]),collab=latestOdinData?.collaboration?.agents||{};
+ const list=$('agentClickList');if(!list)return;
+ list.innerHTML=Object.entries(odinAgentDetails).map(([name,a])=>{
+  const state=collab[name.toLowerCase()]||collab[name]||{},msgs=messages.filter(m=>(m.from||'').toLowerCase()===name.toLowerCase()||(m.to||'').toLowerCase()===name.toLowerCase());
+  return '<button class="agent-button" type="button" data-inspect-agent="'+name+'" aria-pressed="'+(name==='Odin')+'"><span class="agent-glyph">'+a.glyph+'</span><span><b>'+name+' · '+a.role+'</b><br><small>'+(state.status||msgs.length+' trace entries')+'</small></span></button>';
+ }).join('');
+ list.querySelectorAll('[data-inspect-agent]').forEach(b=>b.addEventListener('click',()=>showAgentWork(b.dataset.inspectAgent)));
+ showAgentWork('Odin');
+}
+function showAgentWork(name){
+ const a=odinAgentDetails[name];if(!a)return;
+ const d=latestOdinData||{},messages=d.agent_messages||[],items=messages.filter(m=>(m.from||'').toLowerCase()===name.toLowerCase()||(m.to||'').toLowerCase()===name.toLowerCase());
+ const state=(d.collaboration?.agents||{})[name.toLowerCase()]||(d.collaboration?.agents||{})[name]||{};
+ document.querySelectorAll('[data-inspect-agent]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.inspectAgent===name)));
+ const output=items.length?items.map(m=>'<div style="padding:9px 0;border-bottom:1px solid #302f44"><b>'+esc(m.type||'handoff')+'</b> · '+esc(m.status||'status not reported')+'<p>'+esc(m.summary||m.message||m.task||'No message body in returned trace.')+'</p></div>').join(''):'No message addressed to or emitted by this agent was returned for the current run. This does not imply that its work completed.';
+ $('agentWorkDetail').innerHTML='<div class="eyebrow">'+esc(a.role)+'</div><h4>'+esc(name)+' · Work record</h4><p>'+esc(a.note)+'</p><div class="flow"><span class="tag">State: '+esc((state.status||'not separately reported').replaceAll('_',' '))+'</span><span class="tag">Iteration: '+esc(state.iteration??'—')+'</span><span class="tag">Trace items: '+items.length+'</span></div><p><b>Reads:</b> '+esc(a.reads)+'<br><b>Writes:</b> '+esc(a.writes)+'</p><h4>Latest trace</h4>'+output;
+}
+const recoveryScenarios={
+ payment:{title:'Payment deadline missed',steps:['Preserve the contract, invoice, proof of delivery/performance, payment instructions, and payment records.','Check the exact due-date definition, disputed-invoice process, cure period, interest, notice method, and any payment hold rights.','Reconcile invoice identity, amount, currency, credits, prior payments, and counterparty before asserting a balance.','Escalate internally to the contract owner and finance; prepare a factual, rights-reserving communication for legal review.','Agree a documented remediation/payment plan only through an authorized approver.'],avoid:'Do not assume an amount is owed from a ledger signal alone or admit liability without checking the contract.'},
+ renewal:{title:'Renewal or termination window missed',steps:['Retrieve the executed agreement and every amendment/addendum that may change the term or notice window.','Verify the clause, effective date, delivery method, recipient, time zone, business-day rule, and evidence of notice.','Establish whether the deadline is truly passed and whether the agreement provides an extension, cure, waiver, or mutual-change route.','Ask counsel to assess options and required approvals before contacting the counterparty.','Record the decision, next date, source clause, owner, and evidence of delivery in the contract calendar.'],avoid:'Do not assume a missed window automatically renews or terminates the agreement; the wording and governing law matter.'},
+ delivery:{title:'Delivery or performance milestone missed',steps:['Capture the statement of work, acceptance criteria, dependency log, delivery records, and communications.','Check the milestone, acceptance/rejection rules, grace periods, service credits, and notice/cure provisions.','Identify whether the cause was supplier, customer dependency, force majeure, change control, or unresolved evidence.','Create a recovery plan with owner, new target date, dependency, and proof of completion.','Route any reservation-of-rights notice, service-credit position, or amendment through legal/contract approval.'],avoid:'Do not label a delivery issue a breach before verifying the obligation, dependency, acceptance terms, and exceptions.'},
+ notice:{title:'Notice deadline missed',steps:['Identify the exact notice clause, mandatory delivery channel, address, recipient and deemed-receipt rule.','Gather proof of all attempted communications, including sent messages, tracking, portal receipts and timestamps.','Check whether late notice, waiver, extension, or other cure is explicitly allowed; consult counsel on consequences.','Prepare a factual chronology and a draft request for confirmation or mutually agreed next steps.','Update the calendar with follow-up dates and a responsible owner after approval.'],avoid:'Do not backdate a notice, claim delivery that cannot be proved, or send a legally consequential notice without authorization.'},
+ security:{title:'Security or confidentiality response deadline',steps:['Activate the approved incident-response process and preserve logs, scope, timestamps, and chain of custody.','Locate the security/data-processing/confidentiality clauses and check separate statutory or regulator timelines with counsel.','Assess what is known versus unverified: affected data, counterparties, systems, containment, and notification triggers.','Notify the privacy/security/legal owners immediately and route any external notice through the approved incident process.','Track each verified deadline, evidence owner, approval, delivery receipt, and next update.'],avoid:'Do not wait for contract analysis if incident-response escalation is required; statutory clocks may apply independently.'}
+};
+function renderRecoveryScenario(key){
+ selectedScenario=key;document.querySelectorAll('[data-scenario]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scenario===key)));
+ const s=recoveryScenarios[key];$('scenarioOutput').innerHTML='<h4>'+s.title+'</h4><ol>'+s.steps.map(x=>'<li style="margin:7px 0">'+esc(x)+'</li>').join('')+'</ol><p><b>Important:</b> '+esc(s.avoid)+'</p><p class="small">Scenario guidance only · Confirm against the exact executed agreement and obtain appropriate approval before action.</p>';
+}
+function getCalendarItems(){
+ const d=latestOdinData||{},items=[];
+ const all=[...(d.portfolio_operations?.timeline?.milestones||[]),...(d.timeline?.milestones||[])];
+ const seen=new Set();
+ for(const m of all){const date=String(m.date||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;const key=[date,m.title||'',m.contract_id||''].join('|');if(seen.has(key))continue;seen.add(key);items.push({date,title:m.title||m.obligation||'Contract milestone',contract:m.contract_id||'',status:m.status||'review',type:m.date_type||'milestone'});}
+ const q=d.decision_queue?.issues||[];for(const m of q){const date=String(m.date||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(date)){const key=[date,m.title||'',m.contract_id||''].join('|');if(!seen.has(key)){seen.add(key);items.push({date,title:m.title||m.category||'Review item',contract:m.contract_id||'',status:m.status||m.priority||'review',type:'decision queue'});}}}
+ return items;
+}
+function renderDeadlineCalendar(){
+ const host=$('deadlineCalendar');if(!host)return;
+ const month=$('calendarMonth').value||'2027-03',parts=month.split('-').map(Number),year=parts[0],mi=parts[1]-1,first=new Date(year,mi,1),days=new Date(year,mi+1,0).getDate(),offset=(first.getDay()+6)%7;
+ const all=getCalendarItems(),monthItems=all.filter(i=>i.date.startsWith(month));let html='';
+ const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+ for(const day of labels)html+='<div class="day-cell" style="min-height:auto;background:transparent;border:0;cursor:default"><strong>'+day+'</strong></div>';
+ for(let i=0;i<offset;i++)html+='<div class="day-cell" style="opacity:.25;cursor:default"></div>';
+ for(let d=1;d<=days;d++){const date=year+'-'+String(mi+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),these=monthItems.filter(i=>i.date===date);
+ html+='<button class="day-cell" type="button" data-calendar-date="'+date+'"><strong>'+d+'</strong>'+these.slice(0,2).map(i=>'<div class="day-event">'+esc(i.title)+'</div>').join('')+(these.length>2?'<small>+'+(these.length-2)+' more</small>':'')+'</button>';}
+ host.innerHTML=html||'<p>No days to show.</p>';
+ host.querySelectorAll('[data-calendar-date]').forEach(b=>b.addEventListener('click',()=>{const date=b.dataset.calendarDate,these=all.filter(i=>i.date===date);$('calendarDayDetail').innerHTML='<b>'+date+'</b><p>'+(these.length?these.map(i=>'<div style="padding:8px 0;border-bottom:1px solid #302f44"><b>'+esc(i.title)+'</b><br><span class="small">'+esc(i.contract)+' · '+esc(i.type)+' · '+esc(i.status)+'</span></div>').join(''):'No returned milestones for this date.')+'</p>'; }));
+}
+function populateEsignDraft(){
+ const d=latestOdinData||{},draft=d.ruling?.action_draft||d.action_draft||{},finding=d.evidence_grounded_finding||{};
+ const title=draft.subject||finding.recommended_action||'Contract notice / amendment draft';
+ const body=draft.body||('Review the contract evidence and the following finding before taking action.\n\nFinding: '+(finding.claim||d.finding?.claim||'No current claim returned.')+'\n\nRationale: '+(d.ruling?.rationale||d.rationale||'No rationale returned.')+'\n\nThis draft requires legal and business approval before issue.');
+ $('esignTitle').value=title;$('esignDocTitle').textContent=title;$('esignDocMeta').textContent='Run '+(d.run_id||d.audit?.run_id||'not identified')+' · Draft only · Human review required';$('esignBody').value=body;$('esignStatus').textContent='Draft generated · not signed';
+}
+function initNewOdinPanels(){
+ document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>renderRecoveryScenario(b.dataset.scenario)));
+ $('copyScenario')?.addEventListener('click',async()=>{const text=recoveryScenarios[selectedScenario].title+'\n'+recoveryScenarios[selectedScenario].steps.map((s,i)=>(i+1)+'. '+s).join('\n')+'\nImportant: '+recoveryScenarios[selectedScenario].avoid;try{await navigator.clipboard.writeText(text);$('copyScenario').textContent='Copied';}catch(e){$('copyScenario').textContent='Copy not available in this browser';}});
+ $('calendarMonth')?.addEventListener('change',renderDeadlineCalendar);$('refreshDeadlineCalendar')?.addEventListener('click',renderDeadlineCalendar);
+ $('generateEsignDraft')?.addEventListener('click',populateEsignDraft);
+ $('recordSignatureIntent')?.addEventListener('click',()=>{const who=$('signerName').value.trim();if(!who){$('esignStatus').textContent='Enter the authorized signer name first';return;}if(!$('esignBody').value.trim()){ $('esignStatus').textContent='Prepare a draft before recording intent';return;}$('esignStatus').textContent='Signature intent recorded locally for '+who+' · not a cryptographic or legally binding e-signature';$('esignDocMeta').textContent='Signature intent by '+who+' · local prototype record only';});
+ $('downloadEsignDraft')?.addEventListener('click',()=>{const text=$('esignTitle').value+'\n\n'+$('esignBody').value+'\n\nDraft status: human approval required. Signature intent in this prototype is not a legal e-signature.';const blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=($('esignTitle').value||'odin-contract-draft').replace(/[^A-Za-z0-9-_]+/g,'-')+'.txt';a.click();URL.revokeObjectURL(url);});
+ renderRecoveryScenario('payment');renderDeadlineCalendar();
+}
+initNewOdinPanels();
+</script>
+</body></html>
