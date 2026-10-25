@@ -239,11 +239,53 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                             "human_review_required": bool(cross_contract_edges), "legal_outcome_resolved": False},
         "completion_note": "The relationship scan completed; absence of an edge is not proof that no legal dependency exists."
     })
+
+    # Keep progress truthful: source-triage stages can finish while legal review
+    # remains open, and a budget-exhausted agent cycle must not show as complete.
+    workflow_by_contract = {
+        item.get("contract_id"): item
+        for item in agent_workflow.get("workstreams", [])
+        if item.get("contract_id")
+    }
+    for stream in workstreams:
+        cid = stream.get("primary_contract_id")
+        if cid not in workflow_by_contract:
+            continue
+        workflow = workflow_by_contract[cid]
+        ran = workflow.get("status") != "not_run_budget_exhausted"
+        stream["progress"] = {
+            "completed_stages": 6 if ran else 5,
+            "total_stages": 6,
+            "percentage": 100 if ran else 83,
+        }
+        stream["status"] = workflow.get("status", stream.get("status"))
+        stream["completion_gate"] = {
+            "workflow_complete": ran,
+            "evidence_gaps_remaining": bool(workflow.get("unresolved_questions")),
+            "human_review_required": bool(workflow.get("human_review_required", True)),
+            "legal_outcome_resolved": False,
+            "agent_review_iterations": workflow.get("iterations_used", 0),
+            "agent_review_stop_reason": workflow.get("stop_reason", "not_run"),
+            "note": "A completed workflow is not a legal-completeness guarantee; source and event gaps remain explicit.",
+        }
+        stream["open_questions"] = list(dict.fromkeys(
+            list(stream.get("open_questions", []) or []) + list(workflow.get("unresolved_questions", []) or [])
+        ))
+        stream["completion_note"] = (
+            "Bounded agent review ran; unresolved evidence and human review are still visible."
+            if ran else "Agent review did not run because the configured call budget was exhausted."
+        )
+    for name, status in shared_state.get("agent_status", {}).items():
+        status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
+        if agent_workflow.get("budget_exhausted"):
+            status["status"] = "partial_budget_exhausted"
+        else:
+            status["status"] = "complete_with_limitations"
     # Run a bounded second-pass collaboration cycle. This is deterministic and
     # evidence-preserving; it never claims an LLM debate or a legal conclusion.
     agent_workflow = run_bounded_review_cycles(
         contracts=contracts, extractions=extractions, events=visible_events,
-        as_of=as_of, max_iterations=1, max_agent_calls=300,
+        as_of=as_of, max_iterations=1, max_agent_calls=max(300, len(contracts) * 9),
     )
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
     for candidate in cross_contract_candidates:
@@ -321,7 +363,8 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "execution": {"mode": agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow"), "max_iterations": agent_workflow.get("max_iterations", 1), "iterations_used": agent_workflow.get("iterations_used", 0),
                                   "agent_calls_used": agent_workflow.get("agent_calls_used", 0), "agent_call_budget": agent_workflow.get("agent_call_budget", 300),
                                   "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
-    return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
+    final_status = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
+    return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
