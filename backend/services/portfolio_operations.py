@@ -87,7 +87,11 @@ def _contract_link(
     text: str, contract_ids: list[str] | tuple[str, ...] | set[str] | None = None
 ) -> tuple[str | None, str]:
     """Link only explicit identifiers, including IDs from arbitrary uploaded portfolios."""
-    explicit_refs = [ref for ref in CONTRACT_REF_MAP if ref.casefold() in text.casefold()]
+    explicit_refs = [
+        ref for ref, mapped_id in CONTRACT_REF_MAP.items()
+        if ref.casefold() in text.casefold()
+        and (contract_ids is None or mapped_id in {str(item).strip() for item in contract_ids})
+    ]
     if len(explicit_refs) == 1:
         return CONTRACT_REF_MAP[explicit_refs[0]], "explicit_contract_reference"
     # Keep the demo-pack identifiers for backwards compatibility, but derive
