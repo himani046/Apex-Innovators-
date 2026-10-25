@@ -8,6 +8,7 @@ from backend.services.contract_graph import build_contract_graph, reconcile_cont
 from backend.services.workstreams import build_workstreams
 from backend.services.portfolio_operations import build_portfolio_operations
 from backend.services.decision_engine import build_decision_queue
+from backend.services.evidence_grounding import build_evidence_grounded_finding
 from backend.agents.thor import extract_a1
 from backend.agents.thor_portfolio import extract_portfolio_candidates
 from backend.agents.norns import build_timeline
@@ -279,6 +280,10 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "from": "Tyr", "to": "Odin", "type": "ruling", "status": "complete"
     })
 
+    state["evidence_grounded_finding"] = build_evidence_grounded_finding(
+        finding, verification, contracts, events, state.get("ruling")
+    )
+    shared.update("evidence_grounded_finding", state["evidence_grounded_finding"])
     state["event_summary"] = {
         "drop1_events_available_as_of_date": len(events),
         "drop2_events_loaded": len(pack["event_drops"]["events_drop2.jsonl"]),
