@@ -92,10 +92,11 @@ _rich_graph = build_rich_contract_graph
 
 def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str, str]],
                              events: list[dict[str, Any]] | None, as_of: str,
-                             use_llm: bool = False) -> dict[str, Any]:
+                             use_llm: bool = False,
+                             payment_ledger: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     clock = date.fromisoformat(as_of)
     contracts = {item["id"].strip(): item["text"] for item in contract_items}
-    source_fingerprint = hashlib.sha256((company_context + chr(10) + chr(10).join(cid + chr(10) + text for cid, text in sorted(contracts.items())) + chr(10) + json.dumps(events or [], sort_keys=True, ensure_ascii=False, default=str)).encode("utf-8")).hexdigest()
+    source_fingerprint = hashlib.sha256((company_context + chr(10) + chr(10).join(cid + chr(10) + text for cid, text in sorted(contracts.items())) + chr(10) + json.dumps(events or [], sort_keys=True, ensure_ascii=False, default=str) + chr(10) + json.dumps(payment_ledger or [], sort_keys=True, ensure_ascii=False, default=str)).encode("utf-8")).hexdigest()
     extractions = {cid: extract_document_terms(text, cid) for cid, text in contracts.items()}
     for cid, extraction in extractions.items():
         for term in extraction.get("extracted_terms", []):
@@ -221,7 +222,41 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
         contracts=contracts, extractions=extractions, events=visible_events,
         as_of=as_of, max_iterations=1, max_agent_calls=portfolio_call_budget, use_llm=use_llm,
     )
-    financial_reconciliation = reconcile_payment_events(visible_events, contracts, as_of)
+    ledger_events = []
+    for index, row in enumerate(payment_ledger or []):
+        if not isinstance(row, dict):
+            continue
+        timestamp = str(row.get("date") or row.get("timestamp") or "").strip()
+        reference = str(row.get("reference") or row.get("invoice_id") or "").strip()
+        status_text = str(row.get("status") or row.get("payment_status") or "unknown").strip().casefold()
+        counterparty_text = " ".join(str(row.get(key, "")) for key in ("from", "to", "counterparty", "vendor"))
+        body = " ".join(part for part in (reference, counterparty_text, status_text) if part).strip()
+        if re.search(r"\b(credit|refund|refunded)\b", body, re.I):
+            event_type = "credit"
+        elif status_text in {"paid", "settled", "remitted"}:
+            event_type = "payment"
+        elif status_text in {"pending", "overdue", "unpaid", "outstanding"} or re.search(r"\b(invoice|inv[- #])\b", body, re.I):
+            event_type = "invoice"
+        else:
+            event_type = "unknown"
+        ledger_events.append({
+            "event_id": str(row.get("event_id") or f"payment-ledger:{index + 1}"),
+            "timestamp": timestamp or None,
+            "body": body or "Payment ledger row requires review",
+            "contract_id": row.get("contract_id") if str(row.get("contract_id") or "") in contracts else None,
+            "invoice_id": row.get("invoice_id"),
+            "event_type": event_type,
+            "payment_status": status_text,
+            "amount": row.get("amount"),
+            "currency": row.get("currency"),
+            "event_source": str(row.get("source") or "uploaded_payment_ledger"),
+            "source_type": "user_supplied_payment_ledger",
+            "source_verified": False,
+        })
+    financial_reconciliation = reconcile_payment_events(visible_events + ledger_events, contracts, as_of)
+    financial_reconciliation["payment_ledger_rows_received"] = len(payment_ledger or [])
+    financial_reconciliation["payment_ledger_rows_normalized"] = len(ledger_events)
+    financial_reconciliation["source_authenticity_verified"] = False
     cross_contract_candidates = detect_cross_contract_candidates(contracts)
     cross_review_budget = max(
         0, portfolio_call_budget - int(agent_workflow.get("agent_calls_used", 0))
