@@ -93,7 +93,7 @@ _rich_graph = build_rich_contract_graph
 
 def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str, str]],
                              events: list[dict[str, Any]] | None, as_of: str) -> dict[str, Any]:
-    clock = date.fromisoformat(as_of)
+    date.fromisoformat(as_of)
     contracts = {item["id"].strip(): item["text"] for item in contract_items}
     source_fingerprint = hashlib.sha256((company_context + chr(10) + chr(10).join(cid + chr(10) + text for cid, text in sorted(contracts.items())) + chr(10) + json.dumps(events or [], sort_keys=True, ensure_ascii=False, default=str)).encode("utf-8")).hexdigest()
     extractions = {cid: extract_document_terms(text, cid) for cid, text in contracts.items()}
@@ -137,20 +137,25 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             shared_agent_state.record_agent("Odin", "incomplete_budget_exhausted", produces=["workstream_status"])
             continue
         shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
+        shared_agent_state.record_agent("Thor", "complete_with_review_items", consumes=["contract_source"], produces=["extracted_clauses", "evidence_references"])
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
         timeline.extend(contract_timeline)
         # The call slots above reserve a complete deterministic stage sequence; the
         # remaining stage messages below record actual functions executed.
         shared_agent_state.message("Norns", "Loki", "timeline_candidates", "complete", contract_id=cid, milestones=len(contract_timeline))
+        shared_agent_state.record_agent("Norns", "complete_with_review_items", consumes=["extracted_clauses", "as_of_date"], produces=["timeline_events"])
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
         shared_agent_state.message("Loki", "Heimdall", "risk_challenge", "submitted", contract_id=cid, findings=len(contract_risks))
+        shared_agent_state.record_agent("Loki", "complete_with_review_items", consumes=["extracted_clauses", "timeline_events"], produces=["risk_claims", "unresolved_questions"])
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         verification_records.append({"contract_id": cid, **heimdall_result})
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
         shared_agent_state.message("Heimdall", "Tyr", "verification_result", heimdall_result.get("status", "unknown"), contract_id=cid, findings=len(heimdall_result.get("findings", [])))
+        shared_agent_state.record_agent("Heimdall", heimdall_result.get("status", "unknown"), consumes=["risk_claims", "event_records", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
         shared_agent_state.message("Tyr", "Odin", "rulings", tyr_result.get("status", "unknown"), contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
+        shared_agent_state.record_agent("Tyr", tyr_result.get("status", "unknown"), consumes=["risk_claims", "verification_outcomes"], produces=["recommended_actions"])
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
                               "heimdall_verification": heimdall_result, "tyr_rulings": tyr_result.get("rulings", [])})
         mapped_events = heimdall_result.get("mapped_events", [])
@@ -303,6 +308,12 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                 stream["progress"] = {"completed_stages": 0, "total_stages": 5, "percentage": 0, "note": "Budget exhaustion prevents a completion claim."}
         company_report["status"] = "incomplete_budget_exhausted"
         company_report["limitations"].append("Execution call budget was exhausted; some analysis stages may not have been performed.")
+    shared_agent_state.update("extracted_clauses", [term for item in extractions.values() for term in item.get("extracted_terms", [])])
+    shared_agent_state.update("timeline_events", timeline)
+    shared_agent_state.update("risk_claims", risks)
+    shared_agent_state.update("evidence_references", [c for report in contract_reports for c in report["citations"]])
+    shared_agent_state.update("verification_outcomes", verification_records)
+    shared_agent_state.update("recommended_actions", [action for report in contract_reports for action in report["recommended_actions"]])
     shared_state = {"schema_version": "1.1", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,
