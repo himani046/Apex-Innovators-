@@ -25,6 +25,10 @@ class SharedStateTests(unittest.TestCase):
         snapshot = state.snapshot()
         self.assertEqual(snapshot["agent_messages"][0]["to"], "Loki")
         self.assertEqual(snapshot["agent_status"]["Loki"]["consumes"], ["extracted_clauses"])
+        self.assertEqual(snapshot["agent_messages"][0]["schema_version"], "1.1")
+        self.assertEqual(snapshot["agent_messages"][0]["payload"]["clause_id"], "A1-I1")
+        with self.assertRaises(ValueError):
+            state.message("", "Loki", "extracted_clause", "complete")
 
     def test_follow_up_loop_retries_only_to_iteration_limit(self):
         budget = ExecutionBudget(max_calls=2, max_iterations=2)
