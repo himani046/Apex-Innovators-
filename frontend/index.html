@@ -89,46 +89,46 @@ async function runOdin() {
     const wa = d.workstream_analysis || {};
     const workstreams = wa.workstreams || [];
 
-    // Phase 6 portfolio overview, explorer, heatmap, and event/audit timeline.
+    // Phase 6 portfolio overview, explorer, heatmap, and event/audit p6Timeline.
     const contractIds = Object.keys(docs);
-    const ops = d.portfolio_operations || {};
-    const opsTimeline = ops.timeline || {};
-    const opsCounts = opsTimeline.counts || {};
-    const finance = ops.financial_reconciliation || {};
-    const financeCounts = finance.counts || {};
-    const queue = d.decision_queue || {};
-    const queueCounts = queue.counts || {};
-    const graph = d.contract_graph || {};
-    const reconciliation = d.contract_reconciliation || {};
-    const grounded = d.evidence_grounded_finding || {};
-    const loop = (d.collaboration || {}).loop || {};
-    const timeline = d.timeline || {};
-    const milestones = opsTimeline.milestones || timeline.milestones || [];
+    const p6Ops = d.portfolio_operations || {};
+    const p6OpsTimeline = p6Ops.p6Timeline || {};
+    const p6OpsCounts = p6OpsTimeline.counts || {};
+    const p6Finance = p6Ops.financial_reconciliation || {};
+    const p6FinanceCounts = p6Finance.counts || {};
+    const p6Queue = d.decision_queue || {};
+    const p6QueueCounts = p6Queue.counts || {};
+    const p6Graph = d.contract_graph || {};
+    const p6Reconciliation = d.contract_reconciliation || {};
+    const p6Grounded = d.evidence_grounded_finding || {};
+    const p6Loop = (d.collaboration || {}).p6Loop || {};
+    const p6Timeline = d.p6Timeline || {};
+    const milestones = p6OpsTimeline.milestones || p6Timeline.milestones || [];
     const allRisks = workstreams.flatMap(w => (w.risk_findings || []).map(risk => ({
       ...risk, _workstream: w, _contract: (risk.contract_id || (w.contract_ids || [])[0] || 'Unresolved')
     })));
     const highRisks = allRisks.filter(item => String(item.severity || item.priority || '').toLowerCase() === 'high' ||
       String(item.priority || '').toLowerCase() === 'critical');
-    const unresolvedConflictCount = (graph.edges || []).filter(edge =>
+    const unresolvedConflictCount = (p6Graph.edges || []).filter(edge =>
       /conflict|overlap|review/i.test(String(edge.status || '') + ' ' + String(edge.relation || ''))).length
-      + (reconciliation.review_items || []).length;
+      + (p6Reconciliation.review_items || []).length;
     const dueSoon = milestones.filter(item => /upcoming|due_today|overdue|due soon/i.test(String(item.status || '')));
     $('portfolioStatus').textContent = contractIds.length + ' source documents · ' + workstreams.length + ' workstreams';
     $('portfolioOverview').innerHTML = [
       ['Contracts scanned', contractIds.length, 'Source documents present in the portfolio extraction'],
       ['Contracts analyzed', new Set(workstreams.flatMap(w => w.contract_ids || [])).size, 'Distinct contract IDs represented in workstreams'],
-      ['High-priority signals', highRisks.length + (queueCounts.high || 0), 'Workstream signals plus decision-queue high-priority items; may overlap'],
-      ['Upcoming / action dates', dueSoon.length || (opsCounts.upcoming || 0) + (opsCounts.due_today || 0), 'Explicit dates classified by the timeline engine'],
+      ['High-priority signals', highRisks.length + (p6QueueCounts.high || 0), 'Workstream signals plus decision-p6Queue high-priority items; may overlap'],
+      ['Upcoming / action dates', dueSoon.length || (p6OpsCounts.upcoming || 0) + (p6OpsCounts.due_today || 0), 'Explicit dates classified by the p6Timeline engine'],
       ['Potential exposure', 'Not calculated', 'No unsupported portfolio-wide financial total is inferred'],
-      ['Unresolved review items', unresolvedConflictCount, 'Relationship/reconciliation items needing review']
+      ['Unresolved review items', unresolvedConflictCount, 'Relationship/p6Reconciliation items needing review']
     ].map(([label,value,note]) => '<div class="agent"><b>' + esc(label) + '</b><div class="value">' + esc(value) +
       '</div><p>' + esc(note) + '</p></div>').join('');
 
-    $('explorerCount').textContent = contractIds.length + ' documents · ' + (graph.edge_count || 0) + ' relationship links';
+    $('explorerCount').textContent = contractIds.length + ' documents · ' + (p6Graph.edge_count || 0) + ' relationship links';
     $('contractExplorer').innerHTML = contractIds.map(id => {
       const item = docs[id] || {};
       const terms = item.extracted_terms || [];
-      const linkedEdges = (graph.edges || []).filter(edge => edge.source === id || edge.target === id);
+      const linkedEdges = (p6Graph.edges || []).filter(edge => edge.source === id || edge.target === id);
       const ws = workstreams.filter(w => (w.contract_ids || []).includes(id));
       const verified = terms.filter(term => term.citation && term.citation.verified).length;
       const related = [...new Set(linkedEdges.map(edge => edge.source === id ? edge.target : edge.source))];
@@ -137,7 +137,7 @@ async function runOdin() {
         esc(item.document_type || item.title || 'Loaded source document') + '</p><div class="flow">' +
         '<span class="tag">' + terms.length + ' source lines</span><span class="tag">' + verified + ' verified quotes</span>' +
         '<span class="tag">' + linkedEdges.length + ' links</span><span class="tag">' + obligations + ' candidate obligations</span></div>' +
-        '<p class="small">Related documents: ' + esc(related.join(', ') || 'No explicit graph links detected') + '</p>' +
+        '<p class="small">Related documents: ' + esc(related.join(', ') || 'No explicit p6Graph links detected') + '</p>' +
         '<details><summary>Incorporated documents and source terms</summary><p>' +
         esc(related.join(' · ') || 'No incorporated-document relationship was detected for this node.') +
         '</p>' + terms.slice(0,6).map(term => '<div class="evidence"><b>' + esc(term.category || 'Extracted term') +
@@ -179,18 +179,18 @@ async function runOdin() {
 
     const auditItems = [
       ...milestones.map(item => ({date:item.date || '', title:item.title || 'Portfolio milestone',
-        status:item.status || item.date_type || 'timeline', detail:(item.contract_id || '') + ' · ' + (item.classification_note || item.evidence?.quote || '')})),
+        status:item.status || item.date_type || 'p6Timeline', detail:(item.contract_id || '') + ' · ' + (item.classification_note || item.evidence?.quote || '')})),
       ...(d.agent_messages || []).map((message,index) => ({date:'Run · ' + (message.iteration ?? index + 1),
         title:(message.from || 'Agent') + ' · ' + (message.type || 'handoff'),
         status:message.status || 'recorded', detail:message.summary || message.message || message.to || 'Agent handoff recorded'})),
-      {date:'Current run', title:'Finding: ' + (grounded.claim || f.title || 'Risk review'),
-        status:grounded.status || v.status || 'verification pending',
-        detail:'Breach proven: ' + (grounded.breach_proven ? 'yes' : 'no') + ' · ' +
-          ((grounded.missing_evidence || v.evidence_gaps || []).join('; ') || 'No missing evidence reported')},
-      {date:'Current run', title:'Follow-up loop',
+      {date:'Current run', title:'Finding: ' + (p6Grounded.claim || f.title || 'Risk review'),
+        status:p6Grounded.status || v.status || 'verification pending',
+        detail:'Breach proven: ' + (p6Grounded.breach_proven ? 'yes' : 'no') + ' · ' +
+          ((p6Grounded.missing_evidence || v.evidence_gaps || []).join('; ') || 'No missing evidence reported')},
+      {date:'Current run', title:'Follow-up p6Loop',
         status:(d.collaboration || {}).loop_status || 'not reported',
-        detail:(loop.stop_reason || (d.api_usage || {}).stop_reason || 'stop reason not reported') +
-          ' · iterations ' + (loop.iterations_used ?? 0) + '/' + (loop.max_iterations ?? 0)}
+        detail:(p6Loop.stop_reason || (d.api_usage || {}).stop_reason || 'stop reason not reported') +
+          ' · iterations ' + (p6Loop.iterations_used ?? 0) + '/' + (p6Loop.max_iterations ?? 0)}
     ].sort((a,b) => String(a.date).localeCompare(String(b.date)));
     $('auditTimelineCount').textContent = auditItems.length + ' run events / milestones';
     $('eventAuditTimeline').innerHTML = auditItems.slice(0,60).map(item =>
