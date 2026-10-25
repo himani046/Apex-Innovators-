@@ -5,6 +5,7 @@ from backend.services.portfolio_intelligence import (
     normalize_event_records,
     run_bounded_review_cycles,
     reconcile_payment_events,
+    review_cross_contract_candidates,
 )
 from backend.services.upload_analysis import extract_document_terms
 
@@ -68,6 +69,44 @@ class CrossContractIntelligenceTests(unittest.TestCase):
         self.assertTrue(candidate["context_checks"]["amendment_or_precedence_marker_detected"])
         self.assertFalse(candidate["context_checks"]["amendment_precedence_resolved"])
         self.assertFalse(candidate["legal_conflict_determined"])
+
+    def test_cross_contract_review_runs_loki_heimdall_tyr_and_keeps_draft_unresolved(self):
+        contracts = {
+            "A": "Provider shall provide written incident notice within 4 hours after awareness.",
+            "B": "Provider shall provide written incident notice within 24 hours after awareness.",
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        result = review_cross_contract_candidates(
+            candidates, contracts,
+            [{"event_id": "E1", "contract_id": "A", "timestamp": "2027-03-10",
+              "body": "Incident notice was sent for contract A."}],
+            "2027-03-15", max_agent_calls=30,
+        )
+        self.assertEqual(result["mode"], "bounded_cross_contract_review")
+        self.assertEqual(result["agent_calls_used"], 3 * len(result["traces"]))
+        self.assertTrue(result["traces"])
+        trace = result["traces"][0]
+        self.assertEqual(trace["loki_challenge"]["agent"], "Loki")
+        self.assertEqual(trace["heimdall_verification"]["agent"], "Heimdall")
+        self.assertEqual(trace["tyr_ruling"]["agent"], "Tyr")
+        self.assertFalse(trace["legal_conflict_determined"])
+        self.assertTrue(trace["tyr_ruling"]["human_approval_required"])
+        self.assertEqual(trace["tyr_ruling"]["action_draft"]["status"], "draft_only_not_sent")
+        self.assertFalse(trace["heimdall_verification"]["event_source_authenticity_verified"])
+        self.assertTrue(any(m["type"] == "cross_contract_evidence_verification"
+                            for m in result["agent_messages"]))
+
+    def test_cross_contract_review_budget_exhaustion_is_not_reported_complete(self):
+        contracts = {
+            "A": "Provider shall provide written incident notice within 4 hours after awareness.",
+            "B": "Provider shall provide written incident notice within 24 hours after awareness.",
+        }
+        candidates = detect_cross_contract_candidates(contracts)
+        result = review_cross_contract_candidates(candidates, contracts, [], "2027-03-15", max_agent_calls=2)
+        self.assertEqual(result["status"], "partial_budget_exhausted")
+        self.assertEqual(result["agent_calls_used"], 0)
+        self.assertEqual(result["stop_reason"], "agent_call_budget_exhausted")
+        self.assertTrue(result["human_review_required"])
 
     def test_does_not_compare_clauses_within_one_contract(self):
         contracts = {
