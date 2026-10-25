@@ -114,8 +114,8 @@ def detect_cross_contract_candidates(contracts: dict[str, str]) -> list[dict[str
                 "party_label": bool(PARTY_LABEL.search(line)),
                 "party_roles": sorted(set(role.casefold().replace(" ", "_") for role in PARTY_ROLE_RE.findall(line))),
                 "scope_terms": _context_terms(line),
-                "referenced_contract_ids": _referenced_contract_ids(line, sorted(contracts), cid),
-                "incorporation_marker": bool(INCORPORATION_RE.search(line)),
+                "referenced_contract_ids": _referenced_contract_ids(source, sorted(contracts), cid),
+                "incorporation_marker": bool(INCORPORATION_RE.search(source)),
                 "tokens": set(re.findall(r"[a-z]{4,}", line.casefold())),
             })
             contract_rows += 1
