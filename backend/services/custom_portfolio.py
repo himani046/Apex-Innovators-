@@ -17,7 +17,7 @@ from backend.agents.norns import build_contract_timeline
 from backend.agents.loki import review_contract_candidates
 from backend.agents.heimdall import verify_contract_review
 from backend.agents.tyr import arbitrate_contract_review
-from backend.services.agentic_state import ExecutionBudget, SharedAgentState, run_bounded_follow_up
+from backend.services.agentic_state import ExecutionBudget, SharedAgentState
 from backend.config import MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
 
 
@@ -112,6 +112,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     contract_reports = []
     agent_messages = []
     execution_budget = ExecutionBudget(MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS)
+    budget_exhausted = False
     shared_agent_state = SharedAgentState()
     shared_agent_state.update("contracts_and_relationships", {"contract_ids": sorted(contracts), "source_fingerprint": source_fingerprint})
     debate_traces = []
@@ -121,22 +122,27 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
     visible_events = [e for e in events if str(e.get("timestamp", ""))[:10] <= as_of]
     for cid, source in contracts.items():
         extraction = extractions[cid]
-        execution_budget.reserve_call(f"Thor extraction {cid}")
+        if not execution_budget.reserve_call(f"Thor extraction {cid}"):
+            budget_exhausted = True
         shared_agent_state.message("Thor", "Norns", "extraction_result", "complete", contract_id=cid, terms=len(extraction.get("extracted_terms", [])))
         citations = [term.get("citation") or {} for term in extraction.get("extracted_terms", []) if term.get("citation")]
         contract_timeline = build_contract_timeline(cid, extraction, as_of)
         timeline.extend(contract_timeline)
-        execution_budget.reserve_call(f"Norns timeline {cid}")
+        if not execution_budget.reserve_call(f"Norns timeline {cid}"):
+            budget_exhausted = True
         shared_agent_state.message("Norns", "Loki", "timeline_candidates", "complete", contract_id=cid, milestones=len(contract_timeline))
         loki_result = review_contract_candidates(cid, source, extraction)
         contract_risks = loki_result.get("findings", [])
-        execution_budget.reserve_call(f"Loki review {cid}")
+        if not execution_budget.reserve_call(f"Loki review {cid}"):
+            budget_exhausted = True
         shared_agent_state.message("Loki", "Heimdall", "risk_challenge", "submitted", contract_id=cid, findings=len(contract_risks))
         heimdall_result = verify_contract_review(cid, source, contract_risks, visible_events)
         verification_records.append({"contract_id": cid, **heimdall_result})
-        execution_budget.reserve_call(f"Heimdall verification {cid}")
+        if not execution_budget.reserve_call(f"Heimdall verification {cid}"):
+            budget_exhausted = True
         tyr_result = arbitrate_contract_review(cid, contract_risks, heimdall_result)
-        execution_budget.reserve_call(f"Tyr ruling {cid}")
+        if not execution_budget.reserve_call(f"Tyr ruling {cid}"):
+            budget_exhausted = True
         shared_agent_state.message("Heimdall", "Tyr", "verification_result", heimdall_result.get("status", "unknown"), contract_id=cid, findings=len(heimdall_result.get("findings", [])))
         shared_agent_state.message("Tyr", "Odin", "rulings", tyr_result.get("status", "unknown"), contract_id=cid, rulings=len(tyr_result.get("rulings", [])))
         debate_traces.append({"contract_id": cid, "loki_attacks": loki_result.get("findings", []),
@@ -281,6 +287,15 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                                       "Events are mapped only by explicit contract ID; no event means no evidence, not proof of no incident.",
                                       "Financial exposure is not calculated without reconciliation evidence.",
                                       "Every proposed action requires human review."]}
+    if budget_exhausted:
+        for stream in workstreams:
+            if stream.get("id", "").startswith("contract-"):
+                stream["status"] = "incomplete_budget_exhausted"
+                stream["completion_gate"] = {"workflow_complete": False, "budget_exhausted": True, "evidence_gaps_remaining": True, "human_review_required": True, "legal_outcome_resolved": False}
+                stream["completion_note"] = "The configured execution call budget was exhausted; do not treat this workstream as complete."
+                stream["progress"] = {"completed_stages": 0, "total_stages": 5, "percentage": 0, "note": "Budget exhaustion prevents a completion claim."}
+        company_report["status"] = "incomplete_budget_exhausted"
+        company_report["limitations"].append("Execution call budget was exhausted; some analysis stages may not have been performed.")
     shared_state = {"schema_version": "1.1", "company_context": company_context, "as_of_date": as_of,
                     "contracts_and_relationships": {"contract_ids": sorted(contracts), "graph": graph},
                     "workstreams": workstreams,
@@ -290,14 +305,12 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "verification_outcomes": verification_records,
                     "unresolved_questions": company_report["unresolved_questions"],
                     "recommended_actions": [action for report in contract_reports for action in report["recommended_actions"]],
-                    "agent_status": {name: {"status": "complete_with_limitations", "mode": "deterministic_source_triage"}
-                                     for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]},
                     "agent_messages": agent_messages + shared_agent_state.data["agent_messages"],
-                    "agent_status": shared_agent_state.data["agent_status"],
+                    "agent_status": {name: shared_agent_state.data["agent_status"].get(name, {"status": "not_run", "mode": "deterministic_source_triage"}) for name in ["Odin", "Thor", "Norns", "Loki", "Heimdall", "Tyr"]},
                     "execution": {**execution_budget.as_dict(), "mode": "bounded_deterministic_review",
                                   "iterations_used": execution_budget.iterations_used,
-                                  "note": "Configured call/iteration ceilings are exposed. The generic custom-input path remains deterministic; a budget limit does not imply omitted stages completed."}}
-    return {"status": "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
+                                  "note": "Configured call/iteration ceilings are exposed. The generic custom-input path remains deterministic and single-pass; exhaustion is surfaced as incomplete."}}
+    return {"status": "incomplete_budget_exhausted" if budget_exhausted else "complete_with_limitations", "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
             "company_context": company_context, "contracts": [{"id": cid, "characters": len(text)} for cid, text in sorted(contracts.items())],
             "contract_graph": graph, "workstreams": workstreams, "timeline": {"as_of_date": as_of, "milestones": timeline},
