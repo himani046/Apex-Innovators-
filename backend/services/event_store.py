@@ -51,6 +51,19 @@ class EventStore:
                 )
             """)
             db.execute("CREATE INDEX IF NOT EXISTS idx_ingested_events_date ON ingested_events(occurred_at)")
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS ingested_event_revisions (
+                    revision_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source TEXT NOT NULL,
+                    event_id TEXT NOT NULL,
+                    changed_at TEXT NOT NULL,
+                    previous_payload_hash TEXT NOT NULL,
+                    new_payload_hash TEXT NOT NULL,
+                    previous_payload_json TEXT NOT NULL,
+                    new_payload_json TEXT NOT NULL
+                )
+            """)
+            db.execute("CREATE INDEX IF NOT EXISTS idx_event_revisions_key ON ingested_event_revisions(source,event_id,revision_id)")
 
     def ingest(self, source: str, events: list[dict[str, Any]]) -> dict[str, Any]:
         source = str(source or "").strip()
@@ -97,7 +110,7 @@ class EventStore:
                 })
                 payload_hash = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest()
                 previous = db.execute(
-                    "SELECT payload_hash FROM ingested_events WHERE source=? AND event_id=?",
+                    "SELECT payload_hash,payload_json FROM ingested_events WHERE source=? AND event_id=?",
                     (source, event_id),
                 ).fetchone()
                 if previous and previous["payload_hash"] == payload_hash:
@@ -107,6 +120,14 @@ class EventStore:
                 if previous:
                     updated += 1
                     event_status = "updated"
+                    db.execute(
+                        """INSERT INTO ingested_event_revisions(
+                            source,event_id,changed_at,previous_payload_hash,new_payload_hash,
+                            previous_payload_json,new_payload_json
+                        ) VALUES(?,?,?,?,?,?,?)""",
+                        (source, event_id, received_at, previous["payload_hash"], payload_hash,
+                         previous["payload_json"], json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str)),
+                    )
                 else:
                     accepted += 1
                     event_status = "inserted"
@@ -137,7 +158,13 @@ class EventStore:
         clock = date.fromisoformat(as_of) if as_of else None
         with self._connection() as db:
             rows = db.execute(
-                "SELECT source,event_id,occurred_at,received_at,payload_json FROM ingested_events ORDER BY COALESCE(occurred_at,''),source,event_id LIMIT ?",
+                """SELECT e.source,e.event_id,e.occurred_at,e.received_at,e.payload_json,
+                          (SELECT COUNT(*) FROM ingested_event_revisions r
+                           WHERE r.source=e.source AND r.event_id=e.event_id) AS revision_count,
+                          (SELECT MAX(changed_at) FROM ingested_event_revisions r
+                           WHERE r.source=e.source AND r.event_id=e.event_id) AS last_changed_at
+                   FROM ingested_events e
+                   ORDER BY COALESCE(e.occurred_at,''),e.source,e.event_id LIMIT ?""",
                 (limit,),
             ).fetchall()
         events = []
@@ -155,6 +182,9 @@ class EventStore:
             payload["source"] = row["source"]
             payload["source_verified"] = False
             payload["source_authenticity_verified"] = False
+            payload["revision_count"] = row["revision_count"]
+            payload["last_changed_at"] = row["last_changed_at"]
+            payload["change_detected"] = row["revision_count"] > 0
             events.append(payload)
         return {
             "events": events,
