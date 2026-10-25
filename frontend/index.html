@@ -1403,6 +1403,12 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   color: #454b3e !important;
 }
 
+
+/* Risk & Review: black text on light cards for readability. */
+.page-view[data-view="review"] .card{background:#fff!important;color:#000!important;border-color:#ddd!important}
+.page-view[data-view="review"] .card *{color:#000!important;-webkit-text-fill-color:#000!important}
+.page-view[data-view="review"] .card .agent,.page-view[data-view="review"] .card .evidence,.page-view[data-view="review"] .card .action,.page-view[data-view="review"] .card .milestone,.page-view[data-view="review"] .card .auditrow{background:#f7f7f7!important;color:#000!important;border-color:#ddd!important}
+.page-view[data-view="review"] .card .muted,.page-view[data-view="review"] .card .small,.page-view[data-view="review"] .card .meta,.page-view[data-view="review"] .card .tag{color:#000!important;-webkit-text-fill-color:#000!important}
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
