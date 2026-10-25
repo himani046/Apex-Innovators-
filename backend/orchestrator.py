@@ -1,6 +1,7 @@
 from datetime import date
 
 from backend.config import PACK_DIR, USE_CLAUDE, MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS
+from backend.services.agentic_state import SharedAgentState, ExecutionBudget, run_bounded_follow_up
 from backend.services.ingestion import load_pack
 from backend.services.citations import verify_all
 from backend.services.contract_graph import build_contract_graph, reconcile_contracts
@@ -19,6 +20,10 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     date.fromisoformat(as_of)
     pack = load_pack(PACK_DIR)
     contracts = pack["contracts"]
+    budget = ExecutionBudget(MAX_AGENT_CALLS, MAX_AGENT_ITERATIONS)
+    shared = SharedAgentState()
+    if not budget.reserve_call("Thor portfolio extraction"):
+        raise RuntimeError("Agent call budget is zero; cannot begin portfolio analysis")
     portfolio_extraction = extract_portfolio_candidates(contracts)
     contract_graph = build_contract_graph(contracts)
     contract_reconciliation = reconcile_contracts(contracts, contract_graph)
@@ -40,6 +45,24 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         raise RuntimeError("A1.txt missing from supplied pack")
 
     use = request_claude and USE_CLAUDE
+    shared.update("contracts_and_relationships", {
+        "contracts": [{"contract_id": key, "source_characters": len(value)} for key, value in sorted(contracts.items())],
+        "graph": contract_graph,
+        "reconciliation": contract_reconciliation,
+        "workstreams": multi_contract_analysis.get("workstreams", []),
+    })
+    shared.update("extracted_clauses", [
+        term for contract_result in portfolio_extraction.get("contracts", {}).values()
+        for term in contract_result.get("extracted_terms", [])
+    ])
+    shared.update("timeline_events", portfolio_operations.get("timeline", {}).get("milestones", []))
+    shared.update("financial_calculations", portfolio_operations.get("financial_reconciliation", {}).get("payment_ledger_candidates", []))
+    shared.update("evidence_references", [
+        term.get("citation") for contract_result in portfolio_extraction.get("contracts", {}).values()
+        for term in contract_result.get("extracted_terms", []) if term.get("citation")
+    ])
+    shared.record_agent("Thor", "complete", consumes=["contracts"], produces=["extracted_clauses", "evidence_references", "contracts_and_relationships"])
+    shared.record_agent("Odin", "complete", consumes=["contracts_and_relationships"], produces=["workstream_analysis"])
     state = {
         "run_id": "odin-portfolio-" + as_of,
         "as_of_date": as_of,
@@ -59,7 +82,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
             }
             for item in multi_contract_analysis["workstreams"]
         ],
-        "api_usage": {"max_calls": MAX_AGENT_CALLS, "max_iterations": MAX_AGENT_ITERATIONS},
+        "api_usage": budget.as_dict(),
+        "collaboration": {"enabled": True, "shared_state_schema_version": "1.0", "loop_status": "pending"},
         "agent_messages": [
             {
                 "from": "Thor",
@@ -112,6 +136,8 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         ],
     }
 
+    if not budget.reserve_call("Thor A1 extraction"):
+        raise RuntimeError("Agent call budget exhausted before Thor extraction")
     x = extract_a1(source, use)
     terms = x.get("extracted_terms", [])
     for term in terms:
@@ -123,11 +149,18 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "failed": sum(not t.get("citation", {}).get("verified", False) for t in terms),
     }
     state["extraction"] = x
+    shared.update("extracted_clauses", shared.data["extracted_clauses"] + terms)
+    shared.update("evidence_references", shared.data["evidence_references"] + [t.get("citation") for t in terms if t.get("citation")])
+    shared.record_agent("Thor", "complete", consumes=["contracts_and_relationships"], produces=["extracted_clauses", "evidence_references"])
     state["agent_messages"].append({
         "from": "Thor", "to": "Odin", "type": "extraction_complete", "status": "complete"
     })
 
+    if not budget.reserve_call("Norns timeline calculation"):
+        raise RuntimeError("Agent call budget exhausted before Norns timeline calculation")
     state["timeline"] = build_timeline(x, as_of)
+    shared.update("timeline_events", shared.data["timeline_events"] + state["timeline"].get("milestones", []))
+    shared.record_agent("Norns", "complete", consumes=["extracted_clauses", "contracts_and_relationships"], produces=["timeline_events", "financial_calculations"])
     state["agent_messages"].append({
         "from": "Norns", "to": "Odin", "type": "timeline_complete", "status": "complete"
     })
@@ -136,19 +169,88 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         event for event in pack["event_drops"]["events_drop1.jsonl"]
         if event.get("timestamp", "")[:10] <= as_of
     ]
+    if not budget.reserve_call("Loki risk review"):
+        raise RuntimeError("Agent call budget exhausted before Loki risk review")
     finding = review(x, events, use)
     finding["citations"] = verify_all(finding.get("citations", []), {"A1": source})
     state["risk_finding"] = finding
+    shared.update("risk_claims", [finding])
+    shared.update("unresolved_questions", finding.get("evidence_gaps", []))
+    shared.record_agent("Loki", "complete", consumes=["extracted_clauses", "timeline_events", "evidence_references"], produces=["risk_claims", "unresolved_questions"])
     state["agent_messages"].append({
         "from": "Loki", "to": "Heimdall", "type": "risk_claim", "status": "submitted"
     })
 
+    if not budget.reserve_call("Heimdall evidence verification"):
+        raise RuntimeError("Agent call budget exhausted before Heimdall verification")
     state["verification"] = verify(finding, events, finding.get("citations", []))
+    shared.update("verification_outcomes", [state["verification"]])
+    shared.record_agent("Heimdall", "complete", consumes=["risk_claims", "evidence_references"], produces=["verification_outcomes", "unresolved_questions"])
     state["agent_messages"].append({
         "from": "Heimdall", "to": "Tyr", "type": "verification",
         "status": state["verification"]["status"],
     })
-    state["ruling"] = arbitrate(finding, state["verification"])
+    def targeted_follow_up(previous_finding, previous_verification, iteration):
+        # A targeted, deterministic re-analysis uses the exact verification gaps.
+        # Claude is deliberately disabled in retries so the bounded loop cannot
+        # create hidden model calls outside the execution budget.
+        followup_extraction = extract_a1(source, False)
+        relevant_events = [
+            event for event in events
+            if any(token.casefold() in str(event.get("body", "")).casefold()
+                   for token in ("incident", "notification", "awareness", "outage", "notice"))
+        ]
+        revised_finding = review(followup_extraction, relevant_events, False)
+        revised_finding["targeted_follow_up"] = {
+            "iteration": iteration,
+            "requested_gaps": previous_verification.get("evidence_gaps", []),
+            "scope": "incident awareness and notice-delivery evidence",
+            "note": "Re-analysis cannot manufacture missing source records; missing proof remains unresolved.",
+        }
+        revised_finding["citations"] = verify_all(revised_finding.get("citations", []), {"A1": source})
+        revised_verification = verify(revised_finding, relevant_events, revised_finding.get("citations", []))
+        shared.message("Odin", "Thor", "targeted_follow_up_request", "issued",
+                       iteration=iteration, missing_evidence=previous_verification.get("evidence_gaps", []))
+        shared.message("Thor", "Loki", "targeted_extraction", "complete", iteration=iteration,
+                       terms=len(followup_extraction.get("extracted_terms", [])))
+        shared.message("Loki", "Heimdall", "revised_risk_claim", "submitted", iteration=iteration)
+        shared.message("Heimdall", "Odin", "follow_up_verification", revised_verification.get("status", "unknown"),
+                       iteration=iteration, unresolved=previous_verification.get("evidence_gaps", []))
+        return revised_finding, revised_verification
+
+    finding, verification, loop_summary = run_bounded_follow_up(
+        finding, state["verification"], MAX_AGENT_ITERATIONS, budget, targeted_follow_up
+    )
+    state["risk_finding"] = finding
+    state["verification"] = verification
+    state["collaboration"] = {
+        "enabled": True,
+        "shared_state_schema_version": "1.0",
+        "loop_status": "needs_human_follow_up" if loop_summary["needs_human_follow_up"] else "verified_or_no_follow_up_needed",
+        "loop": loop_summary,
+    }
+    shared.update("risk_claims", [finding])
+    shared.update("verification_outcomes", [verification])
+    shared.update("unresolved_questions", verification.get("evidence_gaps", finding.get("evidence_gaps", [])))
+    shared.record_agent("Heimdall", "complete_with_gaps" if loop_summary["needs_human_follow_up"] else "verified",
+                        iteration=budget.iterations_used, consumes=["risk_claims", "evidence_references"],
+                        produces=["verification_outcomes", "unresolved_questions"])
+    if not budget.reserve_call("Tyr ruling"):
+        state["ruling"] = {
+            "agent": "Tyr", "decision": "deferred_budget_exhausted",
+            "rationale": "The configured execution budget was exhausted before a ruling could be produced.",
+            "approved_facts": [], "rejected_or_unproven_claims": ["No ruling was generated."],
+            "action_draft": None, "human_approval_required": True,
+        }
+        shared.record_agent("Tyr", "skipped_budget_exhausted", consumes=["verification_outcomes"])
+    else:
+        state["ruling"] = arbitrate(finding, verification)
+        shared.record_agent("Tyr", "complete", iteration=budget.iterations_used,
+                            consumes=["risk_claims", "verification_outcomes", "unresolved_questions"],
+                            produces=["recommended_actions"])
+    shared.update("recommended_actions", [state["ruling"].get("action_draft")] if state["ruling"].get("action_draft") else [])
+    shared.message("Tyr", "Odin", "ruling", state["ruling"].get("decision", "complete"),
+                   unresolved_questions=shared.data["unresolved_questions"])
     state["agent_messages"].append({
         "from": "Tyr", "to": "Odin", "type": "ruling", "status": "complete"
     })
@@ -174,4 +276,13 @@ def run_demo(as_of="2027-03-15", request_claude=True):
         "Norns, Heimdall, and Tyr use deterministic logic in this version.",
         "Draft actions require human approval and are never sent automatically.",
     ]
+    state["shared_state"] = shared.snapshot()
+    state["shared_state"]["status"] = state["status"]
+    state["api_usage"] = budget.as_dict()
+    state["api_usage"]["note"] = "Counts orchestrated agent/task invocations, including each bounded follow-up task; provider-internal retries are not observable here."
+    state["collaboration"]["agents"] = state["shared_state"]["agent_status"]
+    state["collaboration"]["handoff_count"] = len(state["shared_state"]["agent_messages"])
+    state["collaboration"]["unresolved_questions"] = state["shared_state"]["unresolved_questions"]
+    state["collaboration"]["recommended_actions"] = state["shared_state"]["recommended_actions"]
+    state["agent_messages"] = state["shared_state"]["agent_messages"]
     return state
