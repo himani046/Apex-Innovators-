@@ -151,7 +151,7 @@ def arbitrate_contract_finding(
         decision = "partially_supported_unresolved"
         rationale = "The clause quotation is verified and related event text exists, but event authenticity, contractual trigger, causation, exceptions, and breach are not established by the match. Treat Loki's claim as a qualified risk requiring human review."
     else:
-        decision = "insufficient_event_or_trigger_evidence"
+        decision = "insufficient_evidence"
         rationale = "The contractual wording is verifiable, but the current evidence does not establish the relevant event or trigger. Preserve the risk as a hypothesis; do not assert breach or liability."
         if not has_events:
             gaps.append("Obtain event, delivery, performance, or notice records that can confirm whether the contractual trigger occurred.")
@@ -160,7 +160,7 @@ def arbitrate_contract_finding(
     confidence = 0.88 if all_quotes_verified and has_events and supports and not gaps else 0.72 if all_quotes_verified and has_events else 0.55 if all_quotes_verified else 0.30
     confidence = max(0.0, min(0.99, confidence - min(0.20, max(0, len(gaps) - 1) * 0.025)))
     finding_id = _text(finding.get("id") or finding.get("finding_id")) or f"{contract_id}:finding"
-    action_id = "tyr-" + hashlib.sha256(f"{contract_id}|{finding_id}|{action_type}".encode("utf-8")).hexdigest()[:16]
+    action_id = f"{contract_id}:action:" + hashlib.sha256(f"{contract_id}|{finding_id}|{action_type}".encode("utf-8")).hexdigest()[:16]
     body = _render_action_body(contract_id, finding, citations, gaps, verification, action_type)
     draft = {
         "id": action_id, "action_id": action_id, "type": action_type, "subject": subject,
