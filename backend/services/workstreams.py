@@ -7,7 +7,7 @@ from each document's own verbatim lines and are marked for human review.
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from backend.agents.thor_portfolio import extract_contract_candidates
@@ -66,7 +66,7 @@ def _extract_dates(doc_id: str, source: str, as_of: str) -> list[dict[str, Any]]
             normalized = None
             for fmt in ("%Y-%m-%d", "%B %d %Y", "%d %B %Y"):
                 try:
-                    normalized = date.fromisoformat(date_text) if fmt == "%Y-%m-%d" else date.strptime(date_text, fmt).isoformat()
+                    normalized = date.fromisoformat(date_text) if fmt == "%Y-%m-%d" else datetime.strptime(date_text, fmt).date().isoformat()
                     break
                 except (ValueError, AttributeError):
                     pass
@@ -244,6 +244,33 @@ def build_workstreams(contracts: dict[str, str], graph: dict[str, Any], reconcil
         })
 
     portfolio = build_portfolio_summary(contracts, graph, reconciliation, workstreams)
+    workstreams.append({
+        "id": "portfolio-wide",
+        "label": "Portfolio-wide",
+        "contract_ids": sorted(set(portfolio["contracts_in_scope"])),
+        "related_documents": [{"document_id": edge["target"], "relationship": edge["relation"]}
+                              for edge in graph.get("edges", [])],
+        "responsibility": "Identify cross-contract dependencies, shared controls, potential conflicts, and portfolio-level review questions.",
+        "status": "complete_with_review_items",
+        "agents": {"Thor": "portfolio_evidence_scanned", "Norns": "cross_contract_dates_not_aggregated",
+                   "Loki": "potential_shared_risks_flagged", "Heimdall": "relationship_evidence_checked",
+                   "Tyr": "portfolio_actions_draft_only"},
+        "extracted_obligations": [],
+        "deadlines": [],
+        "financial_exposure": {"amounts_found": [], "calculated_total_usd": None,
+                               "calculation_status": "not_calculated_without_invoice_or_trigger_evidence",
+                               "note": "Portfolio totals are not calculated; contract values and periods are not directly additive."},
+        "evidence_references": [edge.get("evidence", {}) for edge in graph.get("edges", [])],
+        "citation_verification": graph.get("citation_validation", {"total": 0, "verified": 0, "failed": 0}),
+        "risk_findings": portfolio["shared_risk_signals"],
+        "verification": {"status": "source_links_checked_review_required",
+                         "events_matched": 0, "matched_events": [],
+                         "note": "Potential portfolio conflicts are not proven without validating facts and legal scope."},
+        "recommended_actions": portfolio["recommended_actions"],
+        "unresolved_questions": portfolio["unresolved_questions"],
+        "source_notice": portfolio["notice"],
+        "portfolio_summary": portfolio,
+    })
     return {
         "as_of_date": as_of,
         "scope": in_scope,
