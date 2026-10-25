@@ -130,7 +130,7 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             alerts.append({**risk, "alert_source": "contract_clause_triage"})
         confidence = [float(t["confidence"]) for t in extraction.get("extracted_terms", [])
                       if isinstance(t.get("confidence"), (int, float))]
-        gaps = extraction.get("ambiguities", [])
+        gaps = list(dict.fromkeys(list(extraction.get("ambiguities", []) or []) + [gap for item in heimdall_result.get("findings", []) for gap in (item.get("evidence_gaps", []) or [])]))
         actions = [item.get("action_draft") for item in tyr_result.get("rulings", []) if item.get("action_draft")]
         report = {"contract_id": cid, "status": "complete_with_review_items" if contract_risks or gaps else "source_triage_complete",
                   "key_terms": extraction.get("extracted_terms", []), "obligations": extraction.get("extracted_terms", []),
