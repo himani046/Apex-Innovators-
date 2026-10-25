@@ -81,6 +81,34 @@ class AuditStoreTests(unittest.TestCase):
         self.assertEqual(record["decisions"][0]["reviewer"], "Contract Counsel")
         self.assertTrue(any(event["event_type"] == "human_decision" for event in record["events"]))
 
+    def test_specific_portfolio_action_can_be_reviewed_without_approving_other_actions(self):
+        payload = self.payload()
+        payload["contract_reports"] = [
+            {"contract_id": "A1", "recommended_actions": [
+                {"action_id": "A1:action:1", "subject": "Review A1", "body": "Draft A1",
+                 "human_approval_required": True, "status": "draft_only_not_sent"}]},
+            {"contract_id": "B2", "recommended_actions": [
+                {"action_id": "B2:action:1", "subject": "Review B2", "body": "Draft B2",
+                 "human_approval_required": True, "status": "draft_only_not_sent"}]},
+        ]
+        saved = self.store.record_run(payload)
+        result = self.store.decide(saved["run_id"], "B2:action:1", "rejected", "Legal Reviewer", "Needs evidence")
+        self.assertEqual(result["action_id"], "B2:action:1")
+        self.assertEqual(result["decision"], "rejected")
+        self.assertFalse(result["consequential_action_executed"])
+
+    def test_generic_decision_id_is_rejected_for_multiple_actions(self):
+        payload = self.payload()
+        payload["contract_reports"] = [
+            {"contract_id": "A1", "recommended_actions": [
+                {"action_id": "A1:action:1", "subject": "Review A1", "body": "Draft A1"}]},
+            {"contract_id": "B2", "recommended_actions": [
+                {"action_id": "B2:action:1", "subject": "Review B2", "body": "Draft B2"}]},
+        ]
+        saved = self.store.record_run(payload)
+        with self.assertRaisesRegex(ValueError, "explicit action_id"):
+            self.store.decide(saved["run_id"], "recommended-action", "approved", "Legal Reviewer")
+
     def test_decision_requires_reviewer_and_existing_run(self):
         saved = self.store.record_run(self.payload())
         with self.assertRaises(ValueError):

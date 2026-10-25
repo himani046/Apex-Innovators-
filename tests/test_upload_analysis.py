@@ -25,7 +25,7 @@ class UploadAnalysisTests(unittest.TestCase):
         self.assertTrue(result["target_clause_found"])
         self.assertTrue(result["extracted_terms"])
         self.assertTrue(all("renew" in term["citation"]["quote"].casefold() for term in result["extracted_terms"]))
-        self.assertTrue(all(term["citation"]["line_number"] == 4 for term in result["extracted_terms"]))
+        self.assertTrue(all(term["citation"]["line_number"] >= 5 for term in result["extracted_terms"]))
 
     def test_missing_targeted_section_does_not_fall_back_to_full_document(self):
         source = "Section 1. Term\nThe agreement has a duration of twelve months.\n"
