@@ -239,6 +239,32 @@ header #health{justify-self:end}
 #homeGraph+.card,#homeGraph~.card.full{margin-top:30px!important}
 .graph-shell{margin-bottom:4px}
 @media(max-width:650px){#overviewMetrics{margin-bottom:20px;gap:14px}#homeGraph{margin-top:22px!important;margin-bottom:24px!important}#dash>.card,#dash>.page-view{margin-top:22px!important;margin-bottom:24px!important}.page-view>.page-grid{row-gap:16px;column-gap:14px}}
+
+/* Large structural panels (graph and portfolio sections) stay neutral on hover.
+   Only the smaller modular cards inside them receive the charcoal hover treatment. */
+#dash>.card.full:hover,
+#dash>.page-view>.card.full:hover,
+.card.full:has(.graph-shell):hover,
+.card.full:has(#fr9Graph):hover{
+  color:#171b15!important;
+  background:#fff!important;
+  border-color:#e0e3da!important;
+  box-shadow:0 4px 18px rgba(30,36,25,.025)!important;
+  transform:none!important;
+}
+#dash>.card.full:hover h1,#dash>.card.full:hover h2,#dash>.card.full:hover h3,
+#dash>.card.full:hover h4,#dash>.card.full:hover p,#dash>.card.full:hover li,
+#dash>.card.full:hover small,#dash>.card.full:hover label,
+#dash>.card.full:hover .value,#dash>.card.full:hover .muted,
+#dash>.card.full:hover .label,#dash>.card.full:hover .hint,
+.card.full:has(.graph-shell):hover h1,.card.full:has(.graph-shell):hover h2,
+.card.full:has(.graph-shell):hover h3,.card.full:has(.graph-shell):hover p,
+.card.full:has(#fr9Graph):hover h1,.card.full:has(#fr9Graph):hover h2,
+.card.full:has(#fr9Graph):hover h3,.card.full:has(#fr9Graph):hover p{
+  color:#171b15!important;
+}
+#dash>.card.full:hover:before{opacity:0!important}
+#dash>.card.full:hover svg{filter:none!important}
 </style></head><body>
 <header><div class="odin-brand"><h1>odin<span>.</span></h1></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
