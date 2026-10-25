@@ -125,6 +125,18 @@ main{max-width:1600px;padding:28px 0}
 #loading{margin:10px 0 26px;background:#fff;border:1px solid #d7d9cf;border-radius:22px;padding:26px;font-size:17px;color:#596052}
 #health{font-size:12px;color:#596052;background:#f1f2eb;border:1px solid #d7d9cf;padding:8px 12px;border-radius:999px}
 @media(max-width:850px){.intro{grid-template-columns:1fr;gap:12px}.intro .controls{justify-content:flex-start}}
+
+/* Interactive, orbitable contract relationship canvas */
+.graph-wrap{overflow:hidden;min-height:0;background:#f7f8f3;border:1px solid #e2e4dc;border-radius:18px}
+.graph-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #e2e4dc;color:#68725d;font-size:12px}
+.graph-toolbar>div{display:flex;gap:6px}.graph-toolbar button{background:#fff;color:#25291f;border:1px solid #d8dccf;border-radius:999px;padding:7px 12px;font-size:12px}
+.graph-stage{height:480px;position:relative;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 50% 45%,#fff 0%,#f7f8f3 55%,#eef0e8 100%);touch-action:pan-y;outline:none}
+.relationship-canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}.relationship-canvas.dragging{cursor:grabbing}
+.graph-tip{position:absolute;left:14px;bottom:12px;pointer-events:none;background:#ffffffdc;border:1px solid #e2e4dc;border-radius:999px;padding:7px 11px;font-size:11px;color:#68725d}
+.graph-footnote{font-size:12px;color:#777d6e;margin:10px 0 0}
+.graph-empty{min-height:250px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;color:#68725d;padding:25px}.graph-empty b{font-size:16px;color:#25291f}.graph-empty span{max-width:520px;font-size:13px}
+.graph-detail{position:absolute;z-index:5;width:min(310px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:#fff;border:1px solid #d7dccd;border-radius:16px;padding:17px;box-shadow:0 18px 50px #222a1830;color:#25291f}.graph-detail.hidden{display:none}.graph-detail-close{float:right;background:#f1f2eb;color:#25291f;border:0;border-radius:50%;width:28px;height:28px;padding:0;font-size:18px}.graph-detail-kicker{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#81916f}.graph-detail h4{font-size:23px;margin:6px 0}.graph-detail>p{font-size:12px;color:#68725d;margin:0 0 12px}.graph-detail-edge{border-top:1px solid #e7e9e1;padding:10px 0}.graph-detail-edge b,.graph-detail-edge span,.graph-detail-edge small{display:block}.graph-detail-edge b{font-size:12px}.graph-detail-edge span,.graph-detail-edge small{font-size:11px;color:#68725d;margin-top:4px}.graph-detail-edge blockquote{font-size:11px;margin:7px 0;max-height:75px;overflow:auto}.graph-open-contract{margin-top:8px;width:100%;border-radius:999px;background:#151813;color:#fff;padding:10px}
+@media(max-width:650px){.graph-stage{height:410px}.graph-toolbar{align-items:flex-start;flex-direction:column}}
 </style></head><body>
 <header><div><h1>ODIN <span style="color:var(--cyan)">/</span> THE CONTRACT WAR ROOM</h1><p>Multi-agent contract intelligence · Quillhub Inc.</p></div><nav class="top-tabs" aria-label="Dashboard pages"><button type="button" class="active" data-page="overview">Overview</button><button type="button" data-page="contracts">Contracts</button><button type="button" data-page="timeline">Time machine</button><button type="button" data-page="agents">Agents</button><button type="button" data-page="review">Risk &amp; review</button><button type="button" data-page="audit">Audit</button></nav><span class="tag" id="health">Connecting…</span></header>
 <main><div class="intro"><div><div class="eyebrow">Evidence before conclusions</div><h2>See the risk.<br><span style="color:var(--cyan)">Prove the evidence.</span></h2><p>Odin coordinates specialized agents to extract contract facts, project timelines, challenge risk claims, verify events and draft actions for human approval.</p></div><div class="controls"><label for="date">Simulated date</label> <select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select> <button id="run" onclick="runOdin()">Run agents ↗</button></div></div>
@@ -198,30 +210,47 @@ function setupOdinPages(){
  window.odinShowPage=showPage;
 }
 function updateOverviewAndGraph(){
- const textOf=id=>$(id)?.innerText||'';
- const contractText=textOf('explorerCount').match(/\d+/);if($('homeContracts'))$('homeContracts').textContent=contractText?contractText[0]:'—';
- const riskText=textOf('heatmapStatus').match(/\d+/);if($('homeRisks'))$('homeRisks').textContent=riskText?riskText[0]:(($('riskHeatmap')?.children.length)||0);
- const deadlines=(($('opsMilestones')?.querySelectorAll('.agent,.milestone,li')||[]).length);if($('homeDeadlines'))$('homeDeadlines').textContent=deadlines||(($('timeline')?.children.length)||0)||'—';
- const reviews=(($('decisionQueueItems')?.children.length)||0)+(($('reviewItems')?.children.length)||0);if($('homeReview'))$('homeReview').textContent=reviews||'0';
- const host=$('homeGraph');if(!host)return;
- const edgeCards=[...($('graphEdges')?.querySelectorAll(':scope > .agent')||[])];
- const edges=edgeCards.map(card=>{
-   const title=card.querySelector('b')?.textContent||'';
-   const m=title.match(/^(.+?)\s*→\s*(.+)$/);
-   return m?{source:m[1].trim(),target:m[2].trim(),label:(card.querySelector('p')?.textContent||'Relationship evidence').trim()}:null;
- }).filter(Boolean);
- if(!edges.length){host.innerHTML='<p style="padding:20px;color:#777d6e">No sourced contract links are available yet. Run analysis and inspect the relationship evidence below. The graph will not invent connections.</p>';return}
- const names=[...new Set(edges.flatMap(e=>[e.source,e.target]))].slice(0,14);
- const width=900,height=Math.max(300,Math.ceil(names.length/4)*120),cols=Math.min(4,names.length),rows=Math.ceil(names.length/cols);
- const points=names.map((name,i)=>({name,x:105+(i%cols)*225,y:70+Math.floor(i/cols)*120}));
- const pos=Object.fromEntries(points.map(p=>[p.name,p]));
- const edgeMarkup=edges.filter(e=>pos[e.source]&&pos[e.target]).map(e=>{
-  const a=pos[e.source],b=pos[e.target],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-  return '<line class="graph-edge" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/><text class="graph-edge-label" x="'+mx+'" y="'+(my-8)+'">'+esc(e.label.slice(0,28))+'</text>';
- }).join('');
- const nodeMarkup=points.map((p,i)=>'<g class="graph-node" tabindex="0" role="button" data-node-index="'+i+'"><rect x="'+(p.x-88)+'" y="'+(p.y-27)+'" width="176" height="54" rx="13"/><text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle">'+esc(p.name.length>23?p.name.slice(0,22)+'…':p.name)+'</text></g>').join('');
- host.innerHTML='<svg viewBox="0 0 '+width+' '+height+'" role="img" aria-label="Evidence-backed contract relationship graph">'+edgeMarkup+nodeMarkup+'</svg><p style="padding:0 16px 12px;color:#777d6e;font-size:12px">Only relationships returned by the contract analysis are drawn. Select a node to open the Contracts page and inspect the cited relationship evidence.</p>';
- host.querySelectorAll('[data-node-index]').forEach(n=>{const go=()=>window.odinShowPage?.('contracts');n.addEventListener('click',go);n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
+  const textOf=id=>$(id)?.innerText||'';
+  const contractText=textOf('explorerCount').match(/\d+/);
+  if($('homeContracts'))$('homeContracts').textContent=contractText?contractText[0]:'—';
+  const riskText=textOf('heatmapStatus').match(/\d+/);
+  if($('homeRisks'))$('homeRisks').textContent=riskText?riskText[0]:(($('riskHeatmap')?.children.length)||0);
+  const deadlines=(($('opsMilestones')?.querySelectorAll('.agent,.milestone,li')||[]).length);
+  if($('homeDeadlines'))$('homeDeadlines').textContent=deadlines||(($('timeline')?.children.length)||0)||'—';
+  const reviews=(($('decisionQueueItems')?.children.length)||0)+(($('reviewItems')?.children.length)||0);
+  if($('homeReview'))$('homeReview').textContent=reviews||'0';
+  const host=$('homeGraph');if(!host)return;
+  const edgeCards=[...($('graphEdges')?.querySelectorAll(':scope > .agent')||[])];
+  const edges=edgeCards.map(card=>{
+    const title=card.querySelector('b')?.textContent||'';
+    const m=title.match(/^(.+?)\s*→\s*(.+)$/);
+    return m?{source:m[1].trim(),target:m[2].trim(),label:(card.querySelector('p')?.textContent||'Relationship evidence').trim(),quote:(card.querySelector('blockquote')?.textContent||'No quoted evidence available').trim(),meta:(card.querySelector('.meta')?.textContent||'').trim()}:null;
+  }).filter(Boolean);
+  if(!edges.length){host.innerHTML='<div class="graph-empty"><b>No sourced contract links yet</b><span>Run analysis and inspect the relationship evidence below. Odin will not invent connections.</span></div>';return}
+  const names=[...new Set(edges.flatMap(e=>[e.source,e.target]))].slice(0,18);
+  const nodes=names.map((name,i)=>{const layer=Math.floor(i/6),slot=i%6,a=slot*Math.PI*2/6+layer*.28;return {name,x:Math.cos(a)*(layer===0?190:120),y:(layer-1)*105+Math.sin(a)*55,z:Math.sin(a)*(layer===0?150:100)}});
+  host.innerHTML='<div class="graph-toolbar"><span><b>'+names.length+'</b> contracts · <b>'+edges.length+'</b> sourced links</span><div><button type="button" data-zoom="out" aria-label="Zoom out">−</button><button type="button" data-zoom="reset">Reset view</button><button type="button" data-zoom="in" aria-label="Zoom in">+</button></div></div><div class="graph-stage" tabindex="0" aria-label="Interactive 3D-like contract relationship graph. Drag to rotate, scroll to zoom, hover a contract for details."><canvas class="relationship-canvas"></canvas><div class="graph-tip" role="status">Drag to rotate · scroll to zoom · hover a node for details</div><div class="graph-detail hidden"></div></div><p class="graph-footnote">Connections are evidence-backed relationship signals, not conclusions about legal liability. Drag to orbit; use the wheel or controls to zoom.</p>';
+  const stage=host.querySelector('.graph-stage'),canvas=host.querySelector('canvas'),ctx=canvas.getContext('2d'),detail=host.querySelector('.graph-detail');
+  let yaw=-.45,pitch=.18,zoom=1,dragging=false,lastX=0,lastY=0,hovered=-1;
+  const resize=()=>{const rect=stage.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.max(1,rect.width*dpr);canvas.height=Math.max(1,rect.height*dpr);canvas.style.width=rect.width+'px';canvas.style.height=rect.height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);draw()};
+  function project(n,w,h){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);const x=n.x*cy-n.z*sy,z=n.x*sy+n.z*cy,y=n.y*cp-z*sp,zz=n.y*sp+z*cp;const f=650/(650+zz);return {x:w/2+x*f*zoom,y:h/2+y*f*zoom,z:zz,scale:f*zoom}}
+  function draw(){
+    const w=canvas.clientWidth||stage.clientWidth,h=canvas.clientHeight||stage.clientHeight;if(!w||!h)return;
+    ctx.clearRect(0,0,w,h);
+    const pts=nodes.map(n=>project(n,w,h)),lines=edges.map(e=>({e,a:names.indexOf(e.source),b:names.indexOf(e.target)})).filter(l=>l.a>=0&&l.b>=0).sort((a,b)=>(pts[a.a].z+pts[a.b].z)-(pts[b.a].z+pts[b.b].z));
+    lines.forEach(({e,a,b})=>{const p=pts[a],q=pts[b];ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(129,145,111,.72)';ctx.lineWidth=1.5;ctx.stroke();const mx=(p.x+q.x)/2,my=(p.y+q.y)/2;ctx.font='10px system-ui';ctx.fillStyle='#68725d';const label=e.label.length>26?e.label.slice(0,25)+'…':e.label;ctx.fillText(label,mx+4,my-5)});
+    pts.map((p,i)=>({p,i})).sort((a,b)=>a.p.z-b.p.z).forEach(({p,i})=>{const radius=Math.max(22,Math.min(39,31*p.scale));ctx.save();ctx.shadowColor='rgba(35,45,25,.13)';ctx.shadowBlur=i===hovered?20:9;ctx.shadowOffsetY=5;ctx.beginPath();ctx.roundRect(p.x-radius*1.75,p.y-radius*.72,radius*3.5,radius*1.44,13);ctx.fillStyle=i===hovered?'#e8efdf':'#ffffff';ctx.fill();ctx.shadowColor='transparent';ctx.lineWidth=i===hovered?3:1.4;ctx.strokeStyle=i===hovered?'#81916f':'#cbd0c2';ctx.stroke();ctx.fillStyle='#151813';ctx.font='600 '+Math.max(11,Math.min(14,13*p.scale))+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';const label=nodes[i].name;ctx.fillText(label.length>24?label.slice(0,22)+'…':label,p.x,p.y);ctx.restore()});
+  }
+  function hit(x,y){const w=canvas.clientWidth,h=canvas.clientHeight;let best=-1,dist=Infinity;nodes.forEach((n,i)=>{const p=project(n,w,h),d=Math.hypot(x-p.x,y-p.y);if(d<Math.max(34,38*p.scale)&&d<dist){best=i;dist=d}});return best}
+  function showDetail(i,x,y){hovered=i;draw();if(i<0){detail.classList.add('hidden');return}const name=names[i],related=edges.filter(e=>e.source===name||e.target===name);detail.innerHTML='<button class="graph-detail-close" type="button" aria-label="Close details">×</button><div class="graph-detail-kicker">CONTRACT NODE</div><h4>'+esc(name)+'</h4><p>'+related.length+' sourced relationship'+(related.length===1?'':'s')+' in this analysis</p>'+related.slice(0,5).map(e=>'<div class="graph-detail-edge"><b>'+esc(e.source)+' → '+esc(e.target)+'</b><span>'+esc(e.label)+'</span><blockquote>'+esc(e.quote)+'</blockquote><small>'+esc(e.meta)+'</small></div>').join('')+'<button class="graph-open-contract" type="button">Open contract evidence ↗</button>';detail.classList.remove('hidden');detail.style.left=Math.max(12,Math.min((canvas.clientWidth||stage.clientWidth)-330,x+18))+'px';detail.style.top=Math.max(12,Math.min((canvas.clientHeight||stage.clientHeight)-220,y+12))+'px';detail.querySelector('.graph-detail-close').onclick=()=>showDetail(-1);detail.querySelector('.graph-open-contract').onclick=()=>window.odinShowPage?.('contracts')}
+  canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging')});
+  canvas.addEventListener('pointermove',e=>{const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(dragging){yaw+=(e.clientX-lastX)*.009;pitch=Math.max(-1.15,Math.min(1.15,pitch+(e.clientY-lastY)*.007));lastX=e.clientX;lastY=e.clientY;draw();return}const i=hit(x,y);canvas.style.cursor=i>=0?'pointer':'grab';if(i!==hovered){if(i>=0)showDetail(i,x,y);else{hovered=-1;draw();detail.classList.add('hidden')}}});
+  canvas.addEventListener('pointerup',()=>{dragging=false;canvas.classList.remove('dragging')});canvas.addEventListener('pointercancel',()=>{dragging=false;canvas.classList.remove('dragging')});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.55,Math.min(2.2,zoom*(e.deltaY<0?1.1:.91)));draw()},{passive:false});
+  canvas.addEventListener('click',e=>{if(dragging)return;const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,i=hit(x,y);if(i>=0)showDetail(i,x,y)});
+  host.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.zoom==='in')zoom=Math.min(2.2,zoom*1.2);else if(b.dataset.zoom==='out')zoom=Math.max(.55,zoom/1.2);else{yaw=-.45;pitch=.18;zoom=1}draw()}));
+  stage.addEventListener('keydown',e=>{if(e.key==='Escape')detail.classList.add('hidden')});
+  if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);else window.addEventListener('resize',resize);resize();
 }
 async function init(){try{let h=await get('/api/health');$('health').textContent=h.claude_configured?'Claude configured':'Demo mode · key optional';await runOdin()}catch(e){$('loading').textContent='Backend error: '+e.message}}
 
