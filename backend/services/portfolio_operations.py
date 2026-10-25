@@ -29,7 +29,7 @@ def _amounts(text: str) -> list[str]:
 def _classify_date(title: str) -> tuple[str, str]:
     """Return (date_type, explanation) using only local source wording."""
     text = title.casefold()
-    if re.search(r"\\b(effective date|dated\\s+|signature date|incident start|incident end|submission date|date:)\\b", text):
+    if re.search(r"\\b(effective date|dated\\s+|signature date|incident start|incident end|submission date)\\b|date\\s*:", text):
         return "historical_reference", "Source date is contextual or historical; it is not an action deadline by itself."
     if re.search(r"\\b(due date|deadline|no later than|must be received by|submit by|pay by|notify by|renewal instructions by)\\b", text):
         return "action_deadline", "Source explicitly describes a due date or action deadline."
@@ -75,9 +75,9 @@ def build_portfolio_operations(workstream_analysis: dict[str, Any],
             elif date_type == "historical_reference":
                 status = "past_reference" if parsed < as_of_date else "today_reference" if parsed == as_of_date else "future_reference"
             elif date_type == "contract_milestone":
-                status = "past_milestone" if parsed < as_of_date else "today_milestone" if parsed == as_of_date else "upcoming"
+                status = "past_milestone" if parsed < as_of_date else "today_milestone" if parsed == as_of_date else "upcoming_milestone"
             else:
-                status = "past_reference" if parsed < as_of_date else "today_reference" if parsed == as_of_date else "upcoming"
+                status = "past_unclassified" if parsed < as_of_date else "today_unclassified" if parsed == as_of_date else "upcoming_unclassified"
             deadlines.append({
                 "contract_id": (item.get("evidence") or {}).get("document_id") or root,
                 "date": parsed.isoformat(),
