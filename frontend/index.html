@@ -681,7 +681,7 @@ header #health{justify-self:end}
 <div class="agentlist" id="auditHistory"></div>
 <div class="action" style="margin-top:14px"><h4>Human decision · current run</h4>
 <p class="small" id="approvalRunLabel">Run a portfolio analysis to record a review decision.</p>
-<label for="reviewerName">Reviewer</label><input id="reviewerName" placeholder="Reviewer name / team" autocomplete="name">
+<label for="reviewActionId">Draft action to review</label><select id="reviewActionId"><option value="recommended-action">Primary run action</option></select><label for="reviewerName">Reviewer</label><input id="reviewerName" placeholder="Reviewer name / team" autocomplete="name">
 <label for="reviewNote">Review note (optional)</label><textarea id="reviewNote" rows="2" placeholder="Reason for approval or rejection"></textarea>
 <div class="actions"><button id="approveAction" type="button">Record approval</button><button id="rejectAction" type="button" class="secondary">Record rejection</button></div>
 <p class="small" id="approvalResult">Approval/rejection is recorded only; no email, contract change, or other action is executed.</p></div>
@@ -763,6 +763,12 @@ async function runCustomPortfolio(){
   const data=await response.json();
   if(!response.ok)throw new Error(data.detail||('Request failed with HTTP '+response.status));
   const reports=data.contract_reports||[],company=data.company_risk_report||{},graph=data.contract_graph||{},alerts=data.alert_feed||[];
+  currentAuditRunId = data.run_id || (data.audit || {}).run_id || null;
+  if (currentAuditRunId) {
+   $('approvalRunLabel').textContent = 'Current run: ' + currentAuditRunId;
+   await refreshAuditHistory(currentAuditRunId);
+   await inspectAuditRun(currentAuditRunId);
+  }
   const escHtml=s=>esc(String(s??''));
   out.innerHTML='<div class="metric-grid"><div class="metric"><span>Contracts</span><b>'+escHtml(company.contract_count||reports.length)+'</b></div><div class="metric"><span>Graph nodes</span><b>'+escHtml(graph.node_count||0)+'</b></div><div class="metric"><span>Review signals</span><b>'+escHtml(alerts.length)+'</b></div><div class="metric"><span>Financial exposure</span><b>Not calculated</b></div></div>'+
    '<section class="fr9-section"><h4>Company risk report · '+escHtml(data.as_of_date)+'</h4><p>'+escHtml(company.limitations?.join(' ')||'Human review required.')+'</p><p><b>Cross-contract relationships:</b> '+escHtml((graph.edges||[]).length)+'</p><p><b>Worst-case projection:</b> '+escHtml(company.worst_case_projection?.note||'Not calculated from unsupported inputs.')+'</p></section>'+
@@ -948,6 +954,25 @@ function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;',
 
 let currentAuditRunId = null;
 
+function setReviewActions(actions) {
+  const select = $('reviewActionId');
+  if (!select) return;
+  const unique = new Map();
+  (actions || []).forEach(action => {
+    if (!action || typeof action !== 'object') return;
+    const id = String(action.action_id || action.id || 'recommended-action');
+    if (!unique.has(id)) {
+      const contract = action.contract_id || action.document_id || 'Portfolio';
+      const label = action.subject || action.title || action.type || 'Draft action';
+      unique.set(id, contract + ' — ' + label);
+    }
+  });
+  if (!unique.size) unique.set('recommended-action', 'Primary run action');
+  select.innerHTML = Array.from(unique.entries()).map(([id, label]) =>
+    '<option value="' + esc(id) + '">' + esc(label) + '</option>'
+  ).join('');
+}
+
 async function refreshAuditHistory(selectedRunId) {
   const box = $('auditHistory');
   try {
@@ -971,6 +996,24 @@ async function refreshAuditHistory(selectedRunId) {
 async function inspectAuditRun(runId) {
   try {
     const record = await get('/api/audit/runs/' + encodeURIComponent(runId));
+    currentAuditRunId = runId;
+    const payload = record.payload || {};
+    const actionItems = [];
+    const addAction = action => {
+      if (action && typeof action === 'object') actionItems.push(action);
+    };
+    addAction(payload.action_draft);
+    addAction((payload.ruling || {}).action_draft);
+    (payload.recommended_actions || []).forEach(addAction);
+    ((payload.shared_state || {}).recommended_actions || []).forEach(addAction);
+    (payload.contract_reports || []).forEach(report =>
+      (report.recommended_actions || []).forEach(action => addAction({...action, contract_id: action.contract_id || report.contract_id}))
+    );
+    (((payload.company_risk_report || {}).contract_reports) || []).forEach(report =>
+      (report.recommended_actions || []).forEach(action => addAction({...action, contract_id: action.contract_id || report.contract_id}))
+    );
+    setReviewActions(actionItems);
+    $('approvalRunLabel').textContent = 'Current run: ' + runId;
     const events = record.events || [];
     $('auditSelectedEvents').innerHTML = '<h4>Audit events · ' + esc(runId) + '</h4>' +
       (events.map(event => '<div class="agent"><b>' + esc(event.event_type.replaceAll('_',' ')) +
@@ -996,11 +1039,11 @@ async function submitAuditDecision(decision) {
   try {
     const response = await fetch('/api/audit/runs/' + encodeURIComponent(currentAuditRunId) + '/decision', {
       method: 'POST', headers: apiHeaders({'Content-Type':'application/json'}),
-      body: JSON.stringify({action_id:'recommended-action', decision, reviewer, note:$('reviewNote').value.trim()})
+      body: JSON.stringify({action_id:$('reviewActionId')?.value || 'recommended-action', decision, reviewer, note:$('reviewNote').value.trim()})
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.detail || 'Decision could not be recorded');
-    $('approvalResult').textContent = decision.toUpperCase() + ' recorded for ' + result.reviewer +
+    $('approvalResult').textContent = decision.toUpperCase() + ' recorded for action ' + result.action_id + ' by ' + result.reviewer +
       ' at ' + result.decided_at + '. No consequential action was executed.';
     await inspectAuditRun(currentAuditRunId);
     await refreshAuditHistory(currentAuditRunId);
