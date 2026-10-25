@@ -275,12 +275,6 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
             "Bounded agent review ran; unresolved evidence and human review are still visible."
             if ran else "Agent review did not run because the configured call budget was exhausted."
         )
-    for name, status in shared_state.get("agent_status", {}).items():
-        status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
-        if agent_workflow.get("budget_exhausted"):
-            status["status"] = "partial_budget_exhausted"
-        else:
-            status["status"] = "complete_with_limitations"
     # Run a bounded second-pass collaboration cycle. This is deterministic and
     # evidence-preserving; it never claims an LLM debate or a legal conclusion.
     agent_workflow = run_bounded_review_cycles(
@@ -363,6 +357,9 @@ def analyze_custom_portfolio(company_context: str, contract_items: list[dict[str
                     "execution": {"mode": agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow"), "max_iterations": agent_workflow.get("max_iterations", 1), "iterations_used": agent_workflow.get("iterations_used", 0),
                                   "agent_calls_used": agent_workflow.get("agent_calls_used", 0), "agent_call_budget": agent_workflow.get("agent_call_budget", 300),
                                   "stop_reason": agent_workflow.get("stop_reason"), "note": agent_workflow.get("notice")}}
+    for name, status in shared_state.get("agent_status", {}).items():
+        status["mode"] = agent_workflow.get("mode", "bounded_deterministic_multi_agent_workflow")
+        status["status"] = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
     final_status = "partial_budget_exhausted" if agent_workflow.get("budget_exhausted") else "complete_with_limitations"
     return {"status": final_status, "scope": "custom_contract_portfolio", "as_of_date": as_of,
             "source_fingerprint": source_fingerprint,
