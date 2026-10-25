@@ -16,6 +16,8 @@ A hackathon prototype for evidence-grounded multi-agent contract intelligence, b
 - Produces a simulated timeline, a bounded risk finding, event verification, a reasoned ruling, and a human-approval-only draft action.
 - Includes a responsive dashboard, health endpoint, pack summary endpoint, and selected simulated date.
 - Uses deterministic fallback behavior without an API key. Thor and Loki can call Claude when configured.
+- **FR4 · Loki adversarial review:** scans clauses for ambiguity, unilateral discretion, one-sided remedies, broad indemnity, renewal, termination, payment/penalty, notice, performance, security, confidentiality, force-majeure, and compliance risks; records exact source-line citations, an attack path, severity rationale, and qualitative likelihood rationale.
+- Cross-contract candidates now include Loki's counterparty-side challenge, alternative explanations, scope/amendment/precedence checks, and targeted Thor clarification requests when citations or amendment context are weak. Likelihood labels are qualitative triage—not calibrated probabilities—and no conflict or breach is automatically determined.
 
 **Phase 1 and Phase 2 are implemented as evidence-grounded triage, not complete legal analysis.** The graph links documents using explicit identifiers and relationship language. The reconciliation layer resolves only the specifically detected non-renewal amendment; other amendment sections are flagged for human review. Phase 2 creates source-specific workstreams for A1 (including dependency documents A2/A3/STD), B1, B2, C1, and D1, plus a portfolio-wide workstream. Candidate terms and risks require human review; financial amounts are not summed without invoice and trigger evidence.
 
