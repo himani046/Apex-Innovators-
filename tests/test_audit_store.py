@@ -99,6 +99,7 @@ class AuditStoreTests(unittest.TestCase):
 
     def test_generic_decision_id_is_rejected_for_multiple_actions(self):
         payload = self.payload()
+        payload["ruling"] = {}
         payload["contract_reports"] = [
             {"contract_id": "A1", "recommended_actions": [
                 {"action_id": "A1:action:1", "subject": "Review A1", "body": "Draft A1"}]},
