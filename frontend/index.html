@@ -802,7 +802,7 @@ async function ingestCustomEvents(){
   const data=await response.json();
   if(!response.ok)throw new Error(data.detail||('Request failed with HTTP '+response.status));
   const counts=data.counts||{};
-  status.textContent='Event feed stored: '+(counts.inserted||0)+' inserted, '+(counts.updated||0)+' updated, '+(counts.duplicates||0)+' unchanged, '+(counts.rejected||0)+' rejected. Source authenticity is not independently verified.';
+  status.textContent='Event feed stored: '+(counts.inserted||0)+' inserted, '+(counts.updated||0)+' updated, '+(counts.duplicates||0)+' unchanged, '+(counts.rejected||0)+' rejected. '+((counts.updated||0)?'Before/after revision snapshots retained for changed events. ':'')+'Source authenticity is not independently verified.';
  }catch(error){status.textContent='Event ingestion failed: '+error.message;}
  finally{button.disabled=false;}
 }
