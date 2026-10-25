@@ -32,10 +32,23 @@ def run_demo(as_of="2027-03-15", request_claude=True):
     contract_graph = build_contract_graph(contracts)
     contract_reconciliation = reconcile_contracts(contracts, contract_graph)
     all_events = {}
+    as_of_date = date.fromisoformat(as_of)
+
+    def event_visible_for_review(event):
+        # Exclude only valid future-dated events. Keep malformed timestamps in
+        # the evidence stream so ingestion can flag them instead of silently
+        # dropping them; they remain unverified review candidates.
+        timestamp = str(event.get("timestamp", event.get("date", "")) or "").strip()
+        if not timestamp:
+            return True
+        try:
+            return date.fromisoformat(timestamp[:10]) <= as_of_date
+        except ValueError:
+            return True
+
     for drop_name, drop_events in pack["event_drops"].items():
         all_events[drop_name] = [
-            event for event in drop_events
-            if str(event.get("timestamp", ""))[:10] <= as_of
+            event for event in drop_events if event_visible_for_review(event)
         ]
     multi_contract_analysis = build_workstreams(
         contracts, contract_graph, contract_reconciliation, all_events, as_of
