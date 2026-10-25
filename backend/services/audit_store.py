@@ -74,7 +74,7 @@ class AuditStore:
                 reviewer TEXT NOT NULL,
                 note TEXT NOT NULL,
                 decided_at TEXT NOT NULL,
-                FOREIGN KEY(run_id) REFERENCES audit_runs(run_id),
+                FOREIGN KEY(run_id) REFERENCES audit_runs(run_id)
             );
             """)
 
