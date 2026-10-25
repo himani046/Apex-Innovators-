@@ -107,7 +107,7 @@ def verify_contract_review(contract_id: str, source: str, findings: list[dict[st
             "source_type": event.get("source_type"),
             "verification_method": event.get("verification_method"),
             "source_verified": False,
-            "source_verification_claimed": event.get("source_verified") is True,
+            "source_verification_claimed": event.get("source_verified_claimed") is True or event.get("source_verified") is True,
             "authenticity_status": "not_independently_verified",
             "note": "Explicit contract mapping only; clause matches are lexical candidates, not proof of causation. Supplied verification flags are retained as claims and are not accepted as independent authentication.",
         })
