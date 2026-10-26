@@ -2273,28 +2273,41 @@ async function runOdin() {
     ].map(([label,value,note]) => '<div class="agent"><b>' + esc(label) + '</b><div class="value">' + esc(value) +
       '</div><p>' + esc(note) + '</p></div>').join('');
 
-    $('explorerCount').textContent = contractIds.length + ' documents · ' + (p6Graph.edge_count || 0) + ' relationship links';
+    // Show business documents only: graph clause/party nodes are implementation details,
+    // not related contracts. Never present raw edge counts as meaningful relationships.
+    const knownDocumentIds = new Set(contractIds.map(value => String(value).toUpperCase()));
+    $('explorerCount').textContent = contractIds.length + ' source documents · source-grounded terms';
     $('contractExplorer').innerHTML = contractIds.map(id => {
       const item = docs[id] || {};
-      const terms = item.extracted_terms || [];
-      const linkedEdges = (p6Graph.edges || []).filter(edge => edge.source === id || edge.target === id);
+      const terms = Array.isArray(item.extracted_terms) ? item.extracted_terms : [];
       const ws = workstreams.filter(w => (w.contract_ids || []).includes(id));
       const verified = terms.filter(term => term.citation && term.citation.verified).length;
-      const related = [...new Set(linkedEdges.map(edge => edge.source === id ? edge.target : edge.source))];
-      const obligations = ws.reduce((n,w) => n + (w.extracted_obligations || []).length, 0);
+      const related = [...new Set((p6Graph.edges || [])
+        .filter(edge => edge.source === id || edge.target === id)
+        .map(edge => String(edge.source === id ? edge.target : edge.source))
+        .filter(target => knownDocumentIds.has(target.toUpperCase()) && target.toUpperCase() !== String(id).toUpperCase()))];
+      const termKey = term => [term.category,term.value,term.citation?.quote].map(v=>String(v||'').replace(/\s+/g,' ').trim().toLowerCase()).join('|');
+      const uniqueTerms = [...new Map(terms.map(term => [termKey(term),term])).values()];
+      const uniqueObligations = new Map();
+      ws.flatMap(w => Array.isArray(w.extracted_obligations) ? w.extracted_obligations : []).forEach(obligation => {
+        const text = typeof obligation === 'string' ? obligation : (obligation.description || obligation.obligation || obligation.text || obligation.title || '');
+        const key = String(text).replace(/\s+/g,' ').trim().toLowerCase();
+        if (key && !uniqueObligations.has(key)) uniqueObligations.set(key,obligation);
+      });
+      const title = item.title || item.document_type || 'Contract source document';
       return '<div class="agent contract-explorer-card"><b>' + esc(id) + '</b><p>' +
-        esc(item.document_type || item.title || 'Loaded source document') + '</p><div class="flow">' +
-        '<span class="tag">' + terms.length + ' source lines</span><span class="tag">' + verified + ' verified quotes</span>' +
-        '<span class="tag">' + linkedEdges.length + ' links</span><span class="tag">' + obligations + ' candidate obligations</span></div>' +
-        '<p class="small">Related documents: ' + esc(related.join(', ') || 'No explicit p6Graph links detected') + '</p>' +
-        '<details><summary>Incorporated documents and source terms</summary><p>' +
-        esc(related.join(' · ') || 'No incorporated-document relationship was detected for this node.') +
-        '</p>' + terms.slice(0,6).map(term => '<div class="evidence"><b>' + esc(term.category || 'Extracted term') +
-        '</b><div class="meta">' + esc(term.citation?.clause_reference || '') + ' · ' +
-        (term.citation?.verified ? 'VERIFIED' : 'REVIEW') + '</div><blockquote>' +
-        esc(term.citation?.quote || '') + '</blockquote><p>' + esc(term.value || '') + '</p></div>').join('') +
+        esc(title) + '</p><div class="flow">' +
+        '<span class="tag">' + uniqueTerms.length + ' unique extracted terms</span><span class="tag">' + verified + ' source quotes verified</span>' +
+        '<span class="tag">' + related.length + ' related contract documents</span><span class="tag">' + uniqueObligations.size + ' unique candidate obligations</span></div>' +
+        '<p class="small"><b>Related contracts:</b> ' + esc(related.join(', ') || 'No other contract documents explicitly linked') + '</p>' +
+        '<details><summary>View source-backed findings (' + uniqueTerms.length + ')</summary>' +
+        (uniqueTerms.slice(0,10).map(term => '<div class="evidence"><b>' + esc(String(term.category || 'Extracted term').replace(/_/g,' ')) +
+        '</b><div class="meta">' + esc(term.citation?.clause_reference || 'Clause reference not available') + ' · ' +
+        (term.citation?.verified ? 'SOURCE QUOTE VERIFIED' : 'NEEDS REVIEW') + '</div><blockquote>' +
+        esc(term.citation?.quote || '') + '</blockquote><p>' + esc(term.value || '') + '</p></div>').join('') ||
+        '<p class="small">No source-backed terms were extracted. Run analysis or upload the contract for extraction.</p>') +
         '</details><button type="button" class="jump-contract" data-contract="' + esc(id) + '">Open workstream details ↓</button></div>';
-    }).join('') || '<p class="small">No contract documents returned by portfolio extraction.</p>';
+    }).join('') || '<p class="small">No contract documents returned. Upload contract files and run analysis to populate this view from those sources.</p>';
     document.querySelectorAll('.jump-contract').forEach(button => button.addEventListener('click', () => {
       const id = button.dataset.contract;
       const target = [...document.querySelectorAll('#workstreamCards .agent')].find(card => card.textContent.includes(id));
