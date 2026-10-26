@@ -1538,6 +1538,63 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 .orch-status.unknown,.orch-task-state.unknown{color:#b8afca;background:rgba(180,170,205,.08);border-color:rgba(180,170,205,.2)}
 .orch-task-state{display:inline-flex;margin:5px 0;padding:3px 7px;border:1px solid rgba(190,165,255,.2);border-radius:999px;font-size:10px;font-weight:800}
 .orch-agent-task small{display:block;color:#8f87a5;margin-top:4px;overflow-wrap:anywhere}
+
+/* Risk & Review readability patch: override legacy pale-text styles on white cards. */
+#riskReviewConsolidated,
+#riskReviewConsolidated *,
+.risk-review-details,
+.risk-review-details *,
+#riskReviewConsolidated ~ .card,
+#riskReviewConsolidated ~ .card *,
+.risk-review-details .risk-review-detail-grid > .card,
+.risk-review-details .risk-review-detail-grid > .card * {
+  color: #171923 !important;
+  -webkit-text-fill-color: #171923 !important;
+}
+#riskReviewConsolidated .muted,
+#riskReviewConsolidated .small,
+.risk-review-details .muted,
+.risk-review-details .small,
+#riskReviewConsolidated ~ .card .muted,
+#riskReviewConsolidated ~ .card .small {
+  color: #555b68 !important;
+  -webkit-text-fill-color: #555b68 !important;
+}
+#riskReviewConsolidated .eyebrow,
+#riskReviewConsolidated h3,
+#riskReviewConsolidated h4,
+.risk-review-details > summary,
+#riskReviewConsolidated ~ .card h3,
+#riskReviewConsolidated ~ .card h4 {
+  color: #171923 !important;
+  -webkit-text-fill-color: #171923 !important;
+}
+#riskReviewConsolidated .tag,
+.risk-review-details .tag,
+#riskReviewConsolidated ~ .card .tag {
+  color: #30245c !important;
+  -webkit-text-fill-color: #30245c !important;
+  background: #f0eaff !important;
+  border: 1px solid #e0d4ff !important;
+}
+#riskReviewConsolidated ~ .card,
+.risk-review-details .risk-review-detail-grid > .card {
+  background: #fff !important;
+  border-color: #e0e3d8 !important;
+  box-shadow: 0 8px 24px rgba(18, 20, 30, .06) !important;
+}
+.risk-review-kpis > div { background: #fff !important; }
+.risk-review-kpis span { color: #555b68 !important; -webkit-text-fill-color: #555b68 !important; }
+.risk-review-kpis b { color: #171923 !important; -webkit-text-fill-color: #171923 !important; }
+.rr-finding { color: #171923 !important; }
+.rr-finding p { color: #303542 !important; -webkit-text-fill-color: #303542 !important; }
+.rr-finding small { color: #626979 !important; -webkit-text-fill-color: #626979 !important; }
+@media (max-width: 760px) {
+  #riskReviewConsolidated { padding: 16px !important; }
+  .risk-review-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .risk-review-details .risk-review-detail-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
