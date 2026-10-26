@@ -2026,7 +2026,8 @@ function renderOdinDashboardFR9(d){
    }
    function pick(e){const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;return [...(canvas._points||[])].reverse().find(n=>Math.abs(n.x-x)<(n.hitWidth||72)&&Math.abs(n.y-y)<(n.hitHeight||25))||null;}
    if(!canvas.dataset.bound){canvas.dataset.bound='1';canvas.addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(drag){rotY+=(e.clientX-px)*.007;rotX=Math.max(-1.35,Math.min(1.35,rotX+(e.clientY-py)*.005));px=e.clientX;py=e.clientY;draw();return;}const n=pick(e);if(n?.key!==hovered?.key){hovered=n;draw();}canvas.style.cursor=n?'pointer': 'grab';canvas.title=n?nodeDetail(n):'Drag to rotate in 3D; scroll to zoom; hover a node for details.'});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.55,Math.min(2.6,zoom*(e.deltaY<0?1.1:.9)));draw()},{passive:false});canvas.addEventListener('click',e=>{const n=pick(e);if(!n)return;selected=n;hovered=n;const box=$('fr9GraphDetails');if(box)box.textContent=nodeDetail(n);draw();});}
-   draw();const leg=$('fr9GraphLegend');if(leg)leg.innerHTML='<span>● Contract</span><span>● Clause</span><span>● Party</span><span>— Evidence-backed relationship</span>function renderOdinOrchestrator(d){
+    draw();const leg=$('fr9GraphLegend');if(leg)leg.innerHTML='<span>● Contract</span><span>● Clause</span><span>● Party</span><span>— Evidence-backed relationship</span>';
+  }
  const collaboration=d.collaboration||{},usage=d.api_usage||{},workstreams=d.workstreams||d.workstream_analysis?.workstreams||[],messages=d.agent_messages||[],shared=d.shared_state||{};
  const completed=workstreams.filter(w=>/complete|verified|done/i.test(String(w.status||''))).length;
  const agents=collaboration.agents||shared.agent_status||{},loop=collaboration.loop||{};
@@ -2086,9 +2087,6 @@ function renderOdinDashboardFR9(d){
  el('orchAgentBoardCount').textContent=agentSpecs.length+' agents · '+workstreams.length+' workstreams';
  const jumpButton=document.getElementById('orchOpenTasks');
  if(jumpButton&&!jumpButton.dataset.bound){jumpButton.dataset.bound='1';jumpButton.setAttribute('aria-expanded','false');jumpButton.addEventListener('click',()=>{const board=document.getElementById('orchAgentBoardSection');if(!board)return;const opening=board.hidden;board.hidden=!opening;jumpButton.setAttribute('aria-expanded',String(opening));jumpButton.textContent=opening?'Hide FR1 dashboard ↑':'View FR1 dashboard ↗';if(opening)board.scrollIntoView({behavior:'smooth',block:'start'});});}
- if(el('orchTrace'))el('orchTrace').innerHTML=messages.map(m=>'<div class="orch-event"><b>'+esc((m.from||'Odin')+' → '+(m.to||'System'))+'</b><span>'+esc(String(m.type||'handoff').replaceAll('_',' '))+'</span><small>'+esc(m.status||'recorded')+(m.iteration!==undefined?' · iteration '+m.iteration:'')+'</small></div>').join('')||'<p class="small">No agent messages returned.</p>';
-}
-tribute('aria-expanded','false');jumpButton.addEventListener('click',()=>{const board=document.getElementById('orchAgentBoardSection');if(!board)return;const opening=board.hidden;board.hidden=!opening;jumpButton.setAttribute('aria-expanded',String(opening));jumpButton.textContent=opening?'Hide FR1 dashboard ↑':'View FR1 dashboard ↗';if(opening)board.scrollIntoView({behavior:'smooth',block:'start'});});}
  if(el('orchTrace'))el('orchTrace').innerHTML=messages.map(m=>'<div class="orch-event"><b>'+esc((m.from||'Odin')+' → '+(m.to||'System'))+'</b><span>'+esc(String(m.type||'handoff').replaceAll('_',' '))+'</span><small>'+esc(m.status||'recorded')+(m.iteration!==undefined?' · iteration '+m.iteration:'')+'</small></div>').join('')||'<p class="small">No agent messages returned.</p>';
 }
 
