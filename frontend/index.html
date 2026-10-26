@@ -1595,6 +1595,20 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   .risk-review-details .risk-review-detail-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+
+/* Ensure the Store event feed action is legible on the contract workbench. */
+#customPortfolioInput #customIngestEvents,
+#customPortfolioInput #customIngestEvents:hover,
+#customPortfolioInput #customIngestEvents:focus,
+#customPortfolioInput #customIngestEvents:active {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+  background: #f1f2ed !important;
+  border: 1px solid #c9cdc1 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
