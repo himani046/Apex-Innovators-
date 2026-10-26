@@ -1404,6 +1404,19 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 }
 
 
+
+/* Consolidated Risk & Review decision-centre layout */
+.risk-review-summary{border:1px solid #d7d9cf;background:linear-gradient(135deg,#fff 0%,#f5f7f0 100%)}
+.risk-review-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.risk-review-kpis>div{border:1px solid #dfe3d7;border-radius:12px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:4px}
+.risk-review-kpis span{font-size:12px;color:#666d5e}.risk-review-kpis b{font-size:25px;color:#20251c}
+.rr-finding{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-top:1px solid #e1e4da;padding:14px 0}
+.rr-finding p{margin:5px 0;font-size:13px;line-height:1.55}.rr-finding small{color:#666d5e}
+.risk-review-details>summary{cursor:pointer;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;padding:4px;font-size:15px}
+.risk-review-details[open]>summary{padding-bottom:14px;border-bottom:1px solid #dfe3d7}
+.risk-review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.risk-review-detail-grid>.card{width:auto;min-width:0}
+@media(max-width:760px){.risk-review-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.risk-review-detail-grid{grid-template-columns:1fr}.rr-finding{flex-direction:column}}
 /* Risk & Review: black text on light cards for readability. */
 .page-view[data-view="review"] .card{background:#fff!important;color:#000!important;border-color:#ddd!important}
 .page-view[data-view="review"] .card *{color:#000!important;-webkit-text-fill-color:#000!important}
@@ -1775,6 +1788,40 @@ function setupOdinPages(){
   return 'review';
  };
  cards.forEach(card=>views[group(card)].appendChild(card));
+ // Consolidated Risk & Review: summary first, detailed analysis on demand.
+ const reviewGrid=views.review;
+ if(reviewGrid&&!document.getElementById('riskReviewConsolidated')){
+  const summary=document.createElement('div');summary.className='card full risk-review-summary';summary.id='riskReviewConsolidated';
+  summary.innerHTML='<div class="fr9-title"><div><div class="eyebrow">PORTFOLIO TRIAGE · HUMAN REVIEW</div><h3>Risk &amp; review centre</h3><p class="muted">Prioritized findings, source evidence and next steps. Candidate risks are not legal conclusions.</p></div><span class="tag" id="rrSummaryState">Awaiting analysis</span></div><div class="risk-review-kpis"><div><span>Priority findings</span><b id="rrRiskCount">—</b></div><div><span>Contracts affected</span><b id="rrContractCount">—</b></div><div><span>Pending decisions</span><b id="rrDecisionCount">—</b></div><div><span>Evidence gaps</span><b id="rrEvidenceGaps">—</b></div></div><h4>Top findings</h4><div id="rrTopFindings"><p class="small">Run the portfolio analysis to populate findings.</p></div><p class="small">Expand detailed analysis below for exact quotations, verification, conflicting interpretations and agent reasoning.</p>';
+  reviewGrid.prepend(summary);
+  const details=document.createElement('details');details.className='card full risk-review-details';details.open=false;
+  details.innerHTML='<summary><b>Detailed evidence &amp; agent analysis</b><span class="muted"> Heatmap · reports · verification · conflicts · rulings · follow-up</span></summary><div class="risk-review-detail-grid"></div>';
+  const detailGrid=details.querySelector('.risk-review-detail-grid');
+  [...reviewGrid.children].filter(el=>el!==summary).forEach(card=>{
+   const h=(card.querySelector('h3')?.innerText||'').toLowerCase();
+   if(h.includes('decision queue')||h.includes('action center')||h.includes('human decision'))return;
+   detailGrid.appendChild(card);
+  });
+  reviewGrid.appendChild(details);
+  const refreshRiskReviewSummary=()=>{
+   const candidates=[...document.querySelectorAll('#fr9Alerts .alert-row,#fr9Alerts .agent,#riskHeatmap .agent,#groundingSummary .agent')],unique=new Map();
+   candidates.forEach(el=>{const title=el.querySelector('b,strong')?.textContent?.trim()||el.textContent.trim().slice(0,160);if(title&&!unique.has(title))unique.set(title,el)});
+   const rows=[...unique.values()],queue=document.querySelectorAll('#decisionQueueItems > *,#fr9Alerts .alert-row').length;
+   const contracts=new Set([...document.querySelectorAll('#riskHeatmap .agent,#fr9Alerts .alert-row,#groundingEvidence .evidence')].map(el=>{const t=el.querySelector('.meta,small')?.textContent||'';return t.match(/\b(?:STD|[A-Z]\d+)\b/)?.[0]}).filter(Boolean));
+   const gaps=document.querySelectorAll('#groundingGaps > *,#groundingConflicts > *').length;
+   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v)};
+   set('rrRiskCount',rows.length||'—');set('rrContractCount',contracts.size||'—');set('rrDecisionCount',queue||'0');set('rrEvidenceGaps',gaps||'0');
+   const state=document.getElementById('rrSummaryState');if(state)state.textContent=rows.length?'Analysis available':'Awaiting findings';
+   const top=document.getElementById('rrTopFindings');if(!top)return;
+   const html=rows.slice(0,6).map(el=>{const title=el.querySelector('b,strong')?.textContent?.trim()||'Risk finding',body=el.querySelector('p')?.textContent?.trim()||el.textContent.trim(),meta=el.querySelector('.meta,small')?.textContent?.trim()||'Source details available below';return '<article class="rr-finding"><div><b>'+esc(title)+'</b><p>'+esc(body.slice(0,320))+'</p><small>'+esc(meta.slice(0,160))+'</small></div><span class="tag">Review</span></article>'}).join('');
+   const fallback=[...document.querySelectorAll('#riskTitle,#claim')].map(el=>el.textContent.trim()).filter(Boolean).join(' — ');
+   top.innerHTML=html||(fallback?'<article class="rr-finding"><div><b>'+esc(fallback.slice(0,160))+'</b><p>Inspect the source and verification details before deciding.</p></div><span class="tag">Review</span></article>':'<p class="small">No consolidated findings returned yet. Run analysis, then inspect detailed evidence below.</p>');
+  };
+  const observer=new MutationObserver(refreshRiskReviewSummary);
+  ['fr9Alerts','riskHeatmap','groundingSummary','groundingGaps','groundingConflicts','decisionQueueItems','riskTitle','claim'].map(id=>document.getElementById(id)).filter(Boolean).forEach(el=>observer.observe(el,{childList:true,subtree:true,characterData:true}));
+  refreshRiskReviewSummary();
+ }
+
 
  // Reusable contract-profile panel is shown in both the normal Contracts view and the dedicated uploader page.
  const mainProfileCard=document.createElement('div');
