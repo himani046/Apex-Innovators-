@@ -84,10 +84,19 @@ def _fallback_profile(document_id: str, filename: str, source: str) -> dict[str,
                 return line[:1000]
         return None
 
-    email = first(r"([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})")
+    emails = list(dict.fromkeys(re.findall(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", full, re.I)))
+    email = "; ".join(emails[:6]) or None
     phone = first(r"(\+?\d[\d ()-]{7,}\d)")
-    contact = first(r"(?:contact person|primary contact|account manager|notice contact|operations contact|attention|contact name)\s*[:\-]\s*([^,;|\n]+)")
-    counterparty = first(r"(?:service provider|provider|vendor|supplier|customer|client|counterparty|contracting party)\s*[:\-]\s*([^,;|\n]+)")
+    contact_lines = [line.strip() for line in lines if re.search(r"\bcontact\s*:", line, re.I)]
+    contact_names = []
+    for line in contact_lines:
+        match = re.search(r"\bcontact\s*:\s*([^,;|\n]+)", line, re.I)
+        if match:
+            contact_names.append(match.group(1).strip())
+    contact = "; ".join(dict.fromkeys(contact_names)) or first(r"(?:contact person|primary contact|account manager|notice contact|operations contact|attention|contact name)\s*[:\-]\s*([^,;|\n]+)")
+    provider_name = first(r"PROVIDER INFORMATION[\s\S]{0,350}?Legal Name:\s*([^\n]+)")
+    customer_name = first(r"CUSTOMER INFORMATION[\s\S]{0,350}?Legal Name:\s*([^\n]+)")
+    counterparty = ("Provider: " + provider_name + ("; Customer: " + customer_name if customer_name else "")) if provider_name else first(r"(?:service provider|provider|vendor|supplier|customer|client|counterparty|contracting party)\s*[:\-]\s*([^,;|\n]+)")
     if not counterparty:
         counterparty = first(r"between\s+([A-Z][A-Za-z0-9 &.,'\-]{2,80}?)\s+and\s+", re.I)
     contract_id = first(r"(?:contract (?:id|no\.?|number)|agreement (?:id|no\.?|number))\s*[:#\-]?\s*([A-Z0-9][A-Z0-9._/-]{2,})")
