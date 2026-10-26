@@ -1973,9 +1973,26 @@ function initFR9TimeSlider(){
 
 
 let lastCustomPortfolioResult = null;
+
+async function loadSavedContractCards(){
+ const host=$('contractProfilesMain');if(!host)return;
+ try{
+  const token=sessionStorage.getItem('odinApiToken')||'';
+  const response=await fetch('/api/contracts/saved',{headers:{...(token?{Authorization:'Bearer '+token}:{})}});
+  if(!response.ok)return;
+  const data=await response.json(),items=Array.isArray(data.contracts)?data.contracts:[];
+  if(!items.length)return;
+  const cards=items.slice().reverse().map(item=>'<article class="ci-profile"><div class="ci-profile-head"><div><span class="eyebrow">SAVED CONTRACT · '+esc(item.saved_id||'')+'</span><h4>'+esc(item.contract_name||item.filename||'Contract')+'</h4><p>'+esc(item.filename||'')+' · Saved '+esc(item.saved_at?new Date(item.saved_at).toLocaleString():'date unavailable')+'</p></div><span class="ci-badge">'+esc(item.status||'Saved')+'</span></div><p class="small">SHA-256: '+esc(item.sha256||'not available')+'</p></article>').join('');
+  let section=host.querySelector('.saved-contract-list');
+  if(!section){section=document.createElement('section');section.className='saved-contract-list';host.prepend(section)}
+  section.innerHTML='<h3>Saved contracts</h3>'+cards;
+ }catch(_error){/* Saved-contract list is supplementary; do not block contract analysis. */}
+}
+
 function setupContractSave(){
  const open=$('customSignSave'),overlay=$('contractSaveModal'),form=$('contractSaveForm');
  if(!open||!overlay||!form||open.dataset.bound)return;open.dataset.bound='1';
+ loadSavedContractCards();
  const close=()=>{overlay.hidden=true};
  open.addEventListener('click',()=>{
   if(!lastCustomPortfolioResult){alert('Analyze at least one contract before saving.');return}
