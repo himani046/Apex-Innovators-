@@ -433,6 +433,7 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
 @app.post("/api/contract-intelligence", dependencies=[Depends(require_api_token)])
 async def contract_intelligence_upload(
     files: list[UploadFile] = File(...),
+    payment_ledger: str = Form(default="[]"),
     use_claude: bool = Form(default=True),
 ):
     """Extract a source-verified quick-look profile from contracts uploaded on the Contract Intelligence page."""
@@ -456,6 +457,15 @@ async def contract_intelligence_upload(
             raise HTTPException(status_code=422, detail=f"{Path(filename).name}: not enough readable contract text was found.")
         document_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in Path(doc["filename"]).stem)[:80]
         documents.append((document_id or "CONTRACT", doc))
+    try:
+        ledger_rows = json.loads(payment_ledger or "[]")
+        if not isinstance(ledger_rows, list):
+            raise ValueError("Payment ledger must be a JSON array.")
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid payment ledger override: {exc}") from exc
+    ledger_source = "user_override" if ledger_rows else "odin_dev_pack/bundle/data/payments_ledger.csv"
+    if not ledger_rows:
+        ledger_rows = _ledger_rows_from_bundle()
     with llm_run_context(MAX_LLM_TOKENS) as usage:
         profiles = [
             build_contract_profile(document_id, doc["filename"], doc["text"], use_claude=bool(use_claude))
@@ -464,6 +474,8 @@ async def contract_intelligence_upload(
         usage_data = usage_snapshot(usage)
     return {
         "profiles": profiles,
+        "payment_ledger_source": ledger_source,
+        "payment_ledger_summary": _summarize_payment_ledger(ledger_rows),
         "documents": [
             {"filename": doc["filename"], "format": doc["format"], "characters": doc["characters"],
              "pages": doc["pages"], "sha256": doc["sha256"]}
