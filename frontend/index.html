@@ -2286,8 +2286,35 @@ async function runOdin() {
         .filter(edge => edge.source === id || edge.target === id)
         .map(edge => String(edge.source === id ? edge.target : edge.source))
         .filter(target => knownDocumentIds.has(target.toUpperCase()) && target.toUpperCase() !== String(id).toUpperCase()))];
-      const termKey = term => [term.category,term.value,term.citation?.quote].map(v=>String(v||'').replace(/\s+/g,' ').trim().toLowerCase()).join('|');
-      const uniqueTerms = [...new Map(terms.map(term => [termKey(term),term])).values()];
+      const normalizeEvidence = value => String(value || '').replace(/\s+/g,' ').trim().toLowerCase();
+      // Collapse repeated title/ID/header snippets and repeated representations of the same quote.
+      // A source quote is useful here only if it contains substantive text, not just a heading.
+      const isHeaderOnly = term => {
+        const quote = normalizeEvidence(term.citation?.quote || term.value);
+        if (!quote || quote.length < 55) return true;
+        if (/^(document id:|document title:|stratonode cloudcore|section \d+\s*[—-]|\d+(\.\d+)*\s+["']?monthly uptime percentage)/i.test(quote) && quote.length < 115) return true;
+        return false;
+      };
+      const termKey = term => {
+        const quote = normalizeEvidence(term.citation?.quote || '');
+        const value = normalizeEvidence(term.value || '');
+        // The exact quote is the primary deduplication key; category differences should not duplicate evidence.
+        return quote.length ? quote : value;
+      };
+      const uniqueTerms = [...new Map(terms.filter(term => !isHeaderOnly(term)).map(term => [termKey(term),term])).values()];
+      const categoryLabel = term => {
+        const text = normalizeEvidence([term.category,term.value,term.citation?.quote].join(' '));
+        if (/uptime|availability|service credit|downtime/.test(text)) return 'Uptime & service credits';
+        if (/response time|support|severity|incident/.test(text)) return 'Support & incidents';
+        if (/term|renew|expiration|expires|effective date|commencement/.test(text)) return 'Term & renewal';
+        if (/fee|price|payment|invoice|credit|refund|\$|usd/.test(text)) return 'Fees & payment';
+        if (/liabilit|indemn|damages|limitation of/.test(text)) return 'Liability & indemnity';
+        if (/terminat|suspend|cure period/.test(text)) return 'Termination & suspension';
+        if (/confidential|security|personal data|subprocessor|breach/.test(text)) return 'Data & confidentiality';
+        if (/notice|notify|notification/.test(text)) return 'Notice requirements';
+        if (/incorporated by reference|conflict between|controls with respect/.test(text)) return 'Document hierarchy';
+        return String(term.category || 'Contract term').replace(/_/g,' ');
+      };
       const uniqueObligations = new Map();
       ws.flatMap(w => Array.isArray(w.extracted_obligations) ? w.extracted_obligations : []).forEach(obligation => {
         const text = typeof obligation === 'string' ? obligation : (obligation.description || obligation.obligation || obligation.text || obligation.title || '');
@@ -2301,7 +2328,7 @@ async function runOdin() {
         '<span class="tag">' + related.length + ' related contract documents</span><span class="tag">' + uniqueObligations.size + ' unique candidate obligations</span></div>' +
         '<p class="small"><b>Related contracts:</b> ' + esc(related.join(', ') || 'No other contract documents explicitly linked') + '</p>' +
         '<details><summary>View source-backed findings (' + uniqueTerms.length + ')</summary>' +
-        (uniqueTerms.slice(0,10).map(term => '<div class="evidence"><b>' + esc(String(term.category || 'Extracted term').replace(/_/g,' ')) +
+        (uniqueTerms.slice(0,10).map(term => '<div class="evidence"><b>' + esc(categoryLabel(term)) +
         '</b><div class="meta">' + esc(term.citation?.clause_reference || 'Clause reference not available') + ' · ' +
         (term.citation?.verified ? 'SOURCE QUOTE VERIFIED' : 'NEEDS REVIEW') + '</div><blockquote>' +
         esc(term.citation?.quote || '') + '</blockquote><p>' + esc(term.value || '') + '</p></div>').join('') ||
