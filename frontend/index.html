@@ -1566,7 +1566,7 @@ function exportContractProfilesTxt(){
 function exportContractProfilesPdf(){
  if(!lastContractProfiles.length){alert('Run contract intelligence first.');return}
  const w=window.open('','_blank');if(!w){alert('Allow pop-ups to print or save the PDF.');return}
- const html=$('ciProfiles')?.innerHTML||$('contractProfilesMain')?.innerHTML||'';
+ const quick=$('ciProfiles'),main=$('contractProfilesMain');const html=(quick?.querySelector('.ci-profile')?quick.innerHTML:main?.innerHTML)||'';
  w.document.write('<!doctype html><html><head><title>Odin Contract Intelligence</title><style>body{font:13px Arial,sans-serif;color:#182018;padding:24px}h4{font-size:20px}.ci-profile{page-break-inside:avoid;border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:18px}.ci-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ci-fact{border:1px solid #ddd;padding:9px;border-radius:8px}.ci-fact span,.ci-fact b{display:block}.ci-fact span{font-size:10px;text-transform:uppercase;color:#666}.ci-fact b{margin-top:5px;overflow-wrap:anywhere}.ci-clause{border-left:3px solid #8b9c77;padding:8px 12px;margin:8px 0;background:#f7f8f4;page-break-inside:avoid}.ci-meta{font-size:10px;color:#666}blockquote{white-space:pre-wrap;overflow-wrap:anywhere}@media print{body{padding:0}.ci-profile{page-break-inside:avoid}}</style></head><body><h1>Odin · Contract Intelligence Profiles</h1>'+html+'</body></html>');
  w.document.close();w.focus();setTimeout(()=>w.print(),350);
 }
