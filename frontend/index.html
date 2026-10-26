@@ -2027,8 +2027,10 @@ function setupContractSave(){
   finally{submit.disabled=false}
  });
 }
-\nasync function runCustomPortfolio(){
- setupContractSave();\n const button=$('customAnalyzeButton'),status=$('customPortfolioStatus'),out=$('customPortfolioResults');
+
+async function runCustomPortfolio(){
+ setupContractSave();
+ const button=$('customAnalyzeButton'),status=$('customPortfolioStatus'),out=$('customPortfolioResults');
  const files=[...($('customContractFiles')?.files||[])];
  if(!files.length){status.textContent='Choose at least one PDF or TXT contract file.';return}
  const context=$('customCompanyContext').value.trim();
@@ -2058,7 +2060,8 @@ function setupContractSave(){
   const response=await fetch('/api/analyze-portfolio-upload',{method:'POST',headers:{...(token?{Authorization:'Bearer '+token}:{})},body:form});
   const data=await response.json();
   if(!response.ok)throw new Error(data.detail||('Request failed with HTTP '+response.status));
-  lastCustomPortfolioResult=data;const saveButton=$('customSignSave');if(saveButton)saveButton.disabled=false;\n  renderContractProfiles(data.contract_profiles,'contractProfilesMain');
+  lastCustomPortfolioResult=data;const saveButton=$('customSignSave');if(saveButton)saveButton.disabled=false;
+  renderContractProfiles(data.contract_profiles,'contractProfilesMain');
   const reports=data.contract_reports||[],company=data.company_risk_report||{},graph=data.contract_graph||{},alerts=data.alert_feed||[];
   const finance=company.financial_reconciliation||data.financial_reconciliation||{};
   const financeCounts=finance.counts||{};
