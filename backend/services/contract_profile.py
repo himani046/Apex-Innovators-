@@ -101,7 +101,7 @@ def _fallback_profile(document_id: str, filename: str, source: str) -> dict[str,
         counterparty = first(r"between\s+([A-Z][A-Za-z0-9 &.,'\-]{2,80}?)\s+and\s+", re.I)
     contract_id = first(r"(?:contract (?:id|no\.?|number)|agreement (?:id|no\.?|number))\s*[:#\-]?\s*([A-Z0-9][A-Z0-9._/-]{2,})")
     effective = first(r"(?:effective date|effective as of|commencement date|starts on|start date)\s*[:\-]?\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
-    end_date = first(r"(?:initial subscription ends|expiration date|expires on|end date|termination date|term ends|ending on)\s*[:\-]?\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
+    end_date = first(r"(?:initial subscription ends|expiration date|expires on|end date|termination date|term ends|ending(?: on)?)\s*[:\-]?\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
     monthly = first(r"((?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?\s*(?:per month|/month|monthly))")
     if not monthly:
         monthly = first(r"(?:monthly fee|monthly subscription fee|subscription fee per month|monthly charge)\s*[:\-]?\s*((?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?)")
