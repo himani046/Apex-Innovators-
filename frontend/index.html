@@ -1855,7 +1855,7 @@ async function loadTimeWindow(){
 }
 
 function apiHeaders(extra={}){const token=$('apiToken')?.value?.trim();return {...extra,...(token?{Authorization:'Bearer '+token}:{})}}
-async function get(u){let r=await fetch(u,{headers:apiHeaders()}),d=await r.json();if(!r.ok)throw Error(d.detail||r.status);return d}
+async function get(u){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),90000);try{const r=await fetch(u,{headers:apiHeaders(),signal:controller.signal});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw Error("API returned non-JSON (HTTP "+r.status+"): "+raw.slice(0,180).replace(/\s+/g," "))}if(!r.ok)throw Error(d.detail||("HTTP "+r.status));return d}catch(e){if(e.name==="AbortError")throw Error("The API request timed out after 90 seconds. Try again or inspect Render logs.");throw e}finally{clearTimeout(timer)}}
 
 function setupOdinPages(){
  const dash=$('dash'); if(!dash||dash.dataset.pagesReady)return; dash.dataset.pagesReady='1';
@@ -2503,7 +2503,7 @@ async function runOdin() {
   $('loading').textContent = 'Odin → Thor → Norns → Loki → Heimdall → Tyr';
 
   try {
-    const d = await get('/api/run?as_of=' + encodeURIComponent($('date').value) + '&use_claude=true');
+    const d = await get('/api/run?as_of=' + encodeURIComponent($('date').value) + '&use_claude=false');
     await refreshOverviewFinance($('date').value);
     renderContractProfiles(d.contract_profiles,'contractProfilesMain');
     const x = d.extraction || {};
