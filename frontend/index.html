@@ -1724,7 +1724,7 @@ function setupOdinPages(){
  const financeMetrics=document.createElement('div');financeMetrics.id='overviewFinanceMetrics';
  financeMetrics.innerHTML='<div class="overview-finance-card revenue"><div class="finance-label">Revenue received</div><div class="finance-value" id="homeRevenue">—</div><div class="finance-note">Paid incoming ledger rows through selected date</div></div>'+
  '<div class="overview-finance-card spend"><div class="finance-label">Spend paid</div><div class="finance-value" id="homeSpend">—</div><div class="finance-note">Paid outgoing ledger rows through selected date</div></div>'+
- '<div class="overview-finance-card profit"><div class="finance-label">Net cash flow</div><div class="finance-value" id="homeProfit">—</div><div class="finance-note">Revenue received minus spend paid · not accounting profit</div></div>';
+ '<div class="overview-finance-card profit"><div class="finance-label">Profit / net cash flow</div><div class="finance-value" id="homeProfit">—</div><div class="finance-note">Revenue received minus spend paid · not accounting profit</div></div>';
  overview.parentElement.insertBefore(financeMetrics,metrics);
  const financeStatus=document.createElement('p');financeStatus.id='overviewFinanceStatus';financeStatus.textContent='Finance totals use the bundled payment ledger and selected analysis date.';
  financeMetrics.insertAdjacentElement('afterend',financeStatus);
