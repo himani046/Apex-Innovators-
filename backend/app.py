@@ -22,6 +22,7 @@ from backend.config import MAX_LLM_TOKENS, MAX_AGENT_ITERATIONS, MAX_PORTFOLIO_A
 from backend.services.llm_runtime import llm_run_context, usage_snapshot
 from backend.claude_client import ask_claude
 from backend.services.contract_chat import retrieve_excerpts, build_chat_prompt
+from backend.services.contract_profile import build_contract_profile
 
 event_store = EventStore()
 
@@ -244,6 +245,19 @@ def event_history(
 def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query(default=True)):
     try:
         result = run_demo(as_of.isoformat(), use_claude)
+        # Build a compact, source-grounded quick-look profile for every bundled contract.
+        try:
+            pack = load_pack(PACK_DIR)
+            with llm_run_context(MAX_LLM_TOKENS) as profile_usage:
+                result["contract_profiles"] = [
+                    build_contract_profile(contract_id, f"{contract_id}.txt", source, use_claude=use_claude)
+                    for contract_id, source in pack.get("contracts", {}).items()
+                ]
+                result["contract_profiles_llm_usage"] = usage_snapshot(profile_usage)
+        except Exception:
+            # Core risk analysis remains available if optional profile extraction fails.
+            result["contract_profiles"] = []
+            result["contract_profiles_error"] = "Contract quick-look profiles could not be generated for this run."
         audit = audit_store.record_run(result)
         result["audit"] = {
             "run_id": audit["run_id"],
@@ -369,6 +383,51 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
             "shared_state": snapshot, "persistence": persistence,
             "notice": ("Targeted extraction was saved to the selected audit run." if persistence["persisted"]
                        else "This response contains an updated state snapshot but is not durable. Supply run_id to persist it to an existing audit run.")}
+
+
+@app.post("/api/contract-intelligence", dependencies=[Depends(require_api_token)])
+async def contract_intelligence_upload(
+    files: list[UploadFile] = File(...),
+    use_claude: bool = Form(default=True),
+):
+    """Extract a source-verified quick-look profile from contracts uploaded on the Contract Intelligence page."""
+    if not files:
+        raise HTTPException(status_code=422, detail="Upload at least one PDF or TXT contract.")
+    if len(files) > 50:
+        raise HTTPException(status_code=422, detail="Upload no more than 50 contracts at a time.")
+    documents = []
+    total_bytes = 0
+    for file in files:
+        filename = file.filename or "contract.txt"
+        raw = await file.read(15 * 1024 * 1024 + 1)
+        total_bytes += len(raw)
+        if len(raw) > 15 * 1024 * 1024 or total_bytes > 15 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Combined uploaded files exceed the 15 MB limit.")
+        try:
+            doc = extract_uploaded_document(filename, raw)
+        except DocumentUploadError as exc:
+            raise HTTPException(status_code=422, detail=f"{Path(filename).name}: {exc}") from exc
+        if len(doc["text"]) < 20:
+            raise HTTPException(status_code=422, detail=f"{Path(filename).name}: not enough readable contract text was found.")
+        document_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in Path(doc["filename"]).stem)[:80]
+        documents.append((document_id or "CONTRACT", doc))
+    with llm_run_context(MAX_LLM_TOKENS) as usage:
+        profiles = [
+            build_contract_profile(document_id, doc["filename"], doc["text"], use_claude=bool(use_claude))
+            for document_id, doc in documents
+        ]
+        usage_data = usage_snapshot(usage)
+    return {
+        "profiles": profiles,
+        "documents": [
+            {"filename": doc["filename"], "format": doc["format"], "characters": doc["characters"],
+             "pages": doc["pages"], "sha256": doc["sha256"]}
+            for _, doc in documents
+        ],
+        "claude_requested": bool(use_claude),
+        "claude_configured": USE_CLAUDE,
+        "llm_usage": usage_data,
+    }
 
 
 @app.post("/api/analyze-portfolio-upload", dependencies=[Depends(require_api_token)])
@@ -506,6 +565,12 @@ def analyze_portfolio(body: PortfolioAnalysisRequest = Body(...)):
                 use_llm=body.use_claude,
                 payment_ledger=body.payment_ledger,
             )
+            # Attach the same quick-look schema to the regular portfolio analysis results.
+            result["contract_profiles"] = [
+                build_contract_profile(item.id.strip(), item.id.strip() + ".txt", item.text, use_claude=body.use_claude)
+                for item in body.contracts
+            ]
+            result["contract_profiles_llm_usage"] = usage_snapshot(llm_usage)
         result["event_store_context"] = {
             "stored_events_loaded": len(stored_events),
             "request_events_received": len(body.event_records),
