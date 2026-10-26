@@ -198,7 +198,7 @@ def build_contract_profile(document_id: str, filename: str, source: str, use_cla
                 merged[field] = value
         # Reject scalar claims that cannot be tied back to the source. Keep deterministic,
         # explicitly derived nominal value only when the fallback calculation supports it.
-        source_fold = re.sub(r"\\s+", " ", source).casefold()
+        source_fold = re.sub(r"\s+", " ", source).casefold()
         for field in scalar_fields:
             value = _clean(merged.get(field))
             if not value:
