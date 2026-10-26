@@ -201,6 +201,51 @@ def health():
     }
 
 
+def _ledger_rows_from_bundle():
+    """Load the canonical payment ledger as CSV rows; never require manual JSON entry."""
+    return load_pack(PACK_DIR).get("ledger", [])
+
+
+def _summarize_payment_ledger(rows, company_name="Quillhub Inc."):
+    """Summarize cash flow from CSV from/to/status fields; not accounting revenue recognition."""
+    summary = {"source": "odin_dev_pack/bundle/data/payments_ledger.csv", "rows": len(rows),
+               "revenue_received": 0.0, "payments_sent": 0.0,
+               "received_pending": 0.0, "received_overdue": 0.0,
+               "sent_pending": 0.0, "sent_overdue": 0.0, "by_counterparty": [],
+               "note": "Paid receipts/payments are ledger cash-flow totals, not recognized accounting revenue."}
+    groups = {}
+    for row in rows:
+        try:
+            amount = float(str(row.get("amount", "0")).replace(",", "").replace("$", "").strip() or 0)
+        except (TypeError, ValueError):
+            continue
+        source, destination = str(row.get("from", "")).strip(), str(row.get("to", "")).strip()
+        status = str(row.get("status", "unknown")).strip().casefold()
+        incoming = destination.casefold() == company_name.casefold()
+        outgoing = source.casefold() == company_name.casefold()
+        if not incoming and not outgoing:
+            continue
+        direction, party = ("sent", destination) if outgoing else ("received", source)
+        group = groups.setdefault((direction, party), {"direction": direction, "counterparty": party, "rows": 0,
+                                                        "paid": 0.0, "pending": 0.0, "overdue": 0.0, "other": 0.0})
+        group["rows"] += 1
+        group[status if status in {"paid", "pending", "overdue"} else "other"] += amount
+        if incoming and status == "paid": summary["revenue_received"] += amount
+        elif outgoing and status == "paid": summary["payments_sent"] += amount
+        elif status in {"pending", "overdue"}: summary[("received_" if incoming else "sent_") + status] += amount
+    summary["by_counterparty"] = list(groups.values())
+    for key in ("revenue_received", "payments_sent", "received_pending", "received_overdue", "sent_pending", "sent_overdue"):
+        summary[key] = round(summary[key], 2)
+    return summary
+
+
+@app.get("/api/payment-ledger")
+def get_payment_ledger():
+    rows = _ledger_rows_from_bundle()
+    return {"source": "odin_dev_pack/bundle/data/payments_ledger.csv", "rows": rows,
+            "summary": _summarize_payment_ledger(rows)}
+
+
 @app.get("/api/pack")
 def pack_summary():
     pack = load_pack(PACK_DIR)
@@ -388,6 +433,7 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
 @app.post("/api/contract-intelligence", dependencies=[Depends(require_api_token)])
 async def contract_intelligence_upload(
     files: list[UploadFile] = File(...),
+    payment_ledger: str = Form(default="[]"),
     use_claude: bool = Form(default=True),
 ):
     """Extract a source-verified quick-look profile from contracts uploaded on the Contract Intelligence page."""
@@ -411,6 +457,15 @@ async def contract_intelligence_upload(
             raise HTTPException(status_code=422, detail=f"{Path(filename).name}: not enough readable contract text was found.")
         document_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in Path(doc["filename"]).stem)[:80]
         documents.append((document_id or "CONTRACT", doc))
+    try:
+        ledger_rows = json.loads(payment_ledger or "[]")
+        if not isinstance(ledger_rows, list):
+            raise ValueError("Payment ledger must be a JSON array.")
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid payment ledger override: {exc}") from exc
+    ledger_source = "user_override" if ledger_rows else "odin_dev_pack/bundle/data/payments_ledger.csv"
+    if not ledger_rows:
+        ledger_rows = _ledger_rows_from_bundle()
     with llm_run_context(MAX_LLM_TOKENS) as usage:
         profiles = [
             build_contract_profile(document_id, doc["filename"], doc["text"], use_claude=bool(use_claude))
@@ -419,6 +474,8 @@ async def contract_intelligence_upload(
         usage_data = usage_snapshot(usage)
     return {
         "profiles": profiles,
+        "payment_ledger_source": ledger_source,
+        "payment_ledger_summary": _summarize_payment_ledger(ledger_rows),
         "documents": [
             {"filename": doc["filename"], "format": doc["format"], "characters": doc["characters"],
              "pages": doc["pages"], "sha256": doc["sha256"]}
@@ -493,6 +550,10 @@ async def analyze_portfolio_upload(
             raise ValueError("Event records must be a JSON array.")
         if not isinstance(parsed_ledger, list):
             raise ValueError("Payment ledger must be a JSON array.")
+        # Empty means use the canonical CSV; a non-empty JSON array is an explicit override.
+        ledger_source = "user_override" if parsed_ledger else "odin_dev_pack/bundle/data/payments_ledger.csv"
+        if not parsed_ledger:
+            parsed_ledger = _ledger_rows_from_bundle()
         analysis_date = date.fromisoformat(as_of)
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=422, detail=f"Invalid upload form data: {exc}") from exc
@@ -512,6 +573,8 @@ async def analyze_portfolio_upload(
     result = analyze_portfolio(body)
     result["uploaded_documents"] = uploaded_documents
     result["company_context_source"] = context_source
+    result["payment_ledger_source"] = ledger_source
+    result["payment_ledger_summary"] = _summarize_payment_ledger(parsed_ledger)
     return result
 
 
