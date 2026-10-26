@@ -1503,6 +1503,20 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 .overview-finance-card.profit .finance-value{color:#d3b9ff}
 #overviewFinanceStatus{font-size:11px;color:#aaa4bf;margin:-4px 2px 16px;line-height:1.6}
 @media(max-width:800px){#overviewFinanceMetrics{grid-template-columns:1fr}}
+
+/* Time Machine date-range explorer */
+.time-window{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr)) auto;gap:12px;align-items:end;margin:16px 0 18px;padding:16px;border:1px solid rgba(190,165,255,.2);border-radius:16px;background:rgba(8,8,16,.55)}
+.time-window label{display:grid;gap:7px;font-size:12px;color:#bcb4d1}
+.time-window input{background:#0b0b14;color:#f4efff;border:1px solid #44385e;border-radius:10px;padding:11px 12px;min-width:0}
+.time-window button{border:0;border-radius:999px;padding:12px 18px;font-weight:800;background:linear-gradient(110deg,#e5c7ff,#a994ff);color:#171225;cursor:pointer}
+.time-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.time-summary .time-kpi{padding:14px;border:1px solid rgba(190,165,255,.18);border-radius:14px;background:rgba(255,255,255,.035)}
+.time-kpi span{display:block;color:#aaa2c2;font-size:11px}.time-kpi b{display:block;color:#f6f1ff;font-size:clamp(18px,2vw,26px);margin-top:6px}
+.time-item{display:grid;grid-template-columns:105px minmax(0,1fr) auto;gap:12px;align-items:start;padding:14px;margin:8px 0;border:1px solid rgba(190,165,255,.17);border-left:4px solid #b69aff;border-radius:13px;background:rgba(255,255,255,.025)}
+.time-item.priority-high{border-left-color:#ff6b76}.time-item.priority-medium{border-left-color:#f3c85b}.time-item.priority-low{border-left-color:#65d6a2}
+.time-item .time-date{font-weight:800;color:#cdb7ff}.time-item.priority-high .time-date{color:#ff7c86}.time-item.priority-medium .time-date{color:#f3cf6b}.time-item.priority-low .time-date{color:#75e0ad}
+.time-item p{margin:6px 0;color:#c8c1d9;font-size:13px;line-height:1.55}.time-item .time-source{color:#938ba9;font-size:11px}
+@media(max-width:700px){.time-window{grid-template-columns:1fr}.time-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.time-item{grid-template-columns:1fr auto;}.time-item .time-date{grid-column:1/-1}}
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
@@ -1675,6 +1689,46 @@ async function runContractIntelligenceUpload(event){
  }catch(error){status.textContent='Could not analyze contracts: '+error.message;$('ciProfiles').innerHTML='<div class="ci-empty">No profile generated. Check the API/backend logs and try again.</div>'}
  finally{button.disabled=false}
 }
+
+async function loadTimeWindow(){
+ const start=$('timeStartDate')?.value,end=$('timeEndDate')?.value,status=$('timeRangeStatus'),list=$('timeUnifiedList');
+ if(!start||!end||start>end){if(status)status.textContent='Choose a valid range: start date must be on or before end date.';return}
+ if(status)status.textContent='Loading source events and payments…';
+ try{
+  const d=await get('/api/timeline-data?start_date='+encodeURIComponent(start)+'&end_date='+encodeURIComponent(end));
+  const fmt=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(v||0));
+  $('timeEventCount').textContent=d.event_count;
+  $('timeLedgerCount').textContent=d.ledger_count;
+  $('timeRevenue').textContent=fmt(d.revenue_received);
+  $('timeSpend').textContent=fmt(d.spend_paid);
+  $('timeNet').textContent=fmt(d.net_cash_flow);
+  $('timeProfitLabel').textContent=Number(d.net_cash_flow)>=0?'Positive cash flow':'Negative cash flow';
+  const open=(d.ledger||[]).filter(r=>['pending','overdue'].includes(String(r.status||'').toLowerCase())).length;
+  $('timeOpenPayments').textContent=open;
+  const decisionNodes=[...document.querySelectorAll('#decisionQueueItems .agent')];
+  let decisions=0;
+  decisionNodes.forEach(node=>{const text=node.innerText||'';const match=text.match(/\b(20\d{2}-\d{2}-\d{2})\b/g);const visible=!match||match.some(day=>day>=start&&day<=end);node.style.display=visible?'':'none';if(visible)decisions++});
+  $('timeDecisionCount').textContent=decisions;
+  const items=[];
+  (d.events||[]).forEach(row=>{
+   const title=row.title||row.event_type||row.type||row.event_id||'Portfolio event';
+   const detail=row.description||row.summary||row.message||row.details||row.reference||JSON.stringify(row);
+   const priority=String(row.priority||row.severity||row.risk_level||'').toLowerCase();
+   const cls=/critical|high|severe|overdue|breach/.test(priority)?'high':/medium|warning|pending|review/.test(priority)?'medium':'low';
+   items.push({date:row._timeline_date,kind:'Event',title,detail,source:row._source+' · '+(row.event_id||row.id||'source record'),cls,status:row.status||priority||'review'});
+  });
+  (d.ledger||[]).forEach(row=>{
+   const incoming=String(row.to||'').toLowerCase()==='quillhub inc.';
+   const statusText=String(row.status||'unknown').toLowerCase();
+   const cls=statusText==='overdue'?'high':statusText==='pending'?'medium':'low';
+   items.push({date:row._timeline_date,kind:'Payment',title:(incoming?'Revenue received from ':'Payment sent to ')+(incoming?row.from:row.to),detail:fmt(row.amount)+' · '+(row.reference||'No reference'),source:'payments_ledger.csv',cls,status:statusText});
+  });
+  items.sort((a,b)=>a.date.localeCompare(b.date)||a.kind.localeCompare(b.kind));
+  list.innerHTML=items.map(item=>'<div class="time-item priority-'+item.cls+'"><div class="time-date">'+esc(item.date)+'</div><div><b>'+esc(item.kind+' · '+item.title)+'</b><p>'+esc(item.detail)+'</p><div class="time-source">'+esc(item.source)+'</div></div><span class="tag">'+esc(item.status)+'</span></div>').join('')||'<p class="small">No source events or ledger rows in this date range.</p>';
+  if(status)status.textContent='Showing '+items.length+' source events and payment rows from '+start+' through '+end+'. '+d.note+' Decision queue items are filtered by their displayed dates; contractual milestones remain available in the timeline below.';
+ }catch(error){if(status)status.textContent='Could not load timeline data: '+error.message;list.innerHTML=''}
+}
+
 function apiHeaders(extra={}){const token=$('apiToken')?.value?.trim();return {...extra,...(token?{Authorization:'Bearer '+token}:{})}}
 async function get(u){let r=await fetch(u,{headers:apiHeaders()}),d=await r.json();if(!r.ok)throw Error(d.detail||r.status);return d}
 
@@ -1685,6 +1739,18 @@ function setupOdinPages(){
  for(const [key,title] of [['overview','Overview'],['intelligence','Contract intelligence'],['contracts','Contracts'],['timeline','Time machine'],['agents','Agents'],['review','Risk & review'],['audit','Audit']]){
   const view=document.createElement('section');view.className='page-view'+(key==='overview'?' active':'');view.dataset.view=key;view.setAttribute('aria-label',title);
   const grid=document.createElement('div');grid.className='page-grid';view.appendChild(grid);dash.appendChild(view);views[key]=grid;
+ }
+// Date-range controls and cross-source timeline for Time Machine.
+ const timeGrid=views.timeline;
+ if(timeGrid && !$('timeWindowExplorer')){
+  const explorer=document.createElement('div'); explorer.className='card full'; explorer.id='timeWindowExplorer';
+  explorer.innerHTML='<h3>Timeline explorer <span class="tag">Contracts · events · payments · decisions</span></h3><p class="muted">Choose an inclusive date range. Events from every bundled JSONL/CSV source and payment ledger rows are included. Red = high/overdue, yellow = medium/pending/review, green = low/paid/resolved.</p>'+
+   '<div class="time-window"><label>Start date<input type="date" id="timeStartDate" value="2026-07-01"></label><label>End date<input type="date" id="timeEndDate" value="2027-12-31"></label><button id="timeApplyRange" type="button">Apply date range ↗</button></div>'+
+   '<div class="time-summary"><div class="time-kpi"><span>Events in range</span><b id="timeEventCount">—</b></div><div class="time-kpi"><span>Ledger rows</span><b id="timeLedgerCount">—</b></div><div class="time-kpi"><span>Revenue received</span><b id="timeRevenue">—</b></div><div class="time-kpi"><span>Spend paid</span><b id="timeSpend">—</b></div></div>'+
+   '<div class="time-summary"><div class="time-kpi"><span>Net cash flow</span><b id="timeNet">—</b></div><div class="time-kpi"><span>Profit / loss label</span><b id="timeProfitLabel">—</b></div><div class="time-kpi"><span>Pending / overdue</span><b id="timeOpenPayments">—</b></div><div class="time-kpi"><span>Decision items</span><b id="timeDecisionCount">—</b></div></div>'+
+   '<p id="timeRangeStatus" class="small">Choose dates and apply to load the timeline.</p><div id="timeUnifiedList" class="milestones"></div>';
+  timeGrid.prepend(explorer);
+  $('timeApplyRange').addEventListener('click',()=>loadTimeWindow());
  }
  const group=(card)=>{
   if(card.id==='fr8Synthesis')return 'review';
