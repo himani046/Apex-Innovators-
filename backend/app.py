@@ -64,7 +64,11 @@ async def security_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else "no-cache"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://d2ol7oe51mr4n9.cloudfront.net; media-src 'self' https://d2ol7oe51mr4n9.cloudfront.net; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    if request.url.path in {"/docs", "/redoc"}:
+        # FastAPI docs load Swagger/ReDoc assets from jsDelivr; allow required CDN origins only on docs routes.
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://d2ol7oe51mr4n9.cloudfront.net https://fastapi.tiangolo.com; font-src 'self' data: https://cdn.jsdelivr.net; media-src 'self' https://d2ol7oe51mr4n9.cloudfront.net; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    else:
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://d2ol7oe51mr4n9.cloudfront.net; media-src 'self' https://d2ol7oe51mr4n9.cloudfront.net; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     return response
 
 
