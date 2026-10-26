@@ -267,6 +267,48 @@ def get_payment_ledger():
             "summary": _summarize_payment_ledger(rows)}
 
 
+
+@app.get("/api/timeline-data")
+def timeline_data(
+    start_date: date = Query(default=date(2026, 7, 1)),
+    end_date: date = Query(default=date(2027, 12, 31)),
+):
+    """Return source event records and ledger rows inside an inclusive date window."""
+    if start_date > end_date:
+        raise HTTPException(status_code=422, detail="start_date must be on or before end_date")
+    pack = load_pack(PACK_DIR)
+    def day_of(row):
+        for key in ("date", "timestamp", "event_date", "occurred_at", "created_at", "effective_date", "due_date"):
+            value = str(row.get(key, "") or "").strip()
+            if value:
+                try:
+                    return date.fromisoformat(value[:10])
+                except ValueError:
+                    continue
+        return None
+    events = []
+    for source, rows in pack.get("event_drops", {}).items():
+        for row in rows:
+            d = day_of(row)
+            if d and start_date <= d <= end_date:
+                events.append({**row, "_source": source, "_timeline_date": d.isoformat(), "_kind": "event"})
+    ledger = []
+    for row in pack.get("ledger", []):
+        d = day_of(row)
+        if d and start_date <= d <= end_date:
+            ledger.append({**row, "_source": "payments_ledger.csv", "_timeline_date": d.isoformat(), "_kind": "payment"})
+    events.sort(key=lambda row: (row["_timeline_date"], str(row.get("event_id", ""))))
+    ledger.sort(key=lambda row: (row["_timeline_date"], str(row.get("reference", ""))))
+    paid_in = sum(float(str(r.get("amount", 0)).replace(",", "").replace("$", "") or 0) for r in ledger
+                  if str(r.get("to", "")).strip().casefold() == "quillhub inc." and str(r.get("status", "")).strip().casefold() == "paid")
+    paid_out = sum(float(str(r.get("amount", 0)).replace(",", "").replace("$", "") or 0) for r in ledger
+                   if str(r.get("from", "")).strip().casefold() == "quillhub inc." and str(r.get("status", "")).strip().casefold() == "paid")
+    return {"start_date": start_date.isoformat(), "end_date": end_date.isoformat(),
+            "events": events, "ledger": ledger, "event_count": len(events), "ledger_count": len(ledger),
+            "revenue_received": paid_in, "spend_paid": paid_out, "net_cash_flow": paid_in - paid_out,
+            "note": "Cash-flow totals include only paid ledger rows in the inclusive date range; they are not accounting profit."}
+
+
 @app.get("/api/pack")
 def pack_summary():
     pack = load_pack(PACK_DIR)
