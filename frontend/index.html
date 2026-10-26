@@ -1517,6 +1517,14 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 .time-item .time-date{font-weight:800;color:#cdb7ff}.time-item.priority-high .time-date{color:#ff7c86}.time-item.priority-medium .time-date{color:#f3cf6b}.time-item.priority-low .time-date{color:#75e0ad}
 .time-item p{margin:6px 0;color:#c8c1d9;font-size:13px;line-height:1.55}.time-item .time-source{color:#938ba9;font-size:11px}
 @media(max-width:700px){.time-window{grid-template-columns:1fr}.time-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.time-item{grid-template-columns:1fr auto;}.time-item .time-date{grid-column:1/-1}}
+
+/* Honest agent execution status labels */
+.orch-status.failed,.orch-task-state.failed{color:#ff858b;background:rgba(255,85,99,.13);border-color:rgba(255,85,99,.35)}
+.orch-status.running,.orch-task-state.running{color:#f4d078;background:rgba(244,208,120,.12);border-color:rgba(244,208,120,.3)}
+.orch-status.done,.orch-task-state.done{color:#83e2b2;background:rgba(91,214,154,.11);border-color:rgba(91,214,154,.28)}
+.orch-status.unknown,.orch-task-state.unknown{color:#b8afca;background:rgba(180,170,205,.08);border-color:rgba(180,170,205,.2)}
+.orch-task-state{display:inline-flex;margin:5px 0;padding:3px 7px;border:1px solid rgba(190,165,255,.2);border-radius:999px;font-size:10px;font-weight:800}
+.orch-agent-task small{display:block;color:#8f87a5;margin-top:4px;overflow-wrap:anywhere}
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
@@ -2018,14 +2026,7 @@ function renderOdinDashboardFR9(d){
    }
    function pick(e){const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;return [...(canvas._points||[])].reverse().find(n=>Math.abs(n.x-x)<(n.hitWidth||72)&&Math.abs(n.y-y)<(n.hitHeight||25))||null;}
    if(!canvas.dataset.bound){canvas.dataset.bound='1';canvas.addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(drag){rotY+=(e.clientX-px)*.007;rotX=Math.max(-1.35,Math.min(1.35,rotX+(e.clientY-py)*.005));px=e.clientX;py=e.clientY;draw();return;}const n=pick(e);if(n?.key!==hovered?.key){hovered=n;draw();}canvas.style.cursor=n?'pointer': 'grab';canvas.title=n?nodeDetail(n):'Drag to rotate in 3D; scroll to zoom; hover a node for details.'});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.55,Math.min(2.6,zoom*(e.deltaY<0?1.1:.9)));draw()},{passive:false});canvas.addEventListener('click',e=>{const n=pick(e);if(!n)return;selected=n;hovered=n;const box=$('fr9GraphDetails');if(box)box.textContent=nodeDetail(n);draw();});}
-   draw();const leg=$('fr9GraphLegend');if(leg)leg.innerHTML='<span>● Contract</span><span>● Clause</span><span>● Party</span><span>— Evidence-backed relationship</span><span>— Potential conflict (review)</span>';
-  }else{canvas?.classList.add('hidden');empty?.classList.remove('hidden');}
-  const edgeList=$('fr9GraphEdges');if(edgeList)edgeList.innerHTML=visibleEdges.slice(0,18).map(e=>'<div class="graph-edge-row"><b>'+esc(e.source)+' → '+esc(e.target)+'</b><span>'+esc(String(e.relation||e.status||'relationship').replaceAll('_',' '))+'</span><p>'+esc(e.evidence?.quote||'No quoted evidence returned')+'</p><small>'+esc(e.evidence?.document_id||'')+' · line '+esc(e.evidence?.line_number??'—')+' · '+(e.evidence?.verified?'verified':'review required')+'</small></div>').join('')||'<p class="small">No sourced graph edges returned; Odin will not invent dependencies.</p>';
- }
- const timeText=$('fr9TimeValue');if(timeText)timeText.textContent=current;
-}
-
-function renderOdinOrchestrator(d){
+   draw();const leg=$('fr9GraphLegend');if(leg)leg.innerHTML='<span>● Contract</span><span>● Clause</span><span>● Party</span><span>— Evidence-backed relationship</span>function renderOdinOrchestrator(d){
  const collaboration=d.collaboration||{},usage=d.api_usage||{},workstreams=d.workstreams||d.workstream_analysis?.workstreams||[],messages=d.agent_messages||[],shared=d.shared_state||{};
  const completed=workstreams.filter(w=>/complete|verified|done/i.test(String(w.status||''))).length;
  const agents=collaboration.agents||shared.agent_status||{},loop=collaboration.loop||{};
@@ -2041,29 +2042,53 @@ function renderOdinOrchestrator(d){
   {id:'FR1.4',title:'Coordination · clarification/debate + completion + synthesis',status:'partial',evidence:'Bounded follow-up and synthesis are present; a distinct debate loop and explicit per-contract completion gate need further validation.'}
  ];
  if(el('orchFRList'))el('orchFRList').innerHTML=fr.map(f=>'<div class="orch-fr"><div class="orch-fr-top"><b>'+esc(f.id)+' · '+esc(f.title)+'</b><span class="orch-status '+f.status+'">'+esc(f.status)+'</span></div><p>'+esc(f.evidence)+'</p></div>').join('');
- if(el('orchWorkstreams'))el('orchWorkstreams').innerHTML=workstreams.map(w=>{const status=String(w.status||'status not reported'),contracts=(w.contract_ids||[]).join(', '),assigned=w.assigned_agents||Object.keys(w.agents||{}),isDone=/complete|verified|done/i.test(status),isRunning=/running|progress/i.test(status),pct=isDone?100:isRunning?60:35;return '<div class="orch-ws"><div class="orch-ws-top"><b>'+esc(w.label||w.id||'Workstream')+'</b><span class="orch-status '+(isDone?'':isRunning?'partial':'')+'">'+esc(status)+'</span></div><p>'+esc(w.responsibility||'Contract-specific analysis and evidence review')+'</p><div class="bar"><span style="width:'+pct+'%"></span></div><div class="meta">Contracts: '+esc(contracts||'Portfolio-wide')+'</div><div class="meta">Assigned: '+esc(assigned.join(' · ')||'Not reported')+'</div></div>'}).join('')||'<p class="small">The API returned no workstreams.</p>';
+ if(el('orchWorkstreams'))el('orchWorkstreams').innerHTML=workstreams.map(w=>{const status=String(w.status||'status not reported'),contracts=(w.contract_ids||[]).join(', '),assigned=w.assigned_agents||Object.keys(w.agents||{}),isDone=/complete|verified|done/i.test(status),isRunning=/running|progress/i.test(status);return '<div class="orch-ws"><div class="orch-ws-top"><b>'+esc(w.label||w.id||'Workstream')+'</b><span class="orch-status '+(isDone?'':isRunning?'partial':'')+'">'+esc(status)+'</span></div><p>'+esc(w.responsibility||'Contract-specific analysis and evidence review')+'</p><div class="bar"><span style="width:'+(isDone?100:isRunning?60:35)+'%"></span></div><div class="meta">Contracts: '+esc(contracts||'Portfolio-wide')+'</div><div class="meta">Assigned: '+esc(assigned.join(' · ')||'Not reported')+'</div></div>'}).join('')||'<p class="small">The API returned no workstreams.</p>';
  const agentSpecs=[
-  {name:'Odin',role:'Orchestrator · FR1 owner',task:'Plans workstreams, delegates tasks, tracks progress, coordinates follow-ups and triggers synthesis.',key:'Odin'},
+  {name:'Odin',role:'Orchestration & coordination',task:'Plans workstreams, delegates tasks, tracks progress, coordinates follow-ups and triggers synthesis.',key:'Odin'},
   {name:'Thor',role:'Contract extraction',task:'Extracts clauses, parties, obligations and source-grounded terms.',key:'Thor'},
   {name:'Norns',role:'Timeline & deadlines',task:'Normalizes explicit dates, milestones and deadline candidates.',key:'Norns'},
   {name:'Loki',role:'Risk challenge',task:'Challenges candidate risks, flags ambiguity and surfaces possible cross-contract conflicts.',key:'Loki'},
   {name:'Heimdall',role:'Evidence verification',task:'Checks quotations, citations and event evidence.',key:'Heimdall'},
   {name:'Tyr',role:'Decision & synthesis',task:'Drafts recommendations and rulings for human review.',key:'Tyr'}
  ];
- const normalizeStatus=v=>String(v||'not started').replaceAll('_',' ').replaceAll('-',' ');
- const progressFor=agent=>{
-  const statuses=workstreams.map(w=>(w.agents||{})[agent.key]).filter(Boolean).map(normalizeStatus);
-  const ownMessages=messages.filter(m=>String(m.from||'').toLowerCase()===agent.key.toLowerCase()||String(m.to||'').toLowerCase()===agent.key.toLowerCase());
-  const all=statuses.concat(ownMessages.map(m=>normalizeStatus(m.status)));
-  if(!all.length)return {pct:0,status:'Awaiting task record',count:0};
-  const score=s=>/complete|verified|done|checked|draft only|flagged|extracted|scanned|reviewed|ruling/i.test(s)?100:/partial|candidate|review|pending|running|progress|not aggregated/i.test(s)?60:/fail|error|blocked/i.test(s)?0:25;
-  const pct=Math.round(all.reduce((sum,s)=>sum+score(s),0)/all.length),done=all.filter(s=>score(s)===100).length;
-  return {pct,status:done===all.length?'Reported complete':pct>0?'In progress':'Blocked',count:all.length};
+ const normalize=v=>String(v||'').trim().toLowerCase().replaceAll('_',' ').replaceAll('-',' ');
+ const statusOf=v=>{
+  const x=normalize(v);
+  if(/fail|error|blocked/.test(x))return {label:'Failed / blocked',kind:'failed'};
+  if(/complete|verified|done|checked|extracted|scanned|reviewed|ruling|draft only|flagged/.test(x))return {label:'Completed (reported)',kind:'done'};
+  if(/running|in progress|processing/.test(x))return {label:'Running (reported)',kind:'running'};
+  if(/pending|partial|candidate|review|not aggregated/.test(x))return {label:'Needs review / pending',kind:'review'};
+  return {label:'Status unknown',kind:'unknown'};
  };
- el('orchAgentBoard').innerHTML=agentSpecs.map(agent=>{const p=progressFor(agent),relevant=workstreams.filter(w=>agent.key==='Odin'||(w.agents||{})[agent.key]);const tasks=relevant.slice(0,3).map(w=>'<div class="orch-agent-task"><b>'+esc(w.label||w.id||'Workstream')+'</b><span>'+esc((w.agents||{})[agent.key]||(agent.key==='Odin'?'Plan · delegate · track · coordinate':'Task status not reported'))+'</span></div>').join('');return '<article class="orch-agent-card"><div class="orch-agent-card-top"><b>'+esc(agent.name)+'</b><span class="orch-status '+(p.pct===100?'':p.pct?'partial':'missing')+'">'+esc(p.status)+'</span></div><div class="orch-agent-role">'+esc(agent.role)+'</div><div class="orch-agent-task"><b>Responsibility</b><span>'+esc(agent.task)+'</span></div>'+(tasks||'<div class="orch-agent-task"><span>Task status appears after a run.</span></div>')+'<div class="orch-agent-progress"><span>Reported task progress</span><strong>'+p.pct+'%</strong></div><div class="orch-agent-bar" role="progressbar" aria-label="'+esc(agent.name)+' task progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+p.pct+'"><span style="width:'+p.pct+'%"></span></div><div class="meta" style="margin-top:6px">'+p.count+' status record(s) · derived from run data</div></article>'}).join('');
+ const details=agent=> {
+  const rows=[];
+  workstreams.forEach(w=>{
+   const v=(w.agents||{})[agent.key];
+   if(v!==undefined&&v!==null&&String(v).trim())rows.push({task:w.label||w.id||'Workstream',status:String(v),source:'Workstream status'});
+  });
+  messages.filter(m=>String(m.from||'').toLowerCase()===agent.key.toLowerCase()||String(m.to||'').toLowerCase()===agent.key.toLowerCase()).forEach(m=>{
+   rows.push({task:String(m.type||'Agent message').replaceAll('_',' '),status:String(m.status||'recorded'),source:(m.from||'System')+' → '+(m.to||'System')+(m.iteration!==undefined?' · iteration '+m.iteration:'')});
+  });
+  const direct=agents[agent.key]||agents[agent.key.toLowerCase()]||{};
+  if(!rows.length&&direct&&Object.keys(direct).length)Object.entries(direct).forEach(([k,v])=>rows.push({task:k,status:typeof v==='string'?v:JSON.stringify(v),source:'Agent status record'}));
+  return rows;
+ };
+ el('orchAgentBoard').innerHTML=agentSpecs.map(agent=>{
+  const rows=details(agent),mapped=rows.map(row=>({...row,state:statusOf(row.status)}));
+  const failures=mapped.filter(r=>r.state.kind==='failed').length,done=mapped.filter(r=>r.state.kind==='done').length,running=mapped.filter(r=>r.state.kind==='running').length,review=mapped.filter(r=>r.state.kind==='review').length;
+  const onlyCompleted=mapped.length>0&&done===mapped.length;
+  const mainStatus=failures?'Attention required':running?'Running (reported)':onlyCompleted?'Completed (reported)':mapped.length?'Needs review / pending':'No task status reported';
+  const kind=failures?'failed':running?'running':onlyCompleted?'done':mapped.length?'review':'unknown';
+  const taskHtml=mapped.length?mapped.slice(0,8).map(row=>'<div class="orch-agent-task"><b>'+esc(row.task)+'</b><span class="orch-task-state '+row.state.kind+'">'+esc(row.state.label)+'</span><span>'+esc(row.source)+'</span><small>Raw status: '+esc(row.status)+'</small></div>').join(''):'<div class="orch-agent-task"><b>No execution record</b><span>This run did not report task-level activity for this agent. Its responsibility is descriptive, not proof it executed.</span></div>';
+  const pct= mapped.length?Math.round((done+running*.5+review*.25)/mapped.length*100):null;
+  return '<article class="orch-agent-card"><div class="orch-agent-card-top"><b>'+esc(agent.name)+'</b><span class="orch-status '+kind+'">'+esc(mainStatus)+'</span></div><div class="orch-agent-role">'+esc(agent.role)+'</div><div class="orch-agent-task"><b>Responsibility</b><span>'+esc(agent.task)+'</span></div><div class="orch-agent-task"><b>Reported task records</b><span>'+mapped.length+' · '+done+' completed · '+running+' running · '+review+' pending/review · '+failures+' failed</span></div>'+taskHtml+'<div class="orch-agent-progress"><span>Status coverage (not percent of contract processed)</span><strong>'+(pct===null?'N/A':pct+'%')+'</strong></div><div class="orch-agent-bar" role="progressbar" aria-label="'+esc(agent.name)+' status coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+(pct===null?0:pct)+'"><span style="width:'+(pct===null?0:pct)+'%"></span></div><div class="meta" style="margin-top:6px">Derived from '+mapped.length+' reported task/message records. No record means execution is unconfirmed.</div></article>';
+ }).join('');
  el('orchAgentBoardCount').textContent=agentSpecs.length+' agents · '+workstreams.length+' workstreams';
  const jumpButton=document.getElementById('orchOpenTasks');
  if(jumpButton&&!jumpButton.dataset.bound){jumpButton.dataset.bound='1';jumpButton.setAttribute('aria-expanded','false');jumpButton.addEventListener('click',()=>{const board=document.getElementById('orchAgentBoardSection');if(!board)return;const opening=board.hidden;board.hidden=!opening;jumpButton.setAttribute('aria-expanded',String(opening));jumpButton.textContent=opening?'Hide FR1 dashboard ↑':'View FR1 dashboard ↗';if(opening)board.scrollIntoView({behavior:'smooth',block:'start'});});}
+ if(el('orchTrace'))el('orchTrace').innerHTML=messages.map(m=>'<div class="orch-event"><b>'+esc((m.from||'Odin')+' → '+(m.to||'System'))+'</b><span>'+esc(String(m.type||'handoff').replaceAll('_',' '))+'</span><small>'+esc(m.status||'recorded')+(m.iteration!==undefined?' · iteration '+m.iteration:'')+'</small></div>').join('')||'<p class="small">No agent messages returned.</p>';
+}
+tribute('aria-expanded','false');jumpButton.addEventListener('click',()=>{const board=document.getElementById('orchAgentBoardSection');if(!board)return;const opening=board.hidden;board.hidden=!opening;jumpButton.setAttribute('aria-expanded',String(opening));jumpButton.textContent=opening?'Hide FR1 dashboard ↑':'View FR1 dashboard ↗';if(opening)board.scrollIntoView({behavior:'smooth',block:'start'});});}
  if(el('orchTrace'))el('orchTrace').innerHTML=messages.map(m=>'<div class="orch-event"><b>'+esc((m.from||'Odin')+' → '+(m.to||'System'))+'</b><span>'+esc(String(m.type||'handoff').replaceAll('_',' '))+'</span><small>'+esc(m.status||'recorded')+(m.iteration!==undefined?' · iteration '+m.iteration:'')+'</small></div>').join('')||'<p class="small">No agent messages returned.</p>';
 }
 
