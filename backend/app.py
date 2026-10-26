@@ -647,6 +647,89 @@ async def analyze_portfolio_upload(
     return result
 
 
+
+@app.get("/api/contracts/saved", dependencies=[Depends(require_api_token)])
+def list_saved_contracts():
+    """List contracts explicitly saved from the contract workbench."""
+    root = PACK_DIR / "saved_contracts"
+    index = root / "index.json"
+    if not index.exists():
+        return {"contracts": []}
+    try:
+        data = json.loads(index.read_text(encoding="utf-8"))
+        return {"contracts": data if isinstance(data, list) else []}
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="Saved contract index could not be read.")
+
+
+@app.post("/api/contracts/save", dependencies=[Depends(require_api_token)])
+async def save_contracts(
+    files: list[UploadFile] = File(...),
+    profiles: str = Form(default="[]"),
+    contract_name: str = Form(default=""),
+    signer_name: str = Form(default=""),
+    acknowledge: bool = Form(default=False),
+):
+    """Persist uploaded contract originals and extracted profiles after explicit user confirmation.
+    This records a save/acknowledgement only; it does not create a legally binding e-signature.
+    """
+    if not acknowledge:
+        raise HTTPException(status_code=422, detail="Confirm that you are authorized to save these contract files.")
+    if not files:
+        raise HTTPException(status_code=422, detail="Choose at least one contract file.")
+    try:
+        parsed_profiles = json.loads(profiles or "[]")
+        if not isinstance(parsed_profiles, list):
+            raise ValueError("Profiles must be a JSON array.")
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail="Invalid contract profile data.") from exc
+    import hashlib
+    import re
+    from datetime import datetime, timezone
+    root = PACK_DIR / "saved_contracts"
+    originals = root / "originals"
+    originals.mkdir(parents=True, exist_ok=True)
+    saved = []
+    total_bytes = 0
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", (contract_name or "").strip())[:80].strip("._-") or "Contract"
+    for index, upload in enumerate(files):
+        filename = Path(upload.filename or "contract.txt").name
+        raw = await upload.read(15 * 1024 * 1024 + 1)
+        total_bytes += len(raw)
+        if len(raw) > 15 * 1024 * 1024 or total_bytes > 15 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Combined contract files exceed the 15 MB limit.")
+        digest = hashlib.sha256(raw).hexdigest()
+        ext = Path(filename).suffix.lower()
+        if ext not in {".pdf", ".txt"}:
+            raise HTTPException(status_code=422, detail=f"Unsupported contract format: {filename}")
+        stored_name = f"{stamp}_{safe_name}_{index+1}_{digest[:10]}{ext}"
+        (originals / stored_name).write_bytes(raw)
+        matched_profile = parsed_profiles[index] if index < len(parsed_profiles) and isinstance(parsed_profiles[index], dict) else {}
+        saved.append({
+            "saved_id": f"{stamp}-{digest[:12]}-{index+1}",
+            "contract_name": contract_name.strip() or Path(filename).stem,
+            "filename": filename,
+            "stored_file": stored_name,
+            "sha256": digest,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "saved_by": signer_name.strip()[:120],
+            "status": "Saved · acknowledgement recorded",
+            "profile": matched_profile,
+        })
+        await upload.close()
+    index_path = root / "index.json"
+    try:
+        existing = json.loads(index_path.read_text(encoding="utf-8")) if index_path.exists() else []
+        if not isinstance(existing, list):
+            existing = []
+    except (OSError, json.JSONDecodeError):
+        existing = []
+    existing.extend(saved)
+    index_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"saved": saved, "count": len(saved), "note": "Files saved with an acknowledgement record; no legally binding electronic signature was created."}
+
+
 @app.get("/api/company-context")
 def get_company_context():
     """Return the single canonical company context bundled with the Odin challenge."""
