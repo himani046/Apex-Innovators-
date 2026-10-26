@@ -1490,6 +1490,19 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
  .page-view[data-view="intelligence"] .ci-export-row{justify-content:stretch}
  .page-view[data-view="intelligence"] .ci-export-row button{flex:1}
 }
+
+/* Overview cash-flow KPI cards */
+#overviewFinanceMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 16px}
+.overview-finance-card{position:relative;overflow:hidden;padding:21px 22px;border:1px solid rgba(185,160,255,.22);border-radius:20px;background:linear-gradient(140deg,rgba(31,27,49,.98),rgba(15,16,27,.98));color:#f7f3ff;box-shadow:0 10px 28px rgba(0,0,0,.15)}
+.overview-finance-card:after{content:"";position:absolute;width:100px;height:100px;right:-32px;top:-40px;border-radius:50%;background:rgba(184,151,255,.08)}
+.overview-finance-card .finance-label{font-size:12px;color:#bdb5d2;letter-spacing:.6px;text-transform:uppercase}
+.overview-finance-card .finance-value{font-size:clamp(25px,2.5vw,36px);font-weight:800;letter-spacing:-1px;margin:13px 0 7px;overflow-wrap:anywhere}
+.overview-finance-card .finance-note{font-size:11px;line-height:1.55;color:#a9a2bd}
+.overview-finance-card.revenue .finance-value{color:#9fe4c0}
+.overview-finance-card.spend .finance-value{color:#ffbdad}
+.overview-finance-card.profit .finance-value{color:#d3b9ff}
+#overviewFinanceStatus{font-size:11px;color:#aaa4bf;margin:-4px 2px 16px;line-height:1.6}
+@media(max-width:800px){#overviewFinanceMetrics{grid-template-columns:1fr}}
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
@@ -1708,6 +1721,13 @@ function setupOdinPages(){
   '<div class="overview-metric"><div class="label">Upcoming deadlines</div><div class="value" id="homeDeadlines">—</div><div class="hint">Source-grounded dates</div></div>'+
   '<div class="overview-metric"><div class="label">Open review items</div><div class="value" id="homeReview">—</div><div class="hint">No automatic legal conclusions</div></div>';
  overview.parentElement.insertBefore(metrics,overview);
+ const financeMetrics=document.createElement('div');financeMetrics.id='overviewFinanceMetrics';
+ financeMetrics.innerHTML='<div class="overview-finance-card revenue"><div class="finance-label">Revenue received</div><div class="finance-value" id="homeRevenue">—</div><div class="finance-note">Paid incoming ledger rows through selected date</div></div>'+
+ '<div class="overview-finance-card spend"><div class="finance-label">Spend paid</div><div class="finance-value" id="homeSpend">—</div><div class="finance-note">Paid outgoing ledger rows through selected date</div></div>'+
+ '<div class="overview-finance-card profit"><div class="finance-label">Net cash flow</div><div class="finance-value" id="homeProfit">—</div><div class="finance-note">Revenue received minus spend paid · not accounting profit</div></div>';
+ overview.parentElement.insertBefore(financeMetrics,metrics);
+ const financeStatus=document.createElement('p');financeStatus.id='overviewFinanceStatus';financeStatus.textContent='Finance totals use the bundled payment ledger and selected analysis date.';
+ financeMetrics.insertAdjacentElement('afterend',financeStatus);
  const graphCard=document.createElement('div');graphCard.className='card full';graphCard.innerHTML='<h3>Contract relationship graph <span class="tag">Select a contract node</span></h3><p class="muted">Connections represent relationship evidence; downstream impact is a candidate for review, not a proven legal outcome.</p><div id="homeGraph" class="graph-wrap"><p style="padding:20px;color:#777d6e">Run analysis to map contract relationships.</p></div>';
  overview.parentElement.insertBefore(graphCard,overview);
  const orch=document.createElement('div');orch.className='card full orchestrator-panel';orch.id='odinOrchestratorPanel';orch.innerHTML='<div class="orch-head"><div><div class="eyebrow">FR1 · ORCHESTRATION CONTROL TOWER</div><div class="orch-title-row"><h3>Odin orchestrator <span class="tag" id="orchRunStatus">Awaiting analysis</span></h3><button type="button" class="orch-agent-open" id="orchOpenTasks">Agent tasks</button></div><p class="muted">Live view of planning, agent delegation, workstream progress and bounded coordination for the current run.</p></div><div class="orch-last-run" id="orchRunMeta">No run loaded</div></div><div class="orch-pipeline" id="orchPipeline"><div class="orch-step"><span>01</span><b>Intake</b><small>Company + contracts</small></div><i>→</i><div class="orch-step"><span>02</span><b>Plan</b><small>Contract streams + portfolio</small></div><i>→</i><div class="orch-step"><span>03</span><b>Delegate</b><small>Agent tasks + status</small></div><i>→</i><div class="orch-step"><span>04</span><b>Coordinate</b><small>Clarify / verify / follow-up</small></div><i>→</i><div class="orch-step"><span>05</span><b>Synthesis</b><small>Decision-ready output</small></div></div><div class="orch-agent-board" id="orchAgentBoardSection"><div class="orch-agent-board-head"><div><h4>Agent task list</h4></div><span class="tag" id="orchAgentBoardCount">6 agents</span></div><div class="orch-agent-board-grid" id="orchAgentBoard"><p class="small">Run agents to view task status.</p></div></div>';
@@ -2140,6 +2160,39 @@ async function submitAuditDecision(decision) {
   }
 }
 
+
+async function refreshOverviewFinance(asOf){
+ const status=$('overviewFinanceStatus');
+ try{
+  const data=await get('/api/payment-ledger');
+  const rows=Array.isArray(data.rows)?data.rows:[];
+  const dateLimit=String(asOf||$('date')?.value||'').slice(0,10);
+  let revenue=0,spend=0,receivedPending=0,receivedOverdue=0,spendPending=0,spendOverdue=0,used=0;
+  for(const row of rows){
+   const rowDate=String(row.date||'').slice(0,10);
+   if(!rowDate||!dateLimit||rowDate>dateLimit)continue;
+   const amount=Number(String(row.amount??0).replace(/[$,]/g,''));if(!Number.isFinite(amount))continue;
+   const from=String(row.from||'').trim().toLowerCase(),to=String(row.to||'').trim().toLowerCase(),state=String(row.status||'').trim().toLowerCase();
+   const incoming=to==='quillhub inc.',outgoing=from==='quillhub inc.';
+   if(!incoming&&!outgoing)continue;used++;
+   if(incoming&&state==='paid')revenue+=amount;
+   else if(outgoing&&state==='paid')spend+=amount;
+   else if(incoming&&state==='pending')receivedPending+=amount;
+   else if(incoming&&state==='overdue')receivedOverdue+=amount;
+   else if(outgoing&&state==='pending')spendPending+=amount;
+   else if(outgoing&&state==='overdue')spendOverdue+=amount;
+  }
+  const fmt=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
+  if($('homeRevenue'))$('homeRevenue').textContent=fmt(revenue);
+  if($('homeSpend'))$('homeSpend').textContent=fmt(spend);
+  if($('homeProfit'))$('homeProfit').textContent=fmt(revenue-spend);
+  if(status)status.textContent='Ledger: '+data.source+' · '+used+' Quillhub cash-flow rows dated on or before '+(dateLimit||'selected date')+'. Pending/overdue are excluded from paid totals. Net cash flow is not accounting profit; the ledger does not establish revenue recognition, accruals, taxes, or other costs.';
+ }catch(error){
+  for(const id of ['homeRevenue','homeSpend','homeProfit'])if($(id))$(id).textContent='Unavailable';
+  if(status)status.textContent='Could not load payment ledger: '+error.message;
+ }
+}
+
 async function runOdin() {
   const button = $('run');
   button.disabled = true;
@@ -2149,6 +2202,7 @@ async function runOdin() {
 
   try {
     const d = await get('/api/run?as_of=' + encodeURIComponent($('date').value) + '&use_claude=true');
+    await refreshOverviewFinance($('date').value);
     renderContractProfiles(d.contract_profiles,'contractProfilesMain');
     const x = d.extraction || {};
     const f = d.risk_finding || {};
@@ -2584,6 +2638,7 @@ async function runOdin() {
 async function initOdinApp(){
   const contextField=$('customCompanyContext'),contextSource=$('customCompanyContextSource');
   loadDefaultPaymentLedger();
+  refreshOverviewFinance($('date')?.value); // initial overview finance
   try{
     const contextData=await get('/api/company-context');
     if(contextField)contextField.value=contextData.company_context||'';
