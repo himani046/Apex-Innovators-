@@ -1609,7 +1609,27 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
   text-shadow: none !important;
 }
 
-</style></head><body class="page-is-overview">
+
+/* Sign & save contract modal */
+#customPortfolioInput #customSignSave{color:#fff!important;-webkit-text-fill-color:#fff!important;background:#6b4ce6!important;border:1px solid #8c74f5!important}
+#customPortfolioInput #customSignSave:disabled{opacity:.45!important;cursor:not-allowed}
+.contract-save-overlay{position:fixed;inset:0;z-index:9999;background:rgba(5,6,14,.76);display:flex;align-items:center;justify-content:center;padding:20px}
+.contract-save-overlay[hidden]{display:none!important}
+.contract-save-dialog{position:relative;width:min(520px,100%);box-sizing:border-box;padding:28px;border:1px solid #d9d1ff;border-radius:20px;background:#fff;color:#171923;box-shadow:0 24px 90px rgba(0,0,0,.45);display:grid;gap:14px}
+.contract-save-dialog *{box-sizing:border-box}
+.contract-save-dialog h3,.contract-save-dialog p,.contract-save-dialog label{color:#171923!important;-webkit-text-fill-color:#171923!important}
+.contract-save-dialog h3{font-size:24px;margin:0}
+.contract-save-dialog .muted{color:#535968!important;-webkit-text-fill-color:#535968!important;line-height:1.55}
+.contract-save-dialog label{display:grid;gap:7px;font-size:13px;font-weight:700}
+.contract-save-dialog input:not([type=checkbox]){width:100%;padding:12px;border:1px solid #d1d5df;border-radius:10px;background:#fff;color:#171923}
+.contract-save-dialog .contract-save-check{display:flex;align-items:flex-start;gap:9px;font-weight:500;line-height:1.5}
+.contract-save-dialog .contract-save-check input{margin-top:4px}
+.contract-save-close{position:absolute;right:14px;top:12px;border:0;background:transparent;color:#333;font-size:26px;cursor:pointer}
+.contract-save-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+.contract-save-actions button{padding:11px 16px;border-radius:10px;border:1px solid #d1d5df;background:#f4f5f7;color:#171923}
+.contract-save-actions button[type=submit]{background:#171923;color:#fff;border-color:#171923}
+@media(max-width:600px){.contract-save-dialog{padding:22px}.contract-save-actions{flex-direction:column}.contract-save-actions button{width:100%}}
+\n</style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
   <div class="odin-chat-head"><div><b>Ask Odin</b><small>Claude · Contract-aware assistant</small></div><button type="button" id="odinChatClose" aria-label="Close chat">×</button></div>
@@ -1644,9 +1664,22 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
     <div class="hero-control-card"><div class="hero-control-heading"><span class="live-dot"></span> Run a portfolio review</div><label for="date">Simulated analysis date</label><select id="date"><option>2027-01-15</option><option selected>2027-03-15</option><option>2027-06-01</option><option>2027-09-15</option></select><button id="run" onclick="runOdin()">Run agents <span aria-hidden="true">↗</span></button><small>Findings stay reviewable. No automatic legal conclusions.</small></div>
   </div>
 </section>
-<div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
+
+<div id="contractSaveModal" class="contract-save-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="contractSaveTitle">
+ <form id="contractSaveForm" class="contract-save-dialog">
+  <button type="button" id="contractSaveClose" class="contract-save-close" aria-label="Close dialog">×</button>
+  <span class="eyebrow">CONTRACT WORKBENCH · SAVE</span><h3 id="contractSaveTitle">Sign &amp; save contract</h3>
+  <p class="muted">Save the uploaded original and its extracted profile to your local Odin data folder. This records your acknowledgement; it does not apply a legally binding electronic signature.</p>
+  <label>Contract / record name<input id="contractSaveName" maxlength="120" required placeholder="e.g. Vendor Services Agreement"></label>
+  <label>Saved by<input id="contractSaveSigner" maxlength="120" placeholder="Your name or reviewer ID"></label>
+  <label class="contract-save-check"><input type="checkbox" id="contractSaveAck" required> I am authorized to save these files and confirm the displayed contract profile is for review.</label>
+  <div class="contract-save-actions"><button type="button" id="contractSaveCancel">Cancel</button><button type="submit" id="contractSaveSubmit">Confirm &amp; save</button></div>
+  <p id="contractSaveStatus" class="small" role="status"></p>
+ </form>
+</div>
+\n<div id="error" class="err hidden"></div><div id="loading" class="card">Loading agent state…</div>
 <div id="dash" class="grid hidden">
-<div class="card full" id="customPortfolioInput"><div class="fr9-title"><div><div class="eyebrow">FR1.1 · CONFIGURABLE PORTFOLIO INPUT</div><h3>Analyze your contract set</h3><p class="muted">Provide company context and upload PDF or TXT contracts. Odin keeps source quotes and flags heuristic results for review.</p></div><span class="tag">PDF + TXT · up to 15 MB combined</span></div><div class="form-grid"><label>Company context <span class="small" id="customCompanyContextSource">Loading canonical context.txt…</span><textarea id="customCompanyContext" rows="5" readonly placeholder="Loading odin_dev_pack/bundle/company/context.txt…"></textarea></label><label>Contract files (.pdf, .txt)<input id="customContractFiles" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple></label><label>Optional event records (JSON array)<textarea id="customEvents" rows="3" placeholder='[{"event_id":"E-1","timestamp":"2027-03-01","body":"VENDOR_A invoice paid"}]'></textarea></label><label>Payment ledger override (JSON array) · defaults to bundled payments_ledger.csv<textarea id="customPaymentLedger" rows="5" placeholder="Loading bundled payment ledger…"></textarea><small id="paymentLedgerSource" class="muted">Loading canonical CSV… Edit this JSON to override the bundled ledger for this analysis.</small></label></div><div class="controls"><label for="customAsOf">Analysis date</label><input id="customAsOf" type="date" value="2027-03-15"><label class="small" style="display:flex;align-items:center;gap:8px"><input id="customUseClaude" type="checkbox" checked> Enable Claude review (uses configured ANTHROPIC_API_KEY; bounded by provider-call and token budgets)</label><button type="button" id="customAnalyzeButton">Analyze portfolio ↗</button><button type="button" id="customIngestEvents">Store event feed</button></div><p class="small">Claude review is enabled by default when the server has ANTHROPIC_API_KEY configured. Calls are bounded by provider-call and token budgets; model-proposed quotations are checked against source text. Date calculations and evidence safeguards remain deterministic. No unsupported financial exposure is calculated. PDF and TXT supported; scanned PDFs require OCR.</p><div id="customPortfolioStatus" class="small" role="status">Select at least one PDF or TXT contract file to begin.</div><div id="customPortfolioResults"></div></div>
+<div class="card full" id="customPortfolioInput"><div class="fr9-title"><div><div class="eyebrow">FR1.1 · CONFIGURABLE PORTFOLIO INPUT</div><h3>Analyze your contract set</h3><p class="muted">Provide company context and upload PDF or TXT contracts. Odin keeps source quotes and flags heuristic results for review.</p></div><span class="tag">PDF + TXT · up to 15 MB combined</span></div><div class="form-grid"><label>Company context <span class="small" id="customCompanyContextSource">Loading canonical context.txt…</span><textarea id="customCompanyContext" rows="5" readonly placeholder="Loading odin_dev_pack/bundle/company/context.txt…"></textarea></label><label>Contract files (.pdf, .txt)<input id="customContractFiles" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple></label><label>Optional event records (JSON array)<textarea id="customEvents" rows="3" placeholder='[{"event_id":"E-1","timestamp":"2027-03-01","body":"VENDOR_A invoice paid"}]'></textarea></label><label>Payment ledger override (JSON array) · defaults to bundled payments_ledger.csv<textarea id="customPaymentLedger" rows="5" placeholder="Loading bundled payment ledger…"></textarea><small id="paymentLedgerSource" class="muted">Loading canonical CSV… Edit this JSON to override the bundled ledger for this analysis.</small></label></div><div class="controls"><label for="customAsOf">Analysis date</label><input id="customAsOf" type="date" value="2027-03-15"><label class="small" style="display:flex;align-items:center;gap:8px"><input id="customUseClaude" type="checkbox" checked> Enable Claude review (uses configured ANTHROPIC_API_KEY; bounded by provider-call and token budgets)</label><button type="button" id="customAnalyzeButton">Analyze portfolio ↗</button><button type="button" id="customIngestEvents">Store event feed</button><button type="button" id="customSignSave" disabled>Sign &amp; save</button></div><p class="small">Claude review is enabled by default when the server has ANTHROPIC_API_KEY configured. Calls are bounded by provider-call and token budgets; model-proposed quotations are checked against source text. Date calculations and evidence safeguards remain deterministic. No unsupported financial exposure is calculated. PDF and TXT supported; scanned PDFs require OCR.</p><div id="customPortfolioStatus" class="small" role="status">Select at least one PDF or TXT contract file to begin.</div><div id="customPortfolioResults"></div></div>
 <div class="card full" id="fr2Obligations"><div class="fr9-title"><div><div class="eyebrow">FR2 · THOR</div><h3>Upcoming obligations</h3><p class="muted">Deadlines, payment risks and recommended actions.</p></div><span class="tag" id="fr2UrgentCount">Waiting for analysis</span></div><div id="fr2ObligationList" class="fr2-obligation-list"><p class="small">Run agents to extract obligations.</p></div></div><div class="card full" id="fr8Synthesis"><div class="fr9-title"><div><div class="eyebrow">FR8 · SYNTHESIS</div><h3>Contract reports &amp; company risk report</h3><p class="muted">Per-contract terms, obligations, timelines, risks, citations and actions, combined into a company-wide view.</p></div><span class="tag" id="fr8SynthesisStatus">Waiting for analysis</span></div><div id="fr8CompanyReport" class="fr9-section"><p class="small">Run agents to generate the synthesis.</p></div><div id="fr8ContractReports" class="fr9-section"></div></div>
 <div class="card full fr9-panel" id="fr9Dashboard"><div class="fr9-title"><div><div class="eyebrow">FR9 · DASHBOARD CONTROL SURFACE</div><h3>Contract intelligence cockpit</h3><p class="muted">Interactive relationships, simulated time, exposure, debate, and human-review actions.</p></div><span class="tag" id="fr9RunState">Waiting for analysis</span></div>
 <section class="fr9-section"><div class="fr9-section-head"><div><h4>FR9.2 · Time machine</h4><p>Move the simulated clock to rerun deadline and risk analysis for that date.</p></div><b id="fr9TimeValue">2027-03-15</b></div><input id="fr9TimeSlider" type="range" min="0" max="100" step="1" value="25" aria-label="Simulated date slider"><div class="fr9-scale"><span>15 Jan 2027</span><span>15 Sep 2027</span></div><div class="fr9-time-status" id="fr9TimeStatus">Choose a date to refresh the analysis.</div></section>
@@ -1938,8 +1971,47 @@ function initFR9TimeSlider(){
  slider.addEventListener('input',()=>{const d=new Date(min+(max-min)*Number(slider.value)/100);const iso=d.toISOString().slice(0,10);const sel=$('date');if(sel){let opt=[...sel.options].find(o=>o.value===iso);if(!opt){opt=document.createElement('option');opt.value=iso;opt.textContent=iso;sel.appendChild(opt)}sel.value=iso}if($('fr9TimeValue'))$('fr9TimeValue').textContent=iso;if($('fr9TimeStatus'))$('fr9TimeStatus').textContent='Simulated date changed to '+iso+' · recalculating deadlines, risk signals, and review queue…';clearTimeout(fr9SliderTimer);fr9SliderTimer=setTimeout(()=>{if(typeof runOdin==='function')runOdin()},450)});
 }
 
-async function runCustomPortfolio(){
- const button=$('customAnalyzeButton'),status=$('customPortfolioStatus'),out=$('customPortfolioResults');
+
+let lastCustomPortfolioResult = null;
+function setupContractSave(){
+ const open=$('customSignSave'),overlay=$('contractSaveModal'),form=$('contractSaveForm');
+ if(!open||!overlay||!form||open.dataset.bound)return;open.dataset.bound='1';
+ const close=()=>{overlay.hidden=true};
+ open.addEventListener('click',()=>{
+  if(!lastCustomPortfolioResult){alert('Analyze at least one contract before saving.');return}
+  const files=[...($('customContractFiles')?.files||[])];
+  if(!files.length){alert('Please reselect the contract file(s) you want to save.');return}
+  $('contractSaveName').value=files.length===1?files[0].name.replace(/\.[^.]+$/,''):'Contract portfolio';
+  $('contractSaveStatus').textContent='';
+  overlay.hidden=false;$('contractSaveName').focus();
+ });
+ $('contractSaveClose').addEventListener('click',close);$('contractSaveCancel').addEventListener('click',close);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)close()});
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const files=[...($('customContractFiles')?.files||[])];if(!files.length)return;
+  const submit=$('contractSaveSubmit'),status=$('contractSaveStatus');submit.disabled=true;status.textContent='Saving original files and contract profiles…';
+  try{
+   const body=new FormData();files.forEach(file=>body.append('files',file,file.name));
+   body.append('profiles',JSON.stringify(lastCustomPortfolioResult.contract_profiles||[]));
+   body.append('contract_name',$('contractSaveName').value.trim());
+   body.append('signer_name',$('contractSaveSigner').value.trim());
+   body.append('acknowledge',String($('contractSaveAck').checked));
+   const token=sessionStorage.getItem('odinApiToken')||'';
+   const response=await fetch('/api/contracts/save',{method:'POST',headers:{...(token?{Authorization:'Bearer '+token}:{})},body});
+   const data=await response.json();if(!response.ok)throw new Error(data.detail||'Save failed');
+   status.textContent='Saved '+data.count+' contract file(s).';status.style.color='#17603a';
+   const savedCards=data.saved.map(item=>'<article class="ci-profile"><div class="ci-profile-head"><div><span class="eyebrow">SAVED CONTRACT · '+esc(item.saved_id)+'</span><h4>'+esc(item.contract_name)+'</h4><p>'+esc(item.filename)+' · Saved '+esc(new Date(item.saved_at).toLocaleString())+'</p></div><span class="ci-badge">'+esc(item.status)+'</span></div><p class="small">SHA-256: '+esc(item.sha256)+'</p></article>').join('');
+   const host=$('contractProfilesMain');if(host){const existing=host.querySelector('.saved-contract-list');if(existing)existing.remove();host.insertAdjacentHTML('afterbegin','<section class="saved-contract-list"><h3>Saved contracts</h3>'+savedCards+'</section>')}
+   $('customPortfolioStatus').textContent='Contract saved successfully. Original file and profile are stored locally in Odin.';
+   setTimeout(close,1000);
+  }catch(error){status.textContent='Could not save contract: '+error.message;status.style.color='#b42318'}
+  finally{submit.disabled=false}
+ });
+}
+\nasync function runCustomPortfolio(){
+ setupContractSave();\n const button=$('customAnalyzeButton'),status=$('customPortfolioStatus'),out=$('customPortfolioResults');
  const files=[...($('customContractFiles')?.files||[])];
  if(!files.length){status.textContent='Choose at least one PDF or TXT contract file.';return}
  const context=$('customCompanyContext').value.trim();
@@ -1969,7 +2041,7 @@ async function runCustomPortfolio(){
   const response=await fetch('/api/analyze-portfolio-upload',{method:'POST',headers:{...(token?{Authorization:'Bearer '+token}:{})},body:form});
   const data=await response.json();
   if(!response.ok)throw new Error(data.detail||('Request failed with HTTP '+response.status));
-  renderContractProfiles(data.contract_profiles,'contractProfilesMain');
+  lastCustomPortfolioResult=data;const saveButton=$('customSignSave');if(saveButton)saveButton.disabled=false;\n  renderContractProfiles(data.contract_profiles,'contractProfilesMain');
   const reports=data.contract_reports||[],company=data.company_risk_report||{},graph=data.contract_graph||{},alerts=data.alert_feed||[];
   const finance=company.financial_reconciliation||data.financial_reconciliation||{};
   const financeCounts=finance.counts||{};
