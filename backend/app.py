@@ -373,14 +373,28 @@ def reextract_clause(body: ReExtractionRequest = Body(...)):
 
 @app.post("/api/analyze-portfolio-upload", dependencies=[Depends(require_api_token)])
 async def analyze_portfolio_upload(
-    company_context: str = Form(...),
+    company_context: str = Form(default=""),
     files: list[UploadFile] = File(...),
     event_records: str = Form(default="[]"),
     payment_ledger: str = Form(default="[]"),
     as_of: str = Form(default="2027-03-15"),
     use_claude: bool = Form(default=True),
 ):
-    """Extract text from uploaded TXT/PDF contracts, then run the same portfolio workflow."""
+    """Extract uploaded TXT/PDF contracts using the canonical bundled company context by default."""
+    company_context = (company_context or "").strip()
+    context_source = "request"
+    if not company_context:
+        context_path = PACK_DIR / "bundle" / "company" / "context.txt"
+        try:
+            company_context = context_path.read_text(encoding="utf-8-sig").strip()
+        except OSError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="Company context was omitted and bundle/company/context.txt could not be loaded.",
+            ) from exc
+        context_source = "odin_dev_pack/bundle/company/context.txt"
+    if len(company_context) < 10:
+        raise HTTPException(status_code=422, detail="The bundled company context is empty or too short.")
     if not files:
         raise HTTPException(status_code=422, detail="Upload at least one PDF or TXT contract.")
     if len(files) > 50:
@@ -438,7 +452,25 @@ async def analyze_portfolio_upload(
 
     result = analyze_portfolio(body)
     result["uploaded_documents"] = uploaded_documents
+    result["company_context_source"] = context_source
     return result
+
+
+@app.get("/api/company-context")
+def get_company_context():
+    """Return the single canonical company context bundled with the Odin challenge."""
+    context_path = PACK_DIR / "bundle" / "company" / "context.txt"
+    try:
+        content = context_path.read_text(encoding="utf-8-sig").strip()
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail="Could not load bundle/company/context.txt.") from exc
+    if not content:
+        raise HTTPException(status_code=500, detail="bundle/company/context.txt is empty.")
+    return {
+        "company_context": content,
+        "source": "odin_dev_pack/bundle/company/context.txt",
+        "company": "Quillhub Inc.",
+    }
 
 
 @app.post("/api/analyze-portfolio", dependencies=[Depends(require_api_token)])
