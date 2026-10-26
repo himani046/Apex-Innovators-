@@ -87,10 +87,17 @@ def _fallback_profile(document_id: str, filename: str, source: str) -> dict[str,
     email = first(r"([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})")
     phone = first(r"(\+?\d[\d ()-]{7,}\d)")
     contact = first(r"(?:contact person|primary contact|account manager|notice contact|operations contact|attention|contact name)\s*[:\-]\s*([^,;|\n]+)")
+    counterparty = first(r"(?:service provider|provider|vendor|supplier|customer|client|counterparty|contracting party)\s*[:\-]\s*([^,;|\n]+)")
+    if not counterparty:
+        counterparty = first(r"between\s+([A-Z][A-Za-z0-9 &.,'\-]{2,80}?)\s+and\s+", re.I)
     contract_id = first(r"(?:contract (?:id|no\.?|number)|agreement (?:id|no\.?|number))\s*[:#\-]?\s*([A-Z0-9][A-Z0-9._/-]{2,})")
     effective = first(r"(?:effective date|effective as of|commencement date|starts on|start date)\s*[:\-]?\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
     end_date = first(r"(?:initial subscription ends|expiration date|expires on|end date|termination date|term ends|ending on)\s*[:\-]?\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
     monthly = first(r"((?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?\s*(?:per month|/month|monthly))")
+    if not monthly:
+        monthly = first(r"(?:monthly fee|monthly subscription fee|subscription fee per month|monthly charge)\s*[:\-]?\s*((?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?)")
+        if monthly:
+            monthly = monthly + " per month"
     fee = monthly or first(r"((?:USD\s*)?\$\s?[\d,]+(?:\.\d{2})?[^\n]{0,45}(?:per month|monthly|per year|annually|one-time))")
     term = first(r"((?:initial )?(?:term|subscription period)\s*(?:is|of|:)?\s*\d+\s*(?:months?|years?))")
     term_months = re.search(r"(\d+)\s*months?", term or "", re.I)
@@ -141,7 +148,7 @@ def _fallback_profile(document_id: str, filename: str, source: str) -> dict[str,
     gaps.append("Actual revenue earned/recognized, invoiced, collected, and outstanding cannot be established from contract terms alone; reconcile invoice/payment/accounting records.")
     return {
         "document_id": document_id, "filename": filename, "extraction_mode": "deterministic_fallback",
-        "contract_id": contract_id or document_id, "counterparty": None, "contract_type": None,
+        "contract_id": contract_id or document_id, "counterparty": counterparty, "contract_type": None,
         "contact_person": contact, "contact_email": email, "contact_phone": phone,
         "effective_date": effective, "start_date": effective, "end_date": end_date, "term": term,
         "renewal_terms": renewal, "contract_value": contract_value, "fee_schedule": fee,
