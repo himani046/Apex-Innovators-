@@ -202,10 +202,11 @@ def _run_demo(as_of="2027-03-15", request_claude=True):
         "from": "Norns", "to": "Odin", "type": "timeline_complete", "status": "complete"
     })
 
-    events = [
-        event for event in pack["event_drops"]["events_drop1.jsonl"]
-        if event.get("timestamp", "")[:10] <= as_of
-    ]
+    # Review every event source loaded from the canonical pack (JSONL and CSV),
+    # not only the first legacy JSONL drop. Future valid events were already
+    # filtered using the selected simulated date above; malformed dates remain
+    # visible as unverified review candidates.
+    events = [event for rows in all_events.values() for event in rows]
     if not budget.reserve_call("Loki risk review"):
         raise RuntimeError("Agent call budget exhausted before Loki risk review")
     finding = review(x, events, use)
@@ -313,8 +314,17 @@ def _run_demo(as_of="2027-03-15", request_claude=True):
     )
     shared.update("evidence_grounded_finding", state["evidence_grounded_finding"])
     state["event_summary"] = {
-        "drop1_events_available_as_of_date": len(events),
-        "drop2_events_loaded": len(pack["event_drops"]["events_drop2.jsonl"]),
+        "drop1_events_available_as_of_date": len(pack["event_drops"].get("events_drop1.jsonl", [])),
+        "drop2_events_loaded": len(pack["event_drops"].get("events_drop2.jsonl", [])),
+        "total_events_loaded": sum(len(rows) for rows in pack["event_drops"].values()),
+        "events_by_source": {
+            name: {
+                "loaded": len(pack["event_drops"].get(name, [])),
+                "available_as_of_date": len(all_events.get(name, [])),
+                "format": "csv" if name.casefold().endswith(".csv") else "jsonl",
+            }
+            for name in sorted(pack["event_drops"])
+        },
         "parse_errors": pack["parse_errors"],
     }
     state["status"] = "complete_with_limitations"

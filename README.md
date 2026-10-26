@@ -41,6 +41,12 @@ Open http://127.0.0.1:8000. API checks:
 - `GET /api/pack`
 - `GET /api/run?as_of=2027-03-15&use_claude=false`
 
+## Event-feed ingestion
+
+The canonical pack loader reads every `*.jsonl` and `*.csv` file placed in `odin_dev_pack/bundle/events/`. CSV feeds retain their original columns and receive normalized `event_id`, `timestamp`, `body`, and `contract_id` fields when common aliases are present. The run response reports event counts and ingestion format per source. Event-feed text is still unverified evidence: ingestion does not authenticate the source or prove a contractual trigger.
+
+The current `main` dataset contains `events_drop1.jsonl` and `events_drop2.jsonl`; the existing CSV files are the payment ledger and holidays calendar. If additional event CSVs are part of the intended dataset, place them in `odin_dev_pack/bundle/events/` so the loader includes them automatically.
+
 ## Data / citation policy
 
 The supplied `.txt` files are canonical citation anchors. A citation must include document ID, clause reference, and an exact quote. Unverified quotes must not be treated as evidence. The supplied data is fictional. Draft actions are never sent automatically.
