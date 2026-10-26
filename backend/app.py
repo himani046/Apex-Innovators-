@@ -1,4 +1,6 @@
 import json
+import time
+import copy
 from datetime import date
 from pathlib import Path
 from typing import Literal
@@ -32,6 +34,25 @@ app = FastAPI(
     docs_url=None if security_mode() == "misconfigured_production" else "/docs",
     redoc_url=None if security_mode() == "misconfigured_production" else "/redoc",
 )
+# Cache identical recent analyses so browser refreshes do not rerun Claude.
+_RUN_RESPONSE_CACHE = {}
+_RUN_CACHE_TTL_SECONDS = 300
+
+
+def _run_cache_key(as_of: str, use_claude: bool):
+    import hashlib
+    signature = []
+    if PACK_DIR.exists():
+        for path in sorted(p for p in PACK_DIR.rglob("*") if p.is_file()):
+            try:
+                stat = path.stat()
+                signature.append((str(path.relative_to(PACK_DIR)), stat.st_mtime_ns, stat.st_size))
+            except OSError:
+                continue
+    fingerprint = hashlib.sha256(repr(signature).encode("utf-8")).hexdigest()
+    return (as_of, bool(use_claude), fingerprint)
+
+
 FRONTEND = Path(__file__).resolve().parents[1] / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND)), name="static")
 
@@ -289,6 +310,11 @@ def event_history(
 @app.get("/api/run")
 def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query(default=True)):
     try:
+        cache_key = _run_cache_key(as_of.isoformat(), use_claude and USE_CLAUDE)
+        now = time.monotonic()
+        cached = _RUN_RESPONSE_CACHE.get(cache_key)
+        if cached and now - cached["created"] < _RUN_CACHE_TTL_SECONDS:
+            return copy.deepcopy(cached["result"])
         result = run_demo(as_of.isoformat(), use_claude)
         # Build a compact, source-grounded quick-look profile for every bundled contract.
         try:
@@ -324,6 +350,7 @@ def run(as_of: date = Query(default=date(2027, 3, 15)), use_claude: bool = Query
             # actually persisting the run. Keep analysis usable, but expose that
             # the post-run metadata update was not durable.
             result["audit"]["reproducibility_metadata_persisted"] = False
+        _RUN_RESPONSE_CACHE[cache_key] = {"created": time.monotonic(), "result": copy.deepcopy(result)}
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="as_of must be an ISO date, e.g. 2027-03-15") from exc
