@@ -1434,6 +1434,62 @@ html body #dash .page-view[data-view="audit"] button[data-audit-run]:active {
 .ci-empty{padding:18px;background:#f7f8f3;border-radius:14px;color:#68725d;font-size:13px}
 @media(max-width:800px){.ci-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.ci-profile-head{flex-direction:column}}
 @media(max-width:520px){.ci-facts{grid-template-columns:1fr}.ci-controls{align-items:flex-start;flex-direction:column}.ci-controls button{width:100%}}
+
+/* Contract Intelligence visual polish: consistent dark surfaces, clear contrast, and compact finance panel. */
+.page-view[data-view="intelligence"] .contract-profile-panel{
+  background:linear-gradient(145deg,rgba(22,20,38,.98),rgba(15,16,27,.98))!important;
+  border:1px solid rgba(183,158,255,.22)!important;border-radius:24px!important;
+  padding:clamp(20px,3vw,34px)!important;box-shadow:0 18px 55px rgba(0,0,0,.22)!important;
+}
+.page-view[data-view="intelligence"] .ci-heading{margin-bottom:24px;align-items:center}
+.page-view[data-view="intelligence"] .ci-heading .eyebrow{color:#bda7ff!important;letter-spacing:1.7px}
+.page-view[data-view="intelligence"] .ci-heading h3{font-size:clamp(24px,2.2vw,32px);line-height:1.2;color:#f7f5ff!important;letter-spacing:-.6px}
+.page-view[data-view="intelligence"] .ci-heading p,
+.page-view[data-view="intelligence"] #ciStatus{color:#b9b6cb!important;line-height:1.7}
+.page-view[data-view="intelligence"] .ci-drop{
+  display:grid;grid-template-columns:48px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;
+  gap:5px 14px;padding:24px 26px;min-height:120px;border:1.5px dashed rgba(190,164,255,.52);
+  border-radius:18px;background:linear-gradient(135deg,rgba(157,120,255,.10),rgba(255,255,255,.025));
+  color:#f7f4ff!important;transition:border-color .18s ease,background .18s ease;
+}
+.page-view[data-view="intelligence"] .ci-drop:before{content:"⇧";grid-row:1/3;display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:rgba(185,150,255,.15);color:#d8c4ff;font-size:25px}
+.page-view[data-view="intelligence"] .ci-drop:hover{border-color:#d1b7ff;background:rgba(160,124,255,.12)}
+.page-view[data-view="intelligence"] .ci-drop strong{font-size:16px;color:#f6f2ff!important}
+.page-view[data-view="intelligence"] .ci-drop span{color:#aaa6bf!important;font-size:12px}
+.page-view[data-view="intelligence"] .ci-drop input{grid-column:2;max-width:100%;width:100%;color:#d8d4e8;font-size:12px;margin-top:9px}
+.page-view[data-view="intelligence"] .ci-drop input::file-selector-button{background:#e4d5ff;color:#241936;border:0;border-radius:8px;padding:8px 12px;margin-right:12px;font-weight:700;cursor:pointer}
+.page-view[data-view="intelligence"] .ci-controls{margin-top:18px;padding:0 2px;gap:14px}
+.page-view[data-view="intelligence"] .ci-controls label{color:#d8d4e8!important}
+.page-view[data-view="intelligence"] .ci-controls button{background:linear-gradient(110deg,#e5c7ff,#a994ff)!important;color:#171225!important;border:0!important;border-radius:999px;padding:13px 20px;font-weight:800;box-shadow:0 7px 24px rgba(169,135,255,.17)}
+.page-view[data-view="intelligence"] .ci-controls button:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.page-view[data-view="intelligence"] .ci-ledger{margin:22px 0 18px;padding:20px 22px;background:rgba(255,255,255,.035)!important;border:1px solid rgba(185,168,230,.17)!important;border-radius:18px}
+.page-view[data-view="intelligence"] .ci-ledger label b{display:block;font-size:13px;letter-spacing:.2px;color:#f0eaff!important}
+.page-view[data-view="intelligence"] .ci-ledger label span{font-size:12px;line-height:1.65;color:#aaa6bf!important;margin:7px 0 13px}
+.page-view[data-view="intelligence"] .ci-ledger textarea{display:block;width:100%;min-height:150px;max-height:300px;resize:vertical;box-sizing:border-box;background:#0b0b14!important;color:#e5def9!important;border:1px solid #39334e!important;border-radius:12px;padding:14px 16px;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+.page-view[data-view="intelligence"] .ci-ledger textarea:focus{border-color:#b69aff!important;box-shadow:0 0 0 3px rgba(182,154,255,.12)}
+.page-view[data-view="intelligence"] #ciLedgerSummary{font-size:12px;line-height:1.7;color:#bcb7d0!important;margin:12px 0 0}
+.page-view[data-view="intelligence"] .ci-export-row{justify-content:flex-end;gap:10px;margin:0 0 20px}
+.page-view[data-view="intelligence"] .ci-export-row button{background:rgba(255,255,255,.07)!important;color:#e9e3f7!important;border:1px solid rgba(185,168,230,.2)!important;border-radius:999px;padding:10px 15px;font-size:12px}
+.page-view[data-view="intelligence"] .ci-export-row button:hover{background:rgba(182,154,255,.15)!important;border-color:rgba(182,154,255,.5)!important}
+.page-view[data-view="intelligence"] #ciProfiles{margin-top:12px}
+.page-view[data-view="intelligence"] .ci-profile{background:#12121f!important;color:#f4f1ff!important;border-color:#39334e!important}
+.page-view[data-view="intelligence"] .ci-profile h4,.page-view[data-view="intelligence"] .ci-profile b{color:#f4f1ff!important}
+.page-view[data-view="intelligence"] .ci-profile p,.page-view[data-view="intelligence"] .ci-profile .ci-meta{color:#b9b4cd!important}
+.page-view[data-view="intelligence"] .ci-fact{background:#1b1a2a!important;border-color:#39334e!important}
+.page-view[data-view="intelligence"] .ci-fact span{color:#aaa4c3!important}
+.page-view[data-view="intelligence"] .ci-fact b{color:#f1edff!important}
+.page-view[data-view="intelligence"] .ci-clause{background:#1b1a2a!important;border-left-color:#b69aff!important}
+.page-view[data-view="intelligence"] .ci-clause p,.page-view[data-view="intelligence"] .ci-clause blockquote{color:#d6d1e5!important}
+.page-view[data-view="intelligence"] .ci-empty{background:#1b1a2a!important;color:#c8c2dc!important}
+@media(max-width:650px){
+ .page-view[data-view="intelligence"] .ci-drop{grid-template-columns:36px minmax(0,1fr);padding:18px;gap:5px 11px}
+ .page-view[data-view="intelligence"] .ci-drop:before{width:36px;height:36px;font-size:21px}
+ .page-view[data-view="intelligence"] .ci-controls{align-items:stretch}
+ .page-view[data-view="intelligence"] .ci-controls button{width:100%}
+ .page-view[data-view="intelligence"] .ci-ledger{padding:15px}
+ .page-view[data-view="intelligence"] .ci-export-row{justify-content:stretch}
+ .page-view[data-view="intelligence"] .ci-export-row button{flex:1}
+}
 </style></head><body class="page-is-overview">
 <button type="button" id="odinChatLauncher" aria-controls="odinChatPanel" aria-expanded="false"><span class="chat-spark">✦</span> Ask Odin</button>
 <section id="odinChatPanel" aria-label="Odin AI chat" hidden>
