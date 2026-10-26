@@ -196,6 +196,24 @@ def build_contract_profile(document_id: str, filename: str, source: str, use_cla
             value = _clean(data.get(field))
             if value:
                 merged[field] = value
+        # Reject scalar claims that cannot be tied back to the source. Keep deterministic,
+        # explicitly derived nominal value only when the fallback calculation supports it.
+        source_fold = re.sub(r"\\s+", " ", source).casefold()
+        for field in scalar_fields:
+            value = _clean(merged.get(field))
+            if not value:
+                continue
+            if field == "contract_value" and profile.get("contract_value", "").startswith("Derived nominal initial-term value:"):
+                merged[field] = profile["contract_value"]
+                continue
+            if value.casefold() in source_fold:
+                continue
+            if field in {"contact_person", "contact_email", "counterparty"}:
+                pieces = [part.strip() for part in re.split(r"[;|]", value) if part.strip()]
+                if pieces and all(piece.casefold() in source_fold for piece in pieces):
+                    continue
+            # Prefer the regex/source-derived value; otherwise expose the field as unknown.
+            merged[field] = profile.get(field)
         if not merged.get("revenue_generated") and not merged.get("revenue_recognized") and not merged.get("amount_invoiced") and not merged.get("amount_collected") and not merged.get("outstanding_balance"):
             merged["evidence_gaps"] = list(dict.fromkeys(merged.get("evidence_gaps", []) + [
                 "No actual revenue or cash-performance evidence was established by the contract text."
